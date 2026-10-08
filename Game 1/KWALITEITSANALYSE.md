@@ -24,10 +24,10 @@ De gepubliceerde GitHub Pages-game is interactief getest op ongeveer 1363 × 936
 
 ## Bron en release
 
-De huidige `main`-versie van `Game 1/src/sketch.js` is opgehaald via de gekoppelde repository en vergeleken met de lokale bron vóór deze pass. De live pagina laadde `sketch.js?v=celestial-20261009`; de nieuwe kandidaat gebruikt een nieuwe queryversie om oude browsercache te omzeilen. Na de commit wordt de Pages-build en live kandidaat opnieuw gecontroleerd.
+De polish-pass is gepusht in commit `f0046d2` (`Game 1/src/sketch.js` en bijbehorende tests/docs). GitHub Pages-build `37854464897` is geslaagd. De gepubliceerde pagina laadt `sketch.js?v=celestial-20261009-cinematic2`. Live gecontroleerd: start, chronometerintro zonder standaard HUD, terugkeer van de HUD in 55%-slowmotion en Rewind naar Made in Heaven/Universe 02.
 
 ## Grenzen van de verificatie
 
-De JavaScript-syntaxcheck en 33 Node-simulatie/regressiechecks slagen. De simulatie gebruikt nagebootste p5-/Canvas-functies en bewijst geen visuele kwaliteit of FPS. Een lokale Chromium-run is niet gelukt: de localhost-server werd door de runtime geweigerd en de meegeleverde Chromium-binary crashte met SIGSEGV. De aangepaste kandidaat wordt daarom via GitHub Pages visueel gecontroleerd nadat de build klaar is. Hoorbare synchronisatie en prestaties blijven afhankelijk van een langere test op de eigen pc.
+De JavaScript-syntaxcheck en 33 Node-simulatie/regressiechecks slagen. De simulatie gebruikt nagebootste p5-/Canvas-functies en bewijst geen FPS of hoorbare synchronisatie. Lokale Chromium-QA lukte niet: de localhost-server werd door de runtime geweigerd en de meegeleverde Chromium-binary crashte met SIGSEGV. De gepubliceerde kandidaat is wel live visueel gecontroleerd voor Time Stop en Rewind. De nieuwe Road Roller-landingtiming is lokaal getest, maar de volledige Road Roller-sequentie is na deze push niet opnieuw live afgespeeld. Hoorbare synchronisatie, FPS en langere speelsessies blijven nog te meten.
 
 De graphics zijn zelfgetekende 2D-canvasillustraties; dit zijn geen 3D-modellen of native 4K-textures.

@@ -1,9 +1,9 @@
-# Git-commitvoorstellen
+# Gepushte commits
 
-De complete polish-pass kan als één releasecommit worden gepubliceerd:
+De cinematic polish-release staat op `main` in commit `f0046d2`:
 
 ```text
 feat: polish time stop rewind and road roller cinematics
 ```
 
-De ZIP bevat dezelfde releasebestanden als de bijgewerkte map `Game 1`.
+Na de geslaagde Pages-build en live browser-QA zijn de testresultaten en publicatiestatus bijgewerkt in een kleine documentatiecommit. De bijgewerkte ZIP bevat dezelfde releasebestanden als de bestaande map `Catcher_JoJo_Celestial_Edition`.
