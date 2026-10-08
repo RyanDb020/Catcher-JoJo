@@ -1,0 +1,4 @@
+Feedback Stijn 
+- Voeg een achtergrond toe zodat de game er minder leeg uitziet.
+- Voeg spelregels toe zodat de speler meteen weet hoe de game werkt.
+- Maak de comments in de code duidelijker zodat beter te begrijpen is wat de code doet.

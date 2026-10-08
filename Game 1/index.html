@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100926">
+  <title>JoJo Catcher — Celestial Edition</title>
+  <style>
+    :root { color-scheme: dark; font-family: 'Trebuchet MS', Arial, sans-serif; }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #050514; }
+    body { min-width: 320px; }
+    canvas { display: block; }
+    [hidden] { display: none !important; }
+    #options-panel {
+      position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+      background: rgba(2, 2, 13, .80); padding: 18px; backdrop-filter: blur(7px);
+    }
+    .panel {
+      max-height: calc(100dvh - 36px); overflow-y: auto; width: min(540px, 100%); border: 2px solid #f1c06a; border-radius: 20px;
+      color: #fff5e1; background: linear-gradient(135deg, #291245 0%, #130a24 62%, #25102f 100%);
+      box-shadow: 0 15px 90px #05020daa, inset 0 0 40px #b858f122; padding: 26px;
+    }
+    h1 { margin: 0 0 4px; font: bold clamp(26px, 5vw, 38px) Impact, 'Arial Narrow', sans-serif; letter-spacing: 2px; color: #ffda90; }
+    p { margin: 0 0 20px; color: #d6c7e8; line-height: 1.4; }
+    .volume { display: grid; grid-template-columns: 1fr 2fr; align-items: center; gap: 18px; margin: 15px 0; }
+    .volume input { accent-color: #db9cff; width: 100%; cursor: pointer; }
+    .voice-file { display:grid; grid-template-columns:1fr 1.4fr; gap:12px; align-items:center; margin:12px 0; font-size:14px; color:#dcccf0; }
+    .voice-file input { width:100%; font-size:11px; color:#e5dcf1; }
+    .toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 18px 0; }
+    .toggle input { width: 20px; height: 20px; accent-color: #d3a7ff; cursor: pointer; }
+    button { border: 0; border-radius: 10px; background: #f5c873; color: #1d1029; font-size: 18px; padding: 11px 20px; font-weight: 800; cursor: pointer; width: 100%; margin-top: 17px; }
+    select { background:#201632;color:#ffe8b7;border:1px solid #746087;padding:9px;border-radius:6px; }
+ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+    #library-warning { position:fixed;z-index:40;top:50%;left:50%;transform:translate(-50%,-50%);
+      max-width:540px;width:calc(100% - 36px);border:2px solid #f1c06a;border-radius:14px;
+      padding:24px;background:#1b102c;color:#fbe8cb;text-align:center;line-height:1.5; }
+    small { color: #c1afcf; display: block; margin-top: 12px; }
+  </style>
+  <script src="vendor/p5.min.js"></script>
+  <script src="vendor/p5.sound.min.js"></script>
+  <script defer src="src/sketch.js"></script>
+</head>
+<body>
+  <div id="library-warning" hidden role="alert"><strong>De game kon p5.js niet laden.</strong><p>Controleer je internetverbinding en open deze hele map via Live Server in VS Code. Kijk bij fouten in de browserconsole (F12).</p></div>
+  <div id="options-panel" hidden role="dialog" aria-modal="true" aria-label="Audio en toegankelijkheid">
+    <section class="panel">
+      <h1>STAND SETTINGS</h1>
+      <p>Geluidsmix, schermtrilling en visuele rust. Druk op <strong>O</strong> of <strong>Esc</strong> om terug te gaan.</p>
+      <label class="volume"><span>Grafische kwaliteit</span><select data-setting="quality" aria-label="Grafische kwaliteit"><option value="0">Performance</option><option value="1">Balanced</option><option value="2">Ultra</option><option value="3">Cinematic</option></select></label>
+<label class="volume"><span>Time Stop snelheid</span><select data-setting="slowFactor" aria-label="Time Stop snelheid"><option value="0.4">40%</option><option value="0.55">55% · standaard</option><option value="0.65">65%</option><option value="0.75">75%</option></select></label>
+<label class="volume"><span>Master volume</span><input data-setting="master" aria-label="Master volume" type="range" min="0" max="1" step="0.05"></label>
+      <label class="volume"><span>Muziek</span><input data-setting="music" aria-label="Muziekvolume" type="range" min="0" max="1" step="0.05"></label>
+      <label class="volume"><span>Stemmen</span><input data-setting="voices" aria-label="Stemvolume" type="range" min="0" max="1" step="0.05"></label>
+      <label class="volume"><span>Effecten</span><input data-setting="effects" aria-label="Effectvolume" type="range" min="0" max="1" step="0.05"></label>
+      <label class="toggle"><span>Camera shake</span><input data-setting="shake" type="checkbox" aria-label="Camera shake aan"></label>
+      <label class="toggle"><span>Flitsen tijdens animaties</span><input data-setting="flashes" type="checkbox" aria-label="Flitsen aan"></label>
+      <label class="toggle"><span>Particles</span><input data-setting="particles" type="checkbox" aria-label="Particles aan"></label>
+      <div style="margin-top:20px; border-top:1px solid #86639a; padding-top:14px">
+        <strong style="color:#ffdb91">OPTIONELE JOJO-STEMMEN (LOKALE MP3)</strong>
+        <small>Selecteer je zelf gedownloade clips. Werkt direct, zonder externe stream. Je hoeft niets aan sketch.js te veranderen.</small>
+        <label class="voice-file"><span>Pucci / Made in Heaven</span><input type="file" data-voice="pucci" accept="audio/mpeg,audio/mp3,audio/*"></label>
+        <label class="voice-file"><span>Time Accelerate</span><input type="file" data-voice="accelerate" accept="audio/mpeg,audio/mp3,audio/*"></label>
+        <label class="voice-file"><span>ORA ORA</span><input type="file" data-voice="ora" accept="audio/mpeg,audio/mp3,audio/*"></label>
+        <label class="voice-file"><span>Road Roller</span><input type="file" data-voice="roller" accept="audio/mpeg,audio/mp3,audio/*"></label>
+      </div>
+      <button id="close-options">TERUG NAAR HET SPEL</button>
+      <small>Instellingen en highscore worden lokaal opgeslagen in deze browser. Zelf gekozen stemclips moet je na opnieuw laden nogmaals selecteren; je bestanden verlaten je computer niet.</small>
+    </section>
+  </div>
+  <script>
+    window.addEventListener('load', () => {
+      if (typeof window.p5 === 'undefined') document.getElementById('library-warning').hidden = false;
+    });
+  </script>
+</body>
+</html>
