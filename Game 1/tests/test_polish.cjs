@@ -24,12 +24,18 @@ function run(s){return vm.runInContext(s,c)};
 function tick(n=1){for(let i=0;i<n;i++){context.frameCount++;run('draw()')}};
 let checks=0;function test(label,fn){fn();console.log('PASS:',label);checks++}
 test('setup, preload and render start screen',()=>{run('preload(); setup()');tick(8);assert.equal(run('balls.length'),6);assert.equal(run('stars.length'),100)});
+test('production scripts and every declared local audio file exist',()=>{
+ const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+ for(const file of ['vendor/p5.min.js','vendor/p5.sound.min.js','assets/background-music.mp3','assets/jixaw-metal-pipe-falling-sound.mp3','assets/za-warudo-toki-wo-tomare_WJVdsYt.mp3'])assert(fs.existsSync(path.join(root,file)),file);
+ for(const key of ['catch','perfect','power','punch','impact','rewind','rebirth','roller','miss'])assert(fs.existsSync(path.join(root,'assets',`sfx-${key}.mp3`)),`sfx-${key}.mp3`);
+ assert(html.includes('src="vendor/p5.min.js"')&&html.includes('src="vendor/p5.sound.min.js"')&&html.includes('src/sketch.js'));
+});
 test('start game and spawn world',()=>{run('gameStarted=true; audioUnlocked=true');tick(12);assert.equal(run('gameStarted'),true)});
 test('perfect catch awards points and energy',()=>{run('balls[0].y=catcherY - BALL_SIZE/2+2; balls[0].x=catcherX+catcherWidth/2;');tick();assert(run('score')>=3);assert(run('perfectCatches')>=1);assert(run('standEnergy')>0)});
 test('freeze completely stops catch scoring and power-up collection',()=>{run('startTimeStop(width/2,height/2)');const score=run('score');run('balls[0].y=catcherY+1;balls[0].x=catcherX+20;powerUps=[{x:catcherX+20,y:catcherY+2,type:"stand"}]');tick(8);assert.equal(run('score'),score);assert.equal(run('powerUps.length'),1)});
 test('time stop transitions to freeze -> slow -> release -> idle',()=>{tick(275);assert.equal(run('timeStop.phase'),'freeze');const score=run('score');tick(10);assert.equal(run('score'),score);tick(75);assert.equal(run('timeStop.phase'),'slow');tick(460);assert(['release','idle'].includes(run('timeStop.phase')));tick(90);assert.equal(run('timeStop.phase'),'idle')});
 test('ORA delays score until the distance-based punch reaches its target',()=>{run('standEnergy=100;balls[0].x=width/2;balls[0].y=height/2;startStandRush()');const pre=run('score');tick(1);assert.equal(run('score'),pre);const flight=run('standPunches[0].duration');assert(flight>=150&&flight<=290);tick(Math.ceil(flight/16.6667)+2);assert(run('score')>pre)});
-test('Road Roller requires time stop, lands once, spends energy and retains impact VFX',()=>{run('standRush.active=false;standPunches=[];standEnergy=100; startRoadRoller()');assert.equal(run('roadRoller.active'),false);run('timeStop.phase="freeze";timeStop.phaseStart=gameMillis(); startRoadRoller()');assert.equal(run('roadRoller.active'),true);assert.equal(run('standEnergy'),0);tick(82);assert.equal(run('roadRoller.landed'),true);tick(86);assert.equal(run('roadRoller.active'),true);assert.equal(run('roadRollerImpact.active'),true);tick(25);assert.equal(run('roadRoller.active'),false);assert.equal(run('roadRollerImpact.active'),false)});
+test('Road Roller requires time stop, lands once and keeps impact VFX after the vehicle exits',()=>{run('standRush.active=false;standPunches=[];standEnergy=100; startRoadRoller()');assert.equal(run('roadRoller.active'),false);run('timeStop.phase="freeze";timeStop.phaseStart=gameMillis(); startRoadRoller()');assert.equal(run('roadRoller.active'),true);assert.equal(run('standEnergy'),0);tick(82);assert.equal(run('roadRoller.landed'),true);tick(86);assert.equal(run('roadRoller.active'),true);assert.equal(run('roadRollerImpact.active'),true);tick(25);assert.equal(run('roadRoller.active'),false);assert.equal(run('roadRollerImpact.active'),true);tick(21);assert.equal(run('roadRollerImpact.active'),false)});
 test('King Crimson protects lives for a timed interval',()=>{run('timeStop.phase="idle";standEnergy=100;gameOver=false;startKingCrimson()');assert.equal(run('kingCrimson.active'),true);const lives=run('lives');run('balls[0].y=height + 10;balls[0].gold=false');tick();assert.equal(run('lives'),lives);tick(100);assert.equal(run('kingCrimson.active'),false)});
 test('bomb catch awards bonus and chain effects',()=>{run('balls[0].kind="bomb"; balls[0].gold=false; balls[0].x=catcherX+10; balls[0].y=catcherY+1;balls[1].x=catcherX+25;balls[1].y=catcherY-25;');const old=run('score');tick();assert(run('score')>old)});
 test('repeated reset R is ignored and game cleanly starts universe 2',()=>{run('startUniverseReset()');const a=run('universeReset.started');run('startUniverseReset()');assert.equal(run('universeReset.started'),a);tick(510);assert.equal(run('universeReset.active'),false);assert.equal(run('universeNumber'),2);assert.equal(run('score'),0);assert.equal(run('lives'),3);assert.equal(run('standEnergy'),0);assert.equal(run('timeStop.phase'),'idle');assert.equal(run('gameOver'),false)});
@@ -136,6 +142,11 @@ test('audio missing never stops gameplay',()=>{
  run('audioUnlocked=true; soundEffects.catch.ready=false;');
  assert.doesNotThrow(()=>run('playCue("catch");'));
  assert.equal(run('balls.length'),6);
+});
+test('debug energy refill is disabled in the normal game',()=>{
+ run('resetGame();gameStarted=true;standEnergy=0;key="g";keyCode=71;keyPressed();');
+ assert.equal(run('DEBUG_TEST_MODE'),false);assert.equal(run('standEnergy'),0);
+ assert(code.includes("new URLSearchParams(window.location.search).get('test') === '1'"));
 });
 test('sustained simulation does not accumulate unbounded histories/particles/popups',()=>{
  run('resetGame();gameStarted=true;');

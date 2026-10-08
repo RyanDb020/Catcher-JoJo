@@ -27,6 +27,8 @@ De p5.js-bibliotheken zitten lokaal in `vendor/`. Er is daardoor geen internet n
 | T | Test de ZA WARUDO Time Stop |
 | G | Vul Stand Energy (debug) |
 
+De G-testtoets werkt alleen met `?test=1` aan het einde van de URL. In normaal spel is deze debugtoets uitgeschakeld. Zie `GITHUB_PAGES_PUBLICEREN.md` voor het vervangen van de bestanden in de bestaande map `Game 1`.
+
 Time Stop speelt de bestaande intro en stem af, bevriest de wereld daarna kort en laat de ballen vervolgens op 55% snelheid vallen. De catchersbediening blijft normaal reageren. In het instellingenmenu kies je 40%, 55%, 65% of 75%.
 
 Na een Game Over lopen reeds gestarte ORA- en Road Roller-effecten eerst af. De eindkaart verschijnt daarna met de **TO BE CONTINUED**-banner onder de score en resetinstructies.
@@ -47,5 +49,6 @@ Op 4K wordt de interne canvasschaal automatisch beperkt tot circa 16,6 miljoen r
 - `assets/`: muziek, originele ZA WARUDO-stem en geluidseffecten.
 - `tests/`: regressietests.
 - `PATCH_NOTES.md`, `KWALITEITSANALYSE.md`, `TESTRESULTATEN.md`, `COMMITS.md`: wijzigingsoverzicht, beoordeling en controles.
+- `GITHUB_PAGES_PUBLICEREN.md`: stappen om de lokale ZIP onder de bestaande Pages-map `Game 1` klaar te zetten.
 
 De tekeneningen van catcher, ballen, uurwerk, vuisten en Road Roller worden lokaal als canvas-assets opgebouwd en daarna hergebruikt. Ze laden geen externe afbeeldingen.

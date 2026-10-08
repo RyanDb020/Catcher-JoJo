@@ -16,8 +16,12 @@
 - ORA geeft geen punten meer nadat de speler is uitgeschakeld. De eindkaart wacht op de langste nog lopende animatie en actieve stemclip.
 - De eindkaart en de vertraagd binnenkomende **TO BE CONTINUED**-banner gebruiken een responsieve indeling met vrije ruimte ertussen.
 - Road Roller houdt de inslag apart vast nadat de walsanimatie eindigt; grondbreuken, schokgolven, stof en metaalscherven lopen daarna kort uit.
+- De Road Roller-nasleep is verlengd tot 2,35 seconden en de Game Over-planner wacht nu lang genoeg op die laatste effecten.
 - De ORA-rush bestaat uit twaalf variërende vuistslagen met wisselende aanvluchten, nagloeiende vuistbeelden en een finale inslag.
 - Cinematische geluiden en de banner-cue starten op hun bijbehorende animatiemoment.
+- Made in Heaven gebruikt in de rewindfase nu dezelfde metalen bal- en catcher-assets als tijdens het gewone spel, met extra uurwerk- en chronometerlagen.
+- De energie-vulcheat is uitgeschakeld in normale sessies en werkt alleen met de expliciete `?test=1`-query.
+- Het oude testcommando wijst nu naar één actuele regressiesuite, zodat de timingchecks niet uit elkaar lopen.
 
 ## Nieuwe detailrijke tekeningen
 

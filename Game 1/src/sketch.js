@@ -17,6 +17,11 @@ let kingCrimson = { active: false, start: 0, used: false };
 let awakening = { active: false, end: 0 };
 let audioUnlocked = false;
 const MAX_PARTICLES = 180;
+// Debug-only energy refill is available only on explicit ?test=1 builds.
+const DEBUG_TEST_MODE = (() => {
+  try { return typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('test') === '1'; }
+  catch (_) { return false; }
+})();
 // POLISH: een kleine set van tijdelijke feedbacklagen i.p.v. onbeperkte particles
 let catchFeedback = [];
 let scorePulseEnd = 0;
@@ -159,6 +164,7 @@ const ORA_RUSH_COST = 55;
 const ROAD_ROLLER_COST = 100;
 const ORA_RUSH_DURATION_MS = 2650;
 const ROAD_ROLLER_DURATION_MS = 3150;
+const ROAD_ROLLER_IMPACT_MS = 2350;
 const STAND_PUNCH_INTERVAL_MS = 165;
 
 // Gouden bal instellingen
@@ -351,7 +357,7 @@ function keyPressed() {
   if ((key === 'q' || key === 'Q') && gameStarted && !gameOver) startStandRush();
   if ((key === 'e' || key === 'E') && gameStarted && !gameOver) startRoadRoller();
   if ((key === 'f' || key === 'F') && gameStarted && !gameOver) startKingCrimson();
-  if ((key === 'g' || key === 'G') && gameStarted && !gameOver) {
+  if (DEBUG_TEST_MODE && (key === 'g' || key === 'G') && gameStarted && !gameOver) {
     standEnergy = STAND_MAX_ENERGY;
     addJoJoPopup('STAND READY!', width / 2, height * 0.25, '#ffc65d', 900, 34);
   }
@@ -1048,8 +1054,8 @@ function beginGameOver() {
   const now=gameMillis();let revealAt=now+850;
   if(standRush.active) revealAt=max(revealAt,standRush.start+ORA_RUSH_DURATION_MS+420);
   for(const punch of standPunches) revealAt=max(revealAt,punch.start+(punch.duration||180)+470);
-  if(roadRoller.active) revealAt=max(revealAt,roadRoller.start+ROAD_ROLLER_DURATION_MS+220);
-  if(roadRollerImpact.active) revealAt=max(revealAt,roadRollerImpact.at+1900);
+  if(roadRoller.active) revealAt=max(revealAt,roadRoller.start+ROAD_ROLLER_DURATION_MS+400);
+  if(roadRollerImpact.active) revealAt=max(revealAt,roadRollerImpact.at+ROAD_ROLLER_IMPACT_MS);
   if(timeStop.phase==='intro') revealAt=max(revealAt,timeStop.phaseStart+TIME_STOP_INTRO_MS+TIME_STOP_FREEZE_MS+TIME_STOP_RELEASE_MS);
   else if(timeStop.phase==='freeze') revealAt=max(revealAt,timeStop.phaseStart+TIME_STOP_FREEZE_MS+TIME_STOP_RELEASE_MS);
   else if(timeStop.phase==='slow') {timeStop.phase='release';timeStop.phaseStart=now;slowPowerUpEnd=0;revealAt=max(revealAt,now+TIME_STOP_RELEASE_MS);playTimeSound('resume');}
@@ -1333,7 +1339,7 @@ function updateJoJoAttacks() {
     if (elapsed >= ROAD_ROLLER_DURATION_MS) roadRoller.active = false;
   }
   resolvePunches();
-  if(roadRollerImpact.active&&now-roadRollerImpact.at>1900)roadRollerImpact.active=false;
+  if(roadRollerImpact.active&&now-roadRollerImpact.at>ROAD_ROLLER_IMPACT_MS)roadRollerImpact.active=false;
   jojoShake *= 0.78;
   if (jojoShake < 0.18) jojoShake = 0;
 }
@@ -1511,7 +1517,7 @@ function drawRoadRoller() {
     ctx.globalAlpha=.32;ctx.fillStyle='#eff8ff';ctx.fillRect(-207,28+Math.sin(elapsed*.008)*15,411,3);ctx.restore();
   }
   if(!roadRollerImpact.active)return;
-  const age=gameMillis()-roadRollerImpact.at,p=constrain(age/1900,0,1),ease=easeOutCubic(p);
+  const age=gameMillis()-roadRollerImpact.at,p=constrain(age/ROAD_ROLLER_IMPACT_MS,0,1),ease=easeOutCubic(p);
   const x=roadRollerImpact.x,y=roadRollerImpact.y,fade=1-p;
   ctx.save();ctx.globalAlpha=fade;
   // Fractured arena floor, cut into short angular facets rather than a single circle.
@@ -1728,22 +1734,17 @@ function drawUniverseSnapshot(snapshot, direction, t) {
     circle(star.x, y, star.size);
   }
   if (snapshot) {
-    for (const ball of snapshot.balls) {
-      stroke(245, 245, 255, 180);
-      strokeWeight(1);
-      fill(ball.gold ? '#f8d67a' : '#ef6577');
-      circle(ball.x, ball.y, BALL_SIZE);
-    }
+    for (const ball of snapshot.balls)
+      drawOrb(ball.x, ball.y, BALL_SIZE, ball.kind === 'bomb' ? 'bomb' : ball.gold ? 'gold' : 'normal');
     noStroke();
     for (const p of snapshot.powerUps) {
       fill(p.type === 'slow' ? '#58f1fb' : '#b67dff');
       circle(p.x, p.y, POWERUP_SIZE);
     }
-    fill(58, 73, 232);
-    stroke(255);
-    strokeWeight(2);
-    const x = snapshot.catcherX, y = catcherY, w = snapshot.catcherWidth;
-    quad(x, y, x + w, y, x + w - BUCKET_INSET, y + catcherHeight, x + BUCKET_INSET, y + catcherHeight);
+    const previousWidth = catcherWidth;
+    catcherWidth = snapshot.catcherWidth;
+    drawBucket(snapshot.catcherX, catcherY);
+    catcherWidth = previousWidth;
     noStroke();
     fill(255, 255, 255, 220);
     textAlign(LEFT);
@@ -1777,13 +1778,16 @@ function drawRewindOverlay(t) {
   noStroke();
   fill(94, 38, 187, 85 + t * 35);
   rect(0, 0, width, height);
+  drawOrrery(t, true);
+  drawChronometer(width*.18,height*.50,min(92,height*.12),gameMillis()*.006,.30);
+  drawChronometer(width*.82,height*.50,min(92,height*.12),-gameMillis()*.006,.30);
   stroke(227, 157, 255, 60);
   strokeWeight(3);
   for (let i = 0; i < 32; i++) {
     const y = (i * 53 + t * 920) % height;
     line(0, y, width, y - 16);
   }
-  drawUniverseClock(width / 2, height * 0.70, min(150, height * 0.19), -t * TWO_PI * 8, '#c29bff');
+  drawUniverseClock(width / 2, height * 0.70, min(190, height * 0.23), -t * TWO_PI * 8, '#c29bff');
   drawUniverseHeader('REWIND', 'PUCCI  ·  HET VERLEDEN VERDWIJNT', '#dbc0ff');
   pop();
 }

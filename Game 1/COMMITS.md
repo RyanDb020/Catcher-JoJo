@@ -7,3 +7,4 @@
 5. `feat: voeg vier grafische kwaliteitsstanden toe` — densitybegrenzing en lokale p5-bestanden.
 6. `test: controleer time stop en renderresolutie` — regressies en uitvoeringsnotities.
 7. `fix: laat aanvallen en effecten uitlopen voor game over` — ORA- en Road Roller-afloop, responsieve eindkaart en regressietests.
+8. `polish: tighten animation QA and test-mode controls` — langere roller-nasleep, rijkere Made in Heaven-rewind, debug-guard en één actuele testsuite.
