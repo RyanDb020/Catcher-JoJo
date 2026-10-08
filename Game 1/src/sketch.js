@@ -165,6 +165,7 @@ const ROAD_ROLLER_COST = 100;
 const ORA_RUSH_DURATION_MS = 2650;
 const ROAD_ROLLER_DURATION_MS = 3150;
 const ROAD_ROLLER_IMPACT_MS = 2350;
+const ROAD_ROLLER_LAND_MS = 1390;
 const STAND_PUNCH_INTERVAL_MS = 165;
 
 // Gouden bal instellingen
@@ -734,6 +735,7 @@ function drawTimeStopEffects() {
 
   if (phase === "intro") {
     drawTimeZoom(elapsed);
+    drawTimeStopClock(elapsed);
     drawTimeExplosion(elapsed);
     drawSpeedLines(elapsed);
     drawAnimeText(elapsed);
@@ -779,10 +781,11 @@ function drawTimeExplosion(elapsed) {
   const centerY = height / 2;
   push();
   noFill();
-  for (let i = 0; i < 6; i++) {
-    const reach = (i * 0.13 + eased) * max(width, height) * 0.83;
-    stroke(i % 2 === 0 ? color(120, 235, 255, (1 - progress) * 180) : color(252, 210, 95, (1 - progress) * 130));
-    strokeWeight(1 + (5 - i) * 0.7);
+  for (let i = 0; i < 4; i++) {
+    const ringT = constrain(eased - i * 0.13, 0, 1);
+    const reach = (0.12 + ringT * 1.05) * max(width, height) * 0.78;
+    stroke(i % 2 === 0 ? color(120, 235, 255, (1 - ringT) * 145) : color(252, 210, 95, (1 - ringT) * 105));
+    strokeWeight(1.3 + (3 - i) * 0.8);
     circle(centerX, centerY, reach);
   }
   for (const part of timeStop.particles) {
@@ -802,16 +805,31 @@ function drawSpeedLines(elapsed) {
   if (elapsed > 2600) return;
   push();
   translate(width / 2, height / 2);
-  stroke(180, 195, 255, 95 * (1 - elapsed / 2600));
-  strokeWeight(2);
-  for (let i = 0; i < 48; i++) {
-    const angle = i * TWO_PI / 48;
-    const start = max(width, height) * (0.32 + (i % 4) * 0.055);
+  stroke(180, 195, 255, 66 * (1 - elapsed / 2600));
+  strokeWeight(1.4);
+  for (let i = 0; i < 28; i++) {
+    const angle = i * TWO_PI / 28;
+    const start = max(width, height) * (0.40 + (i % 3) * 0.045);
     const finish = max(width, height) * 1.1;
     line(cos(angle) * start, sin(angle) * start,
          cos(angle) * finish, sin(angle) * finish);
   }
   pop();
+}
+
+// A detailed chronometer gives the Time Stop buildup a clear visual focal point.
+function drawTimeStopClock(elapsed) {
+  if (!visualAtlas.clock || elapsed < 620 || elapsed > 3920) return;
+  const reveal = easeInOutCubic(constrain((elapsed - 620) / 540, 0, 1));
+  const fade = constrain((3920 - elapsed) / 480, 0, 1);
+  const radius = min(width, height) * (0.16 + reveal * 0.055);
+  const ctx = drawingContext;
+  ctx.save();
+  ctx.globalAlpha = 0.48 * reveal * fade;
+  ctx.translate(width / 2, height / 2);
+  ctx.rotate(-elapsed * 0.00028);
+  ctx.drawImage(visualAtlas.clock, -radius, -radius, radius * 2, radius * 2);
+  ctx.restore();
 }
 
 function drawAnimeText(elapsed) {
@@ -929,6 +947,8 @@ function drawCatcherMovement() {
 }
 
 function drawHUD() {
+  // Hide the standard panels while the time-stop letterbox and title take focus.
+  if (!gameOver && (timeStop.phase === 'intro' || timeStop.phase === 'freeze')) return;
   push();
   const u = hudScale(), m = HUD_MARGIN * u;
   const w = min(width - m*2, 465 * u), h = 91 * u;
@@ -1332,7 +1352,7 @@ function updateJoJoAttacks() {
   }
   if (roadRoller.active) {
     const elapsed = now - roadRoller.start;
-    if (elapsed >= 1200 && !roadRoller.landed) {
+    if (elapsed >= ROAD_ROLLER_LAND_MS && !roadRoller.landed) {
       roadRoller.landed = true;
       slamRoadRoller();
     }
@@ -1773,19 +1793,22 @@ function drawUniverseHeader(mainText, subtitle, tint) {
 }
 
 // Rewind-lijnen en een zichtbaar teruglopende tijdcirkel.
+function rewindStreakY(index, t, canvasHeight = height) {
+  return ((index * 61 - t * 760 + canvasHeight) % (canvasHeight + 61)) - 30;
+}
 function drawRewindOverlay(t) {
   push();
   noStroke();
-  fill(94, 38, 187, 85 + t * 35);
+  fill(94, 38, 187, 58 + t * 24);
   rect(0, 0, width, height);
   drawOrrery(t, true);
   drawChronometer(width*.18,height*.50,min(92,height*.12),gameMillis()*.006,.30);
   drawChronometer(width*.82,height*.50,min(92,height*.12),-gameMillis()*.006,.30);
-  stroke(227, 157, 255, 60);
-  strokeWeight(3);
-  for (let i = 0; i < 32; i++) {
-    const y = (i * 53 + t * 920) % height;
-    line(0, y, width, y - 16);
+  stroke(227, 186, 255, 34);
+  strokeWeight(1.4);
+  for (let i = 0; i < 20; i++) {
+    const y = rewindStreakY(i, t);
+    line(0, y, width, y - 7);
   }
   drawUniverseClock(width / 2, height * 0.70, min(190, height * 0.23), -t * TWO_PI * 8, '#c29bff');
   drawUniverseHeader('REWIND', 'PUCCI  ·  HET VERLEDEN VERDWIJNT', '#dbc0ff');
@@ -1798,20 +1821,20 @@ function drawAcceleratingUniverse(t) {
   push();
   const speed = pow(t, 2) * 16 + 1;
   noStroke();
-  fill(19, 2, 32, 130);
+  fill(19, 2, 32, 82);
   rect(0, 0, width, height);
   translate(width / 2, height / 2);
   const radius = sqrt(width * width + height * height) * 0.62;
-  strokeWeight(2.0 + speed * 0.2);
-  for (let i = 0; i < 106; i++) {
-    const a = (i / 106) * TWO_PI + gameMillis() * 0.00007 * speed;
+  strokeWeight(1.2 + speed * 0.12);
+  for (let i = 0; i < 68; i++) {
+    const a = (i / 68) * TWO_PI + gameMillis() * 0.00007 * speed;
     const near = 30 + ((i * 77 + gameMillis() * speed * 0.16) % radius);
-    const far = near + 35 + speed * 23;
-    stroke(i % 4 === 0 ? '#ffd4ff' : '#9e8bff');
+    const far = near + 24 + speed * 15;
+    stroke(i % 5 === 0 ? color(255, 212, 255, 145) : color(158, 139, 255, 92));
     line(cos(a) * near, sin(a) * near, cos(a) * far, sin(a) * far);
   }
   noFill();
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 4; i++) {
     const r = ((i * 100 + gameMillis() * (0.08 + t * 0.65)) % max(width, height)) + 20;
     stroke(161, 98, 243, 180 - i * 18);
     strokeWeight(1 + 5 * t);

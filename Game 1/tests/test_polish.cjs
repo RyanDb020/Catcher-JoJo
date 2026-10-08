@@ -35,7 +35,7 @@ test('perfect catch awards points and energy',()=>{run('balls[0].y=catcherY - BA
 test('freeze completely stops catch scoring and power-up collection',()=>{run('startTimeStop(width/2,height/2)');const score=run('score');run('balls[0].y=catcherY+1;balls[0].x=catcherX+20;powerUps=[{x:catcherX+20,y:catcherY+2,type:"stand"}]');tick(8);assert.equal(run('score'),score);assert.equal(run('powerUps.length'),1)});
 test('time stop transitions to freeze -> slow -> release -> idle',()=>{tick(275);assert.equal(run('timeStop.phase'),'freeze');const score=run('score');tick(10);assert.equal(run('score'),score);tick(75);assert.equal(run('timeStop.phase'),'slow');tick(460);assert(['release','idle'].includes(run('timeStop.phase')));tick(90);assert.equal(run('timeStop.phase'),'idle')});
 test('ORA delays score until the distance-based punch reaches its target',()=>{run('standEnergy=100;balls[0].x=width/2;balls[0].y=height/2;startStandRush()');const pre=run('score');tick(1);assert.equal(run('score'),pre);const flight=run('standPunches[0].duration');assert(flight>=150&&flight<=290);tick(Math.ceil(flight/16.6667)+2);assert(run('score')>pre)});
-test('Road Roller requires time stop, lands once and keeps impact VFX after the vehicle exits',()=>{run('standRush.active=false;standPunches=[];standEnergy=100; startRoadRoller()');assert.equal(run('roadRoller.active'),false);run('timeStop.phase="freeze";timeStop.phaseStart=gameMillis(); startRoadRoller()');assert.equal(run('roadRoller.active'),true);assert.equal(run('standEnergy'),0);tick(82);assert.equal(run('roadRoller.landed'),true);tick(86);assert.equal(run('roadRoller.active'),true);assert.equal(run('roadRollerImpact.active'),true);tick(25);assert.equal(run('roadRoller.active'),false);assert.equal(run('roadRollerImpact.active'),true);tick(21);assert.equal(run('roadRollerImpact.active'),false)});
+test('Road Roller impact matches its visible landing and outlasts vehicle cleanup',()=>{run('standRush.active=false;standPunches=[];standEnergy=100; startRoadRoller()');assert.equal(run('roadRoller.active'),false);run('timeStop.phase="freeze";timeStop.phaseStart=gameMillis(); startRoadRoller()');assert.equal(run('roadRoller.active'),true);assert.equal(run('standEnergy'),0);tick(80);assert.equal(run('roadRoller.landed'),false);tick(4);assert.equal(run('roadRoller.landed'),true);tick(84);assert.equal(run('roadRoller.active'),true);assert.equal(run('roadRollerImpact.active'),true);tick(25);assert.equal(run('roadRoller.active'),false);assert.equal(run('roadRollerImpact.active'),true);tick(32);assert.equal(run('roadRollerImpact.active'),false)});
 test('King Crimson protects lives for a timed interval',()=>{run('timeStop.phase="idle";standEnergy=100;gameOver=false;startKingCrimson()');assert.equal(run('kingCrimson.active'),true);const lives=run('lives');run('balls[0].y=height + 10;balls[0].gold=false');tick();assert.equal(run('lives'),lives);tick(100);assert.equal(run('kingCrimson.active'),false)});
 test('bomb catch awards bonus and chain effects',()=>{run('balls[0].kind="bomb"; balls[0].gold=false; balls[0].x=catcherX+10; balls[0].y=catcherY+1;balls[1].x=catcherX+25;balls[1].y=catcherY-25;');const old=run('score');tick();assert(run('score')>old)});
 test('repeated reset R is ignored and game cleanly starts universe 2',()=>{run('startUniverseReset()');const a=run('universeReset.started');run('startUniverseReset()');assert.equal(run('universeReset.started'),a);tick(510);assert.equal(run('universeReset.active'),false);assert.equal(run('universeNumber'),2);assert.equal(run('score'),0);assert.equal(run('lives'),3);assert.equal(run('standEnergy'),0);assert.equal(run('timeStop.phase'),'idle');assert.equal(run('gameOver'),false)});
@@ -169,6 +169,16 @@ test('Time Stop slow phase advances balls while keeping the large overlay clear'
  run('resetGame();gameStarted=true;timeStop.phase="slow";slowPowerUpEnd=gameMillis()+5000;balls[0].y=100;balls[0].speed=4;');
  const before=run('balls[0].y');tick(1);assert(run('balls[0].y')>before);
  assert.equal(run('getTimeSpeed()'),0.55);
+});
+test('Time Stop intro and freeze hide the standard HUD panels',()=>{
+ const originalRect=context.rect;let rectangles=0;context.rect=()=>{rectangles++};
+ run('timeStop.phase="intro";gameOver=false;drawHUD()');assert.equal(rectangles,0);
+ run('timeStop.phase="freeze";drawHUD()');assert.equal(rectangles,0);
+ run('timeStop.phase="slow";drawHUD()');assert(rectangles>0);
+ context.rect=originalRect;run('timeStop.phase="idle"');
+});
+test('Rewind camera streaks travel opposite the normal reading direction',()=>{
+ assert(run('rewindStreakY(0,.5,720)')<run('rewindStreakY(0,.25,720)'));
 });
 test('visual quality remains bounded at 4K dimensions',()=>{
  context.width=3840;context.height=2160;

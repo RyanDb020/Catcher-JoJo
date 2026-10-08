@@ -1,50 +1,44 @@
-# Testresultaten — Celestial Edition
+# Testresultaten — Celestial Edition, cinematic polish-pass
 
 ## Uitgevoerde controles
 
 | Controle | Resultaat | Methode |
 |---|---|---|
 | JavaScript-syntax | Geslaagd | `node --check src/sketch.js` |
-| Oorspronkelijke tests | 19/19 geslaagd | p5-functies gesimuleerd in Node VM; inclusief fatale ORA-overgang, debugcheat en eindkaart-layout |
-| Uitgebreide regressietests | 28/28 geslaagd | Arena, catch bij framevertraging, reset, audiofallback, lokale assets, Road Roller-nasleep en lange run |
-| Celestial-tests | 31 totaal geslaagd | Plus Time Stop-snelheid, ballen tijdens slowmotion en renderdensity op 4K |
-| Renderassets | Visueel nagekeken | De catcher, 3 baltypes, klok, vuist, roller en achtergrond zijn naar een lokale canvas-preview gerenderd |
-| ZIP-structuur/CRC | Geslaagd: 32 bestanden, CRC foutloos | `python zipfile.testzip()` op eindbestand |
+| Regressiesuite | 33/33 geslaagd | Node VM met nagebootste p5/Canvas API; bevat gameplay, reset, power-ups, audiofallback, effectenlimieten en responsieve Game Over-layout |
+| Time Stop/HUD | Geslaagd | Controle dat de grote HUD-panelen tijdens intro/freeze verborgen zijn en terugkomen bij speelbare slow motion |
+| Rewindrichting | Geslaagd | Controle dat de nieuwe tijdstrepen terugwaarts bewegen |
+| Road Roller | Geslaagd | Controle dat de inslag pas bij de zichtbare landing (1.390 ms) start, één keer afgaat en langer blijft dan de wals |
+| Alle lokale scripts en audio | Geslaagd | Bestaan van p5.js, p5.sound en alle gebruikte audiobestanden gecontroleerd |
+| ZIP-structuur en CRC | Geslaagd | Controle met Python `zipfile.testzip()` op de eind-ZIP |
 
-De tests zijn logicatests met nagebootste p5- en Canvas-functies. Ze controleren ook dat alle lokale audiobestanden en scripts in de ZIP aanwezig zijn, maar testen geen echte browserdownload, gameplay-FPS, compositie of hoorbare audio.
+De VM-tests controleren spelregels en timing met nagebootste tekenfuncties. Ze meten geen echte browser-FPS en bewijzen geen hoorbare audiosynchronisatie.
 
-## Live browser-QA
+## Live browser-QA van de gepubliceerde nulmeting
 
-| Scenario | Resultaat | Bewijs/beperking |
+De opgegeven GitHub Pages-game is op 9 oktober 2026 geopend op ongeveer 1363 × 936. De geladen script-URL bevatte `sketch.js?v=celestial-20261009`, dezelfde hoofdbranchbasis waarop deze kandidaat is gemaakt.
+
+| Scenario | Resultaat | Opmerking |
 |---|---|---|
-| Pagina, canvas en startscherm | Geslaagd | Live GitHub Pages in Chrome; Enter startte de game. |
-| Catcherbesturing | Geslaagd | Links verplaatste de catcher zichtbaar. |
-| ORA ORA | Geslaagd | Q startte de rush; vuisten, trails en impactbeelden waren zichtbaar. |
-| Time Stop | Geslaagd | T en Space bereikten de freeze; de HUD toonde daarna 55% slow motion. |
-| Road Roller | Gedeeltelijk geslaagd | E startte de aanval en de gedetailleerde wals daalde zichtbaar in beeld. De volledige impact-nasleep is in deze sessie niet betrouwbaar als frame vastgelegd; de duur en cleanup zijn lokaal getest. |
-| King Crimson | Geslaagd | F toonde de rode tint, ringeffecten en onkwetsbaarheidsstatus. |
-| Made in Heaven | Gedeeltelijk geslaagd | R startte de rewind en bracht het spel naar een nieuw universum. Niet elk tussenframe is afzonderlijk live vastgelegd. |
-| Instellingen | Geslaagd | O opende het paneel; Time Stop wijzigde naar 75% en is teruggezet naar 55%. |
-| Game Over/TBC | Geslaagd | Live eindkaart toonde score, resettekst en banner zonder overlap. |
-| Browserconsole | Geen gamefout gevonden | De enige zichtbare foutmelding kwam van een browserextensie; echte asset-downloadstatus is niet volledig uitgelezen. |
+| Startscherm en game starten | Geslaagd | Canvas, startkaart, achtergrond, catcher en HUD waren zichtbaar; Enter startte de game. |
+| Rewind/Made in Heaven | Geslaagd | `R` toonde de terugspoelfase, versnelling, singulariteit en terugkeer naar een nieuw universum. Ik zag Universe 02 en daarna Universe 03. |
+| Time Stop | Gedeeltelijk | `T` startte de intro. Eerdere live QA bevestigde de 55%-slowmotion en speelbare catcher; de nieuwe HUD- en klokwijzigingen zitten alleen in de kandidaat en moeten na publicatie opnieuw visueel worden bekeken. |
+| Road Roller | Gedeeltelijk | Eerdere live QA bevestigde de afdaling; de aangepaste landingtiming en nasleep zijn in deze ronde met de lokale regressie getest. |
+| ORA en overige abilities | Eerder getest | De vorige live QA bevestigde ORA, King Crimson en de Game Over/TBC-layout. Deze wijzigingen zijn niet aangepast in deze pass. |
+| Audio en performance | Niet bevestigd | Hoorbare timing, framerate en lange speelsessies zijn niet betrouwbaar gemeten. |
 
-De huidige GitHub Pages-versie is tijdens de live test ongewijzigd. De G-testcheat was daar nog beschikbaar. De nieuwe ZIP schakelt G uit in normale sessies; die wijziging wordt pas actief nadat de ZIP handmatig of met toestemming naar GitHub Pages is gepubliceerd.
+## Browserbeperking voor de kandidaat
 
-## Browserbeperking
+De lokale runtime kan geen localhost-server starten. De meegeleverde Chromium-binary eindigde met een SIGSEGV voordat de lokale kandidaat geladen werd. Daarom heb ik de nieuwe code niet in een echte lokale browser afgespeeld. De live pagina is alleen gebruikt om de gepubliceerde nulmeting te spelen; die bevat de oude HUD-/Rewind-/Road Roller-instellingen.
 
-De live browser was beschikbaar, maar GitHub-repository ophalen was in deze runtime uitgeschakeld. De complete bronvergelijking, exacte asset-downloadstatus, hoorbare audiosynchronisatie en 60-FPS-doel zijn daarom niet geverifieerd. De lokale p5.js-bestanden zijn toegevoegd, de assettekeningen zijn afzonderlijk naar een canvas-preview gerenderd en de aangepaste aanval/Game Over-levenscyclus is in de Node-simulatie getest.
+## Bronstatus en publiceren
 
-## Test zelf met Live Server
+De code van `Game 1/src/sketch.js` op `main` is opgehaald en vergeleken met de Celestial-bron vóór deze polish-pass. De lokale kandidaat bevat daarbovenop de wijzigingen uit `PATCH_NOTES.md`. De live pagina gebruikt nog de eerdere cacheversie. De geüpdatete ZIP bevat een nieuwe cacheversie van `sketch.js`; de repository-publicatie en Pages-build worden apart gecontroleerd.
 
-1. Open `index.html` via Live Server en controleer de browserconsole.
-2. Druk op Enter; test links/rechts, normale vangsten, goud, bom, score en levens.
-3. Druk op T en laat de volledige ZA WARUDO-intro lopen. Verwacht ongeveer 0,5 seconde freeze, daarna actieve vangst op 55% snelheid. De centrale klok hoort dan weg te zijn.
-4. Test de 40%, 65% en 75%-instellingen via O en controleer dat de snelheid na afloop geleidelijk normaal wordt.
-5. Vul Stand Energy met G en test Q en E. Gebruik R voor Made in Heaven; Space slaat de lopende animatie over.
-6. Test Performance, Balanced, Ultra en Cinematic, plus een 4K-venster. Controleer console en framerate.
+## Zelf controleren na publicatie
 
-## Nog niet bevestigd
-
-- Framerate en frametimes op jouw pc.
-- Volledige visuele compositie en HUD-overlap in de browser.
-- Timing van optionele, door de speler gekozen stemclips.
+1. Open de Pages-link en druk op `Ctrl+F5`.
+2. Start de game en druk op `T`. Controleer dat de chronometer zichtbaar wordt, de score-/energievakken de cinematic-balken niet bedekken en de HUD terugkomt in 55%-slowmotion.
+3. Druk op `R`. Controleer dat de bal- en catcherbeelden tijdens Rewind leesbaar blijven en de streaks naar boven teruglopen.
+4. Vul Stand Energy tot 100, start Time Stop en druk tijdens freeze/slow op `E`. Controleer dat de wals landt op het frame van de impact, de schokgolf zichtbaar blijft en de gameplay daarna hervat.
+5. Controleer ORA, Game Over/TBC, instellingen, browserconsole en audio op jouw pc.
