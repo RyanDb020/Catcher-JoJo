@@ -6,12 +6,16 @@
 |---|---|---|
 | Syntax | Geslaagd | `node --check src/sketch.js` en `node --check tests/live_qa.cjs` |
 | Regressie | 35/35 geslaagd | `npm test`; Node VM, inclusief localhost-only levensbehoud en uitvoer van de nieuwe klok/roller-renderlagen |
-| Reproduceerbare browserharnas | Toegevoegd; lokaal uitvoeren geblokkeerd in deze runtime | `npm install`, `npx playwright install chromium`, `npm run qa:browser`; browserdownload leverde hier een leeg/incompleet archief op en de sandbox weigerde localhost te binden |
-| C3-basis livebeelden | Vastgelegd in browser tijdens deze ronde | ZA WARUDO-intro en titelclimax, Rewind en Made in Heaven-versnelling; de Road Roller-test werd door Game Over onderbroken |
-| Nieuwe livebeelden | Nog niet geverifieerd | Wordt na publicatie opnieuw bekeken; zie de huidige ronde hieronder |
-| FPS, frametimes, audio-events, 10-minutensessie | Niet gemeten | De meegeleverde Playwrightrunner registreert deze zodra Chromium beschikbaar is; er is geen hoorbare audiokwaliteit beoordeeld |
+| Playwright-harnas | Toegevoegd; volledige runner niet uitgevoerd | Chromium-download leverde een incompleet archief op en de sandbox weigerde de localhost-server (`listen EPERM`) |
+| Gepubliceerde versie | Visueel gecontroleerd op commit `d72bcf2` | Pages-build `37910041128` slaagde; live `index.html` laadde `sketch.js?v=celestial-20261009-cinematic4` en toonde het spelcanvas |
+| ZA WARUDO | Intro, grote klok, freeze en hervatting gezien | Echte browser; klok, tandwielen, wijzers en weer zichtbare HUD in hervatting |
+| Rewind / Made in Heaven | Rewind, singulariteit, rebirth en speelbare nieuwe wereld gezien | Echte browser met `R`; volledige overgang verliep door tot Universe 02 |
+| Road Roller | Daling, landing met schokgolf en terugkeer naar gameplay gezien | Echte browser; mechanische wals, uitschuivende hydrauliek, impactring en grondgolven zichtbaar |
+| ORA ORA en Game Over | Start/climax van ORA en Game Over/TBC gezien | Echte browser; gameplay hervatte na ORA en liep daarna natuurlijk naar Game Over |
+| Console en ontbrekende assets | Geen foutuitvoer in de beschikbare browserconsole; volledige asset-requestaudit niet beschikbaar | `tab.dev.logs({levels:["error"]})` gaf geen regels terug; geen Playwright-netwerkregistratie |
+| FPS, frametimes, audio-events en sessie van 10 minuten | Niet gemeten | Playwright-browser kon in deze runtime niet starten. Er is geen hoorbare audiokwaliteit beoordeeld |
 
-De browserrunner schrijft screenshots en `qa-<label>-results.json` in de projectmap (of de bestaande map in `QA_OUTPUT_DIR`). `--duration-ms=0` slaat alleen het lange speelsegment over; standaard is 600.000 ms.
+De live browser toonde screenshots van de aangepaste fases tijdens deze QA, maar deze browserinterface biedt geen exportpad naar bestanden in de repository. De reproduceerbare runner schrijft screenshots en `qa-<label>-results.json` in de projectmap (of in een bestaande map via `QA_OUTPUT_DIR`). `--duration-ms=0` slaat alleen het lange speelsegment over; standaard is 600.000 ms.
 
 ## Uitgevoerde controles
 
