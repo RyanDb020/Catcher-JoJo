@@ -226,9 +226,9 @@ const REWIND_MS = 8882;
 const ACCELERATE_MS = 2750;
 const SINGULARITY_MS = 2200;
 const REBIRTH_MS = 2600;
-const HEAVEN_REVEAL_MS = 6008;
+const HEAVEN_REVEAL_MS = 8664; // new user-supplied 8.664 second opening
 const UNIVERSE_RESET_MS = HEAVEN_REVEAL_MS + REWIND_MS + ACCELERATE_MS + SINGULARITY_MS + REBIRTH_MS;
-const HISTORY_MAX_FRAMES = 550;
+const HISTORY_MAX_FRAMES = 550; // bounded ~9 seconds at 60 fps
 let universeNumber = 1;
 let universeHistory = [];
 let universeReset = { active: false, started: 0, source: [], committed: false,
@@ -1748,7 +1748,7 @@ function recordUniverseFrame() {
   if (gameMillis() - lastHistoryCapture < 16) return;
   lastHistoryCapture = gameMillis();
   universeHistory.push({
-    catcherX, catcherWidth, score, lives, combo,
+    at: gameMillis(), catcherX, catcherWidth, score, lives, combo,
     balls: balls.map(ball => ({x: ball.x, y: ball.y, gold: ball.gold, kind: ball.kind})),
     powerUps: powerUps.map(p => ({x: p.x, y: p.y, type: p.type}))
   });
@@ -1762,14 +1762,14 @@ function startUniverseReset() {
  if(standRush.active || timeStop.phase!=='idle' || roadRoller.active){queuedReset=true;return;}
  gameStarted=true;
  if(!universeHistory.length)recordUniverseFrame();
- universeReset={active:true,started:gameMillis(),source:universeHistory.slice(),committed:false,phase:'reveal',phaseStart:gameMillis()};
+ universeReset={
+  active:true,started:gameMillis(),source:universeHistory.slice(),committed:false,
+  phase:'reveal',phaseStart:gameMillis(),introVoiceDone:false,rewindVoiceDone:false
+ };
+ // The voice may finish before the 8.664s visual intro if an older file is selected.
+ // Rewind is gated independently below: it NEVER starts while the new voice plays.
  beginDirectorVoice('pucci',()=>{
-  if(!universeReset.active||universeReset.phase!=='reveal')return;
-  universeReset.phase='rewind';universeReset.phaseStart=gameMillis();
-  beginDirectorVoice('accelerate',()=>{
-   if(!universeReset.active||universeReset.phase!=='rewind')return;
-   universeReset.phase='accelerate';universeReset.phaseStart=gameMillis();playUniverseSound('speed');
-  });
+  if(universeReset.active&&universeReset.phase==='reveal')universeReset.introVoiceDone=true;
  });
 }
 
@@ -1787,33 +1787,65 @@ function commitNewUniverse() {
 
 function drawUniverseReset() {
  const u=universeReset,phase=u.phase,age=gameMillis()-u.phaseStart;
- const d=phase==='reveal'?HEAVEN_REVEAL_MS:phase==='rewind'?REWIND_MS:phase==='accelerate'?ACCELERATE_MS:phase==='collapse'?SINGULARITY_MS:REBIRTH_MS;
+ const d=phase==='reveal'?HEAVEN_REVEAL_MS:phase==='rewind'?REWIND_MS:
+   phase==='accelerate'?ACCELERATE_MS:phase==='collapse'?SINGULARITY_MS:REBIRTH_MS;
  const t=constrain(age/d,0,1);
  if(phase==='reveal'){
   drawUniverseSnapshot(u.source[u.source.length-1]||null,1,t);
-  if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.heaven(drawingContext,width,height,t,'reveal');
+  if(window.JoJoCosmicDirector)window.JoJoCosmicDirector.intro(drawingContext,width,height,t);
+  if(window.JoJoCharacterDirector)window.JoJoCharacterDirector.heaven(drawingContext,width,height,t,'reveal');
   else drawHeavenReveal(t);
  }else if(phase==='rewind'){
-  const history=u.source,pos=(1-easeInOutCubic(directorAudioProgress(REWIND_MS)))*(history.length-1);
-  const i=max(0,floor(pos)),a=history[i]||null,b=history[min(history.length-1,i+1)]||a;
-  const k=pos-i;
+  const h=u.source;
+  const playback=u.rewindVoiceDone?1:directorVoice&&directorVoice.name==='accelerate'?
+    directorAudioProgress(REWIND_MS):t;
+  const pos=(1-easeInOutCubic(playback))*Math.max(0,h.length-1);
+  const i=max(0,floor(pos)),a=h[i]||null,b=h[min(h.length-1,i+1)]||a;
   if(a&&b){
+   const k=pos-i;
    const snap={...a,catcherX:lerp(a.catcherX,b.catcherX,k),
     catcherWidth:lerp(a.catcherWidth,b.catcherWidth,k),
-    balls:a.balls.map((ball,j)=>{const q=b.balls[j]||ball;return {...ball,x:lerp(ball.x,q.x,k),y:lerp(ball.y,q.y,k)}})};
-   drawUniverseSnapshot(snap,-1,t,history[max(0,i-9)]);
+    balls:a.balls.map((ball,j)=>{const q=b.balls[j]||ball;return {...ball,
+      x:lerp(ball.x,q.x,k),y:lerp(ball.y,q.y,k)}})};
+   drawUniverseSnapshot(snap,-1,t,h[max(0,i-9)]);
   }else drawUniverseSnapshot(null,-1,t);
   drawRewindOverlay(t);
-  if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.heavenEcho(drawingContext,width,height,t);
+  if(window.JoJoCharacterDirector)window.JoJoCharacterDirector.heavenEcho(drawingContext,width,height,t);
  }else if(phase==='accelerate'){
-  drawUniverseSnapshot(u.source[0]||null,1,t);drawAcceleratingUniverse(t);
-  if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.heavenEcho(drawingContext,width,height,t);
- }else if(phase==='collapse')drawUniverseCollapse(t);
- else drawUniverseRebirth(t);
- if(age<d||phase==='reveal'||phase==='rewind')return;
- if(phase==='accelerate'){u.phase='collapse';u.phaseStart=gameMillis();playUniverseSound('collapse');}
- else if(phase==='collapse'){u.phase='rebirth';u.phaseStart=gameMillis();commitNewUniverse();playUniverseSound('reborn');}
- else{u.active=false;u.source=[];universeHistory=[];startGameMusic();updateMusicVolume(true);}
+  drawUniverseSnapshot(u.source[0]||null,1,t);
+  drawAcceleratingUniverse(t);
+  if(window.JoJoCharacterDirector)window.JoJoCharacterDirector.heavenEcho(drawingContext,width,height,t);
+ }else if(phase==='collapse'){
+  drawUniverseCollapse(t);
+ }else{
+  drawUniverseRebirth(t);
+ }
+ if(phase==='reveal'){
+  // A default 6-second legacy clip does not shorten the new 8.664-second intro.
+  if(age>=HEAVEN_REVEAL_MS && (u.introVoiceDone || age>=HEAVEN_REVEAL_MS+1800)){
+   cancelDirectorVoice();
+   u.phase='rewind';u.phaseStart=gameMillis();
+   beginDirectorVoice('accelerate',()=>{
+    if(universeReset.active&&universeReset.phase==='rewind')universeReset.rewindVoiceDone=true;
+   });
+  }
+  return;
+ }
+ if(phase==='rewind'){
+  if(age>=REWIND_MS && (u.rewindVoiceDone || age>=REWIND_MS+1800)){
+   cancelDirectorVoice();u.phase='accelerate';u.phaseStart=gameMillis();
+   playUniverseSound('speed');
+  }
+  return;
+ }
+ if(age<d)return;
+ if(phase==='accelerate'){
+  u.phase='collapse';u.phaseStart=gameMillis();playUniverseSound('collapse');
+ }else if(phase==='collapse'){
+  u.phase='rebirth';u.phaseStart=gameMillis();commitNewUniverse();playUniverseSound('reborn');
+ }else{
+  u.active=false;u.source=[];universeHistory=[];startGameMusic();updateMusicVolume(true);
+ }
 }
 
 // Een momentopname tekenen zonder de ballen, levens of sterren te verplaatsen.
@@ -1946,6 +1978,13 @@ function drawUniverseClock(x,y,radius,rotation,tint) {
 }
 
 function drawUniverseCollapse(t) {
+  if(window.JoJoCosmicDirector){
+    window.JoJoCosmicDirector.collapse(drawingContext,width,height,t,
+      universeReset.source,Number(OVERHAUL_AUDIO.quality)||0);
+    if(t<.22)drawUniverseHeader('REALITY FRACTURE','THE OLD WORLD BREAKS APART','#e9c5ff');
+    else if(t>.36&&t<.64)drawUniverseHeader('SINGULARITY','EVERYTHING IS FALLING IN','#ffe2c4');
+    return;
+  }
   push();
   background(5, 2, 17);
   drawOrrery(t, true);
@@ -1980,6 +2019,26 @@ function drawUniverseCollapse(t) {
 }
 
 function drawUniverseRebirth(t) {
+  if(window.JoJoCosmicDirector){
+    window.JoJoCosmicDirector.rebirth(drawingContext,width,height,t,
+      Number(OVERHAUL_AUDIO.quality)||0);
+    // Reveal the REAL reset state under the new stars, rather than fading
+    // from unrelated effect drawings to an abrupt game screen.
+    if(t>.70){
+      const alpha=easeInOutCubic((t-.70)/.30);
+      const ctx=drawingContext;ctx.save();ctx.globalAlpha=alpha;
+      drawCosmicAtlas();
+      drawBackdropDetails();
+      for(const b of balls)
+        drawOrb(b.x,b.y,BALL_SIZE,b.kind==='bomb'?'bomb':b.gold?'gold':'normal');
+      drawBucket(catcherX,catcherY);
+      ctx.restore();
+    }
+    // Only display the title when a complete newborn environment already exists.
+    if(t>.77)drawUniverseHeader('NEW UNIVERSE '+String(universeNumber).padStart(2,'0'),
+      'THE WORLD BEGINS AGAIN','#bafaff');
+    return;
+  }
   push();
   background(6, 6, 24);
   drawCosmicAtlas();
@@ -2365,10 +2424,12 @@ function drawOrrery(t,collapse){if(!visualAtlas.clock)return;const c=drawingCont
    AUDIO DIRECTOR 2 — local audio, real ended events, one voice
    A missing/blocked MP3 uses its verified expected duration.
    ============================================================= */
-const AUDIO_CLIP_MS = { pucci: 6008.163, accelerate: 8881.633, ora: 8359.184 };
+const AUDIO_CLIP_MS = { pucci: 8664, accelerate: 8881.633, ora: 8359.184 };
 function initializeTimeResumeAudio() {
  if(typeof Audio==='undefined')return;
- resumeAudio=new Audio(RESUME_AUDIO_PATH);resumeAudio.preload='auto';
+ // The uploaded commercial voice clip is deliberately not auto-published.
+ // Selecting it in Options enables private local playback without a 404 request.
+ resumeAudio=null;
  const control=document.querySelector('[data-voice="resume"]');
  if(control)control.addEventListener('change',()=>{
   const file=control.files&&control.files[0];
