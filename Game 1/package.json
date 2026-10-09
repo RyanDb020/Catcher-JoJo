@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "test": "node tests/test_polish.cjs",
+    "test": "node tests/test_polish.cjs && node tests/test_cinematic_directors.cjs",
     "qa:browser": "node tests/live_qa.cjs"
   },
   "devDependencies": {
