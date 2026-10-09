@@ -1169,9 +1169,11 @@ function draw() {
     drawHUD();
     return;
   }
+  updateDirectorAudio();
   if (universeReset.active) { drawUniverseReset(); return; }
   if (gameOver) { drawGameOverWorld(); return; }
   if (gameStarted && !gameOver) updateTimeStop();
+  if(queuedReset&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active){queuedReset=false;startUniverseReset();}
   const freezePhysics = timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
   if (freezePhysics) {
     const hold = min(50, max(0, deltaTime));
@@ -1304,16 +1306,11 @@ function notEnoughStandEnergy(cost) {
 
 // Q: Star Platinum-achtige ORA ORA ORA punchrush.
 function startStandRush() {
-  if (!canUseJoJoAttack(ORA_RUSH_COST)) {
-    if (standEnergy < ORA_RUSH_COST) notEnoughStandEnergy(ORA_RUSH_COST);
-    return;
-  }
-  standEnergy -= ORA_RUSH_COST;
-  standRush = { active: true, start: gameMillis(), lastPunch: gameMillis() - STAND_PUNCH_INTERVAL_MS, punches: 0 };
-  mangaPulse = gameMillis() + 450;
-  addJoJoPopup("ORA ORA ORA!", width / 2, height * 0.31, "#f9baff", 1400, 52);
-  playStandSound("rush");
-  playJoJoVoice("ora");
+ if(!canUseJoJoAttack(ORA_RUSH_COST)||timeStop.phase!=='idle'){if(standEnergy<ORA_RUSH_COST)notEnoughStandEnergy(ORA_RUSH_COST);return;}
+ standEnergy-=ORA_RUSH_COST;
+ standRush={active:true,start:gameMillis(),lastPunch:gameMillis(),punches:0,finisher:false};
+ mangaPulse=gameMillis()+450;
+ beginDirectorVoice('ora',()=>{standRush.voiceFinished=true;});
 }
 
 // E: ROAD ROLLER DA! kan alleen tijdens het bevroren of vertraagde tijdvenster.
@@ -1353,7 +1350,7 @@ function punchDangerousBall() {
   const [sx,sy]=sources[n];
   standPunches.push({target,tx:target.x,ty:target.y,start:gameMillis(),impacted:false,
     duration:constrain(dist(sx,sy,target.x,target.y)*.28,150,290),sx,sy,side:n%2?-1:1,
-    finisher:standRush.punches>=12});
+    finisher:standRush.finisher});
 }
 function resolvePunches() {
   const now = gameMillis();
@@ -1405,12 +1402,11 @@ function updateJoJoAttacks() {
   if (!gameStarted) return;
   const now = gameMillis();
   if (standRush.active) {
-    if (now - standRush.start >= ORA_RUSH_DURATION_MS) {
-      standRush.active = false;
-    } else if (!gameOver && now - standRush.lastPunch >= STAND_PUNCH_INTERVAL_MS && standRush.punches < 12) {
-      standRush.lastPunch = now;
-      punchDangerousBall();
-    }
+    const p=directorVoice&&directorVoice.name==='ora'?directorAudioProgress(ORA_RUSH_DURATION_MS):constrain((now-standRush.start)/ORA_RUSH_DURATION_MS,0,1);
+    const interval=p<.12?100000:p<.38?250:p<.72?135:p<.88?80:100000;
+    if(!gameOver&&now-standRush.lastPunch>=interval){standRush.lastPunch=now;punchDangerousBall();}
+    if(p>.88&&!standRush.finisher){standRush.finisher=true;punchDangerousBall();jojoShake=19;mangaPulse=now+620;}
+    if((standRush.voiceFinished&&now-standRush.start>ORA_RUSH_DURATION_MS)||now-standRush.start>ORA_RUSH_DURATION_MS+1200)standRush.active=false;
   }
   if (roadRoller.active) {
     const elapsed = now - roadRoller.start;
@@ -1741,32 +1737,32 @@ function stopJoJoVoices() {
 // te worden tijdens het achteruit afspelen. Max ~3,5 s geheugen.
 function recordUniverseFrame() {
   if (!gameStarted || universeReset.active) return;
-  if (gameMillis() - lastHistoryCapture < 45) return;
+  if (gameMillis() - lastHistoryCapture < 16) return;
   lastHistoryCapture = gameMillis();
   universeHistory.push({
     catcherX, catcherWidth, score, lives, combo,
     balls: balls.map(ball => ({x: ball.x, y: ball.y, gold: ball.gold, kind: ball.kind})),
     powerUps: powerUps.map(p => ({x: p.x, y: p.y, type: p.type}))
   });
-  if (universeHistory.length > 84) universeHistory.shift();
+  if (universeHistory.length > HISTORY_MAX_FRAMES) universeHistory.shift();
 }
 
 // R werkt tijdens normaal spel én bij Game Over. Tijdens de animatie wordt
 // herhaald R genegeerd zodat er niet meerdere resets tegelijk starten.
 function startUniverseReset() {
-  if (universeReset.active) return;
-  gameStarted = true;
-  if (universeHistory.length === 0) recordUniverseFrame();
-  stopJoJoVoices();
-  if (timeStopSoundLoaded && timeStopSound.isPlaying()) timeStopSound.stop();
-  if (gameOverSoundLoaded && gameOverSound.isPlaying()) gameOverSound.stop();
-  updateMusicVolume(true);
-  universeReset = {
-    active: true, started: gameMillis(), source: universeHistory.slice(), committed: false,
-    soundAccelerated: false, soundCollapse: false
-  };
-  playJoJoVoice("pucci");
-  playUniverseSound("charge");
+ if(universeReset.active)return;
+ if(standRush.active || timeStop.phase!=='idle' || roadRoller.active){queuedReset=true;return;}
+ gameStarted=true;
+ if(!universeHistory.length)recordUniverseFrame();
+ universeReset={active:true,started:gameMillis(),source:universeHistory.slice(),committed:false,phase:'reveal',phaseStart:gameMillis()};
+ beginDirectorVoice('pucci',()=>{
+  if(!universeReset.active||universeReset.phase!=='reveal')return;
+  universeReset.phase='rewind';universeReset.phaseStart=gameMillis();
+  beginDirectorVoice('accelerate',()=>{
+   if(!universeReset.active||universeReset.phase!=='rewind')return;
+   universeReset.phase='accelerate';universeReset.phaseStart=gameMillis();playUniverseSound('speed');
+  });
+ });
 }
 
 // Start echt vanaf het begin: score, combo, upgrades, ballen, cooldowns en
@@ -1782,57 +1778,31 @@ function commitNewUniverse() {
 }
 
 function drawUniverseReset() {
-  const elapsed = gameMillis() - universeReset.started;
-  const next1 = REWIND_MS;
-  const next2 = next1 + ACCELERATE_MS;
-  const next3 = next2 + SINGULARITY_MS;
-  const phase = elapsed < next1 ? "rewind" :
-                elapsed < next2 ? "accelerate" :
-                elapsed < next3 ? "collapse" : "rebirth";
-  const t = phase === "rewind" ? constrain(elapsed / REWIND_MS, 0, 1) :
-            phase === "accelerate" ? constrain((elapsed - next1) / ACCELERATE_MS, 0, 1) :
-            phase === "collapse" ? constrain((elapsed - next2) / SINGULARITY_MS, 0, 1) :
-            constrain((elapsed - next3) / REBIRTH_MS, 0, 1);
-
-  if (phase === "accelerate" && !universeReset.soundAccelerated) {
-    universeReset.soundAccelerated = true;
-    stopJoJoVoices(); // Geen overlappende Pucci-clips tijdens de versnelling
-    playJoJoVoice("accelerate");
-    playUniverseSound("speed");
-  }
-  if (phase === "collapse" && !universeReset.soundCollapse) {
-    universeReset.soundCollapse = true;
-    playUniverseSound("collapse");
-  }
-  if (phase === "rebirth" && !universeReset.committed) {
-    commitNewUniverse();
-    playUniverseSound("reborn");
-  }
-
-  if (phase === "rewind") {
-    const history = universeReset.source;
-    const index = max(0, floor((history.length - 1) * (1 - t)));
-    drawUniverseSnapshot(history[index], -1, t, history[max(0,index-2)]);
-    drawRewindOverlay(t);
-  } else if (phase === "accelerate") {
-    const history = universeReset.source;
-    drawUniverseSnapshot(history.length ? history[0] : null, 1, t);
-    drawAcceleratingUniverse(t);
-  } else if (phase === "collapse") {
-    drawUniverseCollapse(t);
-  } else {
-    drawUniverseRebirth(t);
-  }
-
-  if (elapsed >= UNIVERSE_RESET_MS) {
-    universeReset.active = false;
-    universeReset.source = [];
-    universeHistory = [];
-    if (backgroundMusicLoaded) {
-      updateMusicVolume(true);
-      if (!backgroundMusic.isPlaying()) backgroundMusic.loop();
-    }
-  }
+ const u=universeReset,phase=u.phase,age=gameMillis()-u.phaseStart;
+ const d=phase==='reveal'?HEAVEN_REVEAL_MS:phase==='rewind'?REWIND_MS:phase==='accelerate'?ACCELERATE_MS:phase==='collapse'?SINGULARITY_MS:REBIRTH_MS;
+ const t=constrain(age/d,0,1);
+ if(phase==='reveal'){
+  drawUniverseSnapshot(u.source[u.source.length-1]||null,1,t);
+  drawHeavenReveal(t);
+ }else if(phase==='rewind'){
+  const history=u.source,pos=(1-easeInOutCubic(directorAudioProgress(REWIND_MS)))*(history.length-1);
+  const i=max(0,floor(pos)),a=history[i]||null,b=history[min(history.length-1,i+1)]||a;
+  const k=pos-i;
+  if(a&&b){
+   const snap={...a,catcherX:lerp(a.catcherX,b.catcherX,k),
+    catcherWidth:lerp(a.catcherWidth,b.catcherWidth,k),
+    balls:a.balls.map((ball,j)=>{const q=b.balls[j]||ball;return {...ball,x:lerp(ball.x,q.x,k),y:lerp(ball.y,q.y,k)}})};
+   drawUniverseSnapshot(snap,-1,t,history[max(0,i-9)]);
+  }else drawUniverseSnapshot(null,-1,t);
+  drawRewindOverlay(t);
+ }else if(phase==='accelerate'){
+  drawUniverseSnapshot(u.source[0]||null,1,t);drawAcceleratingUniverse(t);
+ }else if(phase==='collapse')drawUniverseCollapse(t);
+ else drawUniverseRebirth(t);
+ if(age<d||phase==='reveal'||phase==='rewind')return;
+ if(phase==='accelerate'){u.phase='collapse';u.phaseStart=gameMillis();playUniverseSound('collapse');}
+ else if(phase==='collapse'){u.phase='rebirth';u.phaseStart=gameMillis();commitNewUniverse();playUniverseSound('reborn');}
+ else{u.active=false;u.source=[];universeHistory=[];startGameMusic();updateMusicVolume(true);}
 }
 
 // Een momentopname tekenen zonder de ballen, levens of sterren te verplaatsen.
@@ -2467,4 +2437,22 @@ function skipUniverseDirector() {
   universeReset.phaseStart = gameMillis() - REBIRTH_MS*.50;
   universeReset.finished = false;
   if (!universeReset.committed) {commitNewUniverse();playUniverseSound('reborn');}
+}
+
+function drawHeavenReveal(t){
+ push();const cx=width*.5,cy=height*.51,e=easeInOutCubic(t);
+ noStroke();fill(6,4,24,80+150*e);rect(0,0,width,height);
+ for(const side of [-1,1]){
+  push();translate(cx+side*width*(.16+.35*e),cy);rotate(side*(.07+.2*e));
+  fill(14,8,35,230);rect(-width*.38,-height,width*.76,height*2);
+  stroke(244,206,151,140);strokeWeight(2);for(let i=0;i<8;i++)line(i*36,-height,i*36,height);pop();
+ }
+ push();translate(cx,cy);scale(.45+e*.67);
+ drawChronometer(0,0,min(width,height)*.38,-t*TWO_PI*.25,.9);
+ noStroke();fill('#e2d3fd');ellipse(0,-88,46,53);quad(-32,-62,32,-62,30,25,-30,25);
+ rect(-29,12,23,78,10);rect(8,12,23,78,10);
+ fill('#8d56dc');rect(-19,-54,38,14,5);pop();
+ textAlign(CENTER,CENTER);stroke('#160522');strokeWeight(5);fill('#ffe9b7');
+ textStyle(BOLD);textSize(min(64,width*.067));text('MADE IN HEAVEN',cx,height*.2);
+ noStroke();fill('#dabaff');textSize(17);text('THE END IS THE BEGINNING',cx,height*.28);pop();
 }
