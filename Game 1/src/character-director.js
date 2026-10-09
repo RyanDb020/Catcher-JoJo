@@ -315,40 +315,41 @@
     if (!ctxReady(c)) return;
     c.save(); const phase=t<.12?0:t<.37?1:t<.70?2:t<.88?3:t<.965?4:5;
     const age=t*8.359,first=ease(t/.12),power=[.25,.35,.65,.93,1,.12][phase];
-    stage(c,w,h,'151,72,235',t,power+.30);
-    aura(c,[w*.51,h*.50,w*.20,h*.38],age,'166,83,246',power);
+    // Restrained screen tint: preserve gameplay and catcher safe area.
+    stage(c,w,h,'151,72,235',t,.13+power*.12);
+    aura(c,[w*.31,h*.32,w*.13,h*.22],age,'166,83,246',power*.72);
     // Signature double portrait: Jotaro behind a readable full-bodied Stand.
-    figure(c,w,h,cc=>jotaro(cc,age),{x:.43,y:.59,zoom:.77+first*.08});
-    const zoom=(.76+first*.37+(phase===3?.12:0)+(phase===4?.22:0));
+    figure(c,w,h,cc=>jotaro(cc,age),{x:.18,y:.35,zoom:.43+first*.045});
+    const zoom=(.43+first*.11+(phase===3?.05:0)+(phase===4?.095:0));
     if(phase>=2 && phase<=3){
       c.save();c.globalAlpha=.20;
       for(let i=3;i>=1;i--)
         figure(c,w,h,cc=>starFigure(cc,age-i*.10,phase),
-          {x:.52+(i%2?-.045:.035),y:.52,zoom:zoom*(1+i*.027)});
+          {x:.32+(i%2?-.028:.020),y:.34,zoom:zoom*(1+i*.018)});
       c.restore();
     }
-    figure(c,w,h,cc=>starFigure(cc,age,phase),{x:.53,y:.55,zoom});
+    figure(c,w,h,cc=>starFigure(cc,age,phase),{x:.32,y:.32,zoom});
     if(phase>=1 && phase<=3){
       const n=phase===1?4:phase===2?8:14;
-      motion(c,w*.50,h*.49,age,'#f3d7ff',n);
+      motion(c,w*.33,h*.34,age,'#f3d7ff',n);
       c.save();
       for(let i=0;i<n;i++){
         const v=(t*(phase===3?56:32)+i/n)%1;
         c.globalAlpha=(1-v)*(.17+.28*power);
         c.translate(0,0);
-        const xp=w*(.5+.36*(v-.5)+.09*Math.sin(i*2.2)),yp=h*(.33+.42*v);
-        const size=Math.min(w,h)*(.025+.076*v);
+        const xp=w*(.33+.19*(v-.5)+.055*Math.sin(i*2.2)),yp=h*(.23+.24*v);
+        const size=Math.min(w,h)*(.018+.042*v);
         oval(c,xp,yp,size*.5,size,'#c29dea',null,0,.55*(i%2?1:-1));
       } c.restore();
     }
     if(phase===4){
       const k=smooth((t-.88)/.085);
-      tint(c,w*.51,h*.45,Math.max(w,h)*.43,'248,224,255',(.25+.3*(1-k)));
+      tint(c,w*.35,h*.35,Math.max(w,h)*.28,'248,224,255',(.16+.22*(1-k)));
       c.save();c.strokeStyle='rgba(255,242,190,'+(1-k)+')';c.lineWidth=5;
       for(let i=0;i<22;i++){
         const a=i*TAU/22;
-        line(c,[[w*.53+Math.cos(a)*42,h*.5+Math.sin(a)*42],
-                [w*.53+Math.cos(a)*(170+k*w*.6),h*.5+Math.sin(a)*(120+k*h*.5)]],
+        line(c,[[w*.35+Math.cos(a)*42,h*.35+Math.sin(a)*42],
+                [w*.35+Math.cos(a)*(120+k*w*.32),h*.35+Math.sin(a)*(120+k*h*.28)]],
                 'rgba(255,236,185,'+(1-k)+')',4);
       }c.restore();
     }
@@ -360,11 +361,25 @@
   function heaven(c,w,h,t,variant='reveal') {
     if (!ctxReady(c)) return;
     c.save();
-    const full=variant==='reveal', power=full?ease(t/.38):.65;
-    stage(c,w,h,'122,70,221',t,full?.89:.48);
-    aura(c,[w*.52,h*.48,w*.22,h*.37],t*4,'144,72,244',power);
-    figure(c,w,h,cc=>pucci(cc,t*5),{x:.42,y:.56,zoom:.75+.15*power});
-    figure(c,w,h,cc=>heavenFigure(cc,t*5),{x:.54,y:.54,zoom:.90+.19*power});
+    const full=variant==='reveal', power=full?ease((t-.055)/.27):.65;
+    // Five deliberate shot compositions synchronized to the 8.664 s intro:
+    // omen / name reveal / manifestation / distortion / final pose.
+    const shot=t<.065?0:t<.26?1:t<.54?2:t<.85?3:4;
+    const entrance=smooth((t-.06)/.12), pull=smooth((t-.54)/.31);
+    stage(c,w,h,'122,70,221',t,.26+.27*power);
+    aura(c,[w*.52,h*.47,w*(.12+.12*power),h*(.18+.20*power)],t*4,'144,72,244',power);
+    c.save();
+    c.globalAlpha=.20+.80*entrance;
+    figure(c,w,h,cc=>pucci(cc,t*7),{x:.41-.055*pull,y:.55+.018*Math.sin(t*14),zoom:.56+.10*power});
+    figure(c,w,h,cc=>heavenFigure(cc,t*7+(shot===3?1.1:0)),
+      {x:.55+.045*pull,y:.56-.045*power+.015*Math.sin(t*11),
+       zoom:.66+power*.20+(shot===1?.16:0)+(shot===4?.07:0)});
+    c.restore();
+    if(shot===1 || shot===4){
+      c.save(); c.globalCompositeOperation='screen';
+      tint(c,w*.54,h*.39,w*.19,'230,208,255',(shot===1?.20:.13)*power);
+      c.restore();
+    }
     for(let i=0;i<7;i++){
       const x=w*(.15+i*.115),y=h*(.22+.11*Math.sin(i*3+t*7));
       c.strokeStyle='rgba(232,207,255,.3)';
