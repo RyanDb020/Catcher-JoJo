@@ -75,6 +75,15 @@
     c.textAlign='right';c.fillText(bottom,w-Math.max(16,w*.037),h-bar*.51);
     c.restore();
   }
+  function topBanner(c,w,h,title,accent='#b76cf3') {
+    const bar=Math.min(h*.065,50);c.save();
+    c.fillStyle='rgba(5,3,17,.83)';c.fillRect(0,0,w,bar);
+    c.fillStyle=accent;c.fillRect(0,bar-3,w*.4,3);
+    c.font='bold '+Math.max(12,Math.min(20,w*.017))+'px Arial';
+    c.textBaseline='middle';c.textAlign='left';c.fillStyle='#ffefd3';
+    c.fillText(title,Math.max(16,w*.037),bar*.52);
+    c.restore();
+  }
   function stage(c,w,h,rgb,t,intensity=1) {
     c.save();c.fillStyle='rgba(5,3,22,'+(intensity*.56)+')';c.fillRect(0,0,w,h);
     tint(c,w*.52,h*.5,h*.65,rgb,.33*intensity);
@@ -289,12 +298,16 @@
       c.restore();return;
     }
     if(isRelease){
-      stage(c,w,h,'222,173,67',t,.4);
+      stage(c,w,h,'222,173,67',t,.17);
       const ring=ease(t),r=ring*Math.max(w,h)*.85;
       c.strokeStyle='rgba(255,224,143,'+(1-ring)*.9+')';c.lineWidth=14*(1-ring)+2;
       oval(c,w*.5,h*.5,r,r*.68,'rgba(0,0,0,0)','rgba(255,238,169,'+(1-ring)+')',14*(1-ring)+2);
-      if(t<.62)figure(c,w,h,cc=>worldFigure(cc,1,true),{zoom:1.12+.17*t,x:.5,y:.54});
-      border(c,w,h,'TIME RESUMES','THE WORLD  /  RELEASE','#e9c458');
+      if(t<.62){
+        c.save();c.globalAlpha=.75*(1-smooth(t/.62));
+        figure(c,w,h,cc=>worldFigure(cc,1,true),{zoom:.52+.08*t,x:.73,y:.34});
+        c.restore();
+      }
+      topBanner(c,w,h,'THE WORLD  /  TIME RESUMES','#e9c458');
       c.restore();return;
     }
     stage(c,w,h,'255,193,65',t,.98);
@@ -353,9 +366,9 @@
                 'rgba(255,236,185,'+(1-k)+')',4);
       }c.restore();
     }
-    border(c,w,h,['STAR PLATINUM  /  REVEAL','ORA  /  FIRST STRIKES','ORA ORA  /  BARRAGE',
+    topBanner(c,w,h,['STAR PLATINUM  /  REVEAL','ORA  /  FIRST STRIKES','ORA ORA  /  BARRAGE',
       'STAR PLATINUM  /  OVERDRIVE','ORA!  /  FINAL IMPACT','STAND  /  RECOVERY'][phase],
-      phase===4?'FINISHER  ·  HIT STOP':phase===5?'RETURN TO GAME':'JOJO CATCHER  ·  RUSH','#b76cf3');
+      '#b76cf3');
     c.restore();
   }
   function heaven(c,w,h,t,variant='reveal') {
