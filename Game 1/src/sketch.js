@@ -105,6 +105,7 @@ function updateRecords() {
   }
 }
 function openOptions(value) {
+  if (value && (universeReset.active || standRush.active || timeStop.phase === 'intro')) return;
   optionsVisible = value;
   const panel = document.getElementById('options-panel');
   if (panel) panel.hidden = !value;
@@ -124,9 +125,7 @@ function applySetting(name, value) {
   if (name === 'slowFactor') OVERHAUL_AUDIO.slowFactor = getSlowFactor();
   if (name === 'quality') rebuildVisuals();
   saveSettings();
-  if (backgroundMusicLoaded && backgroundMusic && backgroundMusic.isPlaying()) {
-    backgroundMusic.setVolume(musicTarget * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.music, 0.12);
-  }
+  updateMusicVolume(true);
 }
 
 let catcherX = 280;
@@ -183,7 +182,7 @@ const DOUBLE_POWERUP_TIME = 7000;
 const STAND_MAX_ENERGY = 100;
 const ORA_RUSH_COST = 55;
 const ROAD_ROLLER_COST = 100;
-const ORA_RUSH_DURATION_MS = 2650;
+const ORA_RUSH_DURATION_MS = 8359;
 const ROAD_ROLLER_DURATION_MS = 3150;
 const ROAD_ROLLER_IMPACT_MS = 2350;
 const ROAD_ROLLER_LAND_MS = 1390;
@@ -223,12 +222,13 @@ let mangaPulse = 0;
 
 // MADE IN HEAVEN: R speelt je laatste seconden achteruit,
 // versnelt de tijd en begint opnieuw in een nieuw universum.
-const REWIND_MS = 1550;
-const ACCELERATE_MS = 2950;
-const SINGULARITY_MS = 1200;
-const REBIRTH_MS = 1650;
-const UNIVERSE_RESET_MS = REWIND_MS + ACCELERATE_MS + SINGULARITY_MS + REBIRTH_MS;
-const HISTORY_MAX_FRAMES = 210;
+const REWIND_MS = 8882;
+const ACCELERATE_MS = 2750;
+const SINGULARITY_MS = 2200;
+const REBIRTH_MS = 2600;
+const HEAVEN_REVEAL_MS = 6008;
+const UNIVERSE_RESET_MS = HEAVEN_REVEAL_MS + REWIND_MS + ACCELERATE_MS + SINGULARITY_MS + REBIRTH_MS;
+const HISTORY_MAX_FRAMES = 550;
 let universeNumber = 1;
 let universeHistory = [];
 let universeReset = { active: false, started: 0, source: [], committed: false,
@@ -239,12 +239,19 @@ let universeReset = { active: false, started: 0, source: [], committed: false,
 // én wanneer Myinstants rechtstreeks afspelen in de browser toestaat.
 // Als een link niet werkt, blijven de effecten en synthgeluiden werken.
 const JOJO_CLIP_URLS = {
-  // Optionele lokale bestanden: worden alleen ingeladen als je ze zelf toevoegt.
-  // De ingesproken ZA WARUDO is al meegeleverd en wordt apart afgespeeld.
+  pucci: 'assets/made-in-heaven.mp3',
+  accelerate: 'assets/time-accelerate.mp3',
+  ora: 'assets/ora-ora.mp3'
 };
 
 let jojoVoiceClips = {};
 let jojoVoiceObjectUrls = {};
+let directorVoice = null;
+let directorVoiceToken = 0;
+let giornoTheme = null;
+let giornoThemeReady = false;
+let queuedReset = false;
+let queuedTimeStop = null;
 
 
 // JOJO TIME STOP: instellingen
@@ -322,6 +329,7 @@ function setup() {
   if (backgroundMusicLoaded) backgroundMusic.setVolume(0.18 * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.music);
   if (timeStopSoundLoaded) timeStopSound.setVolume(0.85 * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.voices);
   prepareJoJoVoiceClips();
+  initializeCinematicAudio();
   const closeBtn = document.getElementById("close-options");
   if (closeBtn) closeBtn.addEventListener("click", () => openOptions(false));
   document.querySelectorAll('[data-voice]').forEach(input => {
@@ -355,8 +363,7 @@ function keyPressed() {
   if (optionsVisible) return false;
   // SPACE slaat lange cinematische scènes over, niet de beloning of reset.
   if (keyCode === 32 && universeReset.active) {
-    stopJoJoVoices();
-    universeReset.started = gameMillis() - UNIVERSE_RESET_MS + 230;
+    skipUniverseDirector();
     return false;
   }
   if (keyCode === 32 && timeStop.phase === 'intro') {
@@ -368,7 +375,7 @@ function keyPressed() {
   }
   if (!gameStarted && keyCode === ENTER && !universeReset.active) {
     gameStarted = true;
-    if (backgroundMusicLoaded && !backgroundMusic.isPlaying()) backgroundMusic.loop();
+    startGameMusic();
   }
   if (key === 'r' || key === 'R') {
     startUniverseReset();
@@ -435,10 +442,8 @@ function resetGame() {
   for (let i = 0; i < ACTIVE_BALLS; i++) {
     respawnBall(balls[i]);
   }
-  if (backgroundMusicLoaded) {
-    updateMusicVolume(true);
-    if (gameStarted && !backgroundMusic.isPlaying()) backgroundMusic.loop();
-  }
+  updateMusicVolume(true);
+  if (gameStarted) startGameMusic();
   if (gameOverSoundLoaded && gameOverSound.isPlaying()) gameOverSound.stop();
 }
 
@@ -1700,17 +1705,13 @@ function drawStandPunches() {
 }
 
 function prepareJoJoVoiceClips() {
-  if (typeof Audio === "undefined") return;
-  for (const name in JOJO_CLIP_URLS) {
+  if (typeof Audio === 'undefined') return;
+  for (const name of Object.keys(JOJO_CLIP_URLS)) {
     try {
-      const audio = new Audio();
-      audio.preload = "none";
-      audio.src = JOJO_CLIP_URLS[name];
-      audio.volume = name === "continued" ? 0.40 : 0.63;
-      jojoVoiceClips[name] = audio;
-    } catch (_) {
-      // Het programma blijft werken zonder netwerk en zonder extra MP3's.
-    }
+      const sound = new Audio(JOJO_CLIP_URLS[name]);
+      sound.preload = 'auto';
+      jojoVoiceClips[name] = sound;
+    } catch (_) {}
   }
 }
 
@@ -2201,15 +2202,18 @@ function synthFallback(name, intensity) {
   } catch (_) { return false; }
 }
 function updateMusicVolume(force = false) {
-  const cinematic = universeReset.active || timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
-  musicTarget = cinematic ? .055 : timeStop.phase === 'slow' ? .17 : .55;
+  const cinematic = universeReset.active || standRush.active || timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
+  musicTarget = cinematic ? .045 : timeStop.phase === 'slow' ? .18 : .55;
   if (optionsVisible) musicTarget *= .25;
   const intended = musicTarget * OVERHAUL_AUDIO.music * OVERHAUL_AUDIO.master;
-  if (!backgroundMusicLoaded || !backgroundMusic) return;
-  if (force || abs(previousMusicLevel - intended) > .002) {
-    backgroundMusic.setVolume(intended, .18);
-    previousMusicLevel = intended;
+  if (giornoTheme && giornoThemeReady) {
+    const next = force ? intended : giornoTheme.volume + (intended - giornoTheme.volume) * .10;
+    giornoTheme.volume = Math.max(0,Math.min(1,next));
+    if (backgroundMusicLoaded && backgroundMusic.isPlaying()) backgroundMusic.stop();
+  } else if (backgroundMusicLoaded && backgroundMusic) {
+    if (force || abs(previousMusicLevel - intended) > .002) backgroundMusic.setVolume(intended, .18);
   }
+  previousMusicLevel = intended;
 }
 
 function getCinematicCameraScale() {
@@ -2371,3 +2375,96 @@ function paintCosmos(c,w,h){
 }
 function drawCosmicAtlas(){if(!visualAtlas.space)return;const c=drawingContext;c.save();let shift=(catcherX+catcherWidth/2-width/2)/Math.max(1,width)*10;c.drawImage(visualAtlas.space,-12+shift,-8,width+24,height+16);if(timeStop.phase!=='idle'){c.fillStyle='rgba(46,133,160,.075)';c.fillRect(0,0,width,height);}c.restore();}
 function drawOrrery(t,collapse){if(!visualAtlas.clock)return;const c=drawingContext,radius=min(width,height)*(.25+(collapse?-.20*t:.12*t));c.save();c.translate(width/2,height/2);c.rotate(gameMillis()*.00015*(1+t*9));c.strokeStyle='#bfaed344';c.lineWidth=1;for(let j=0;j<3;j++){c.save();c.rotate(j*Math.PI/3);c.beginPath();c.ellipse(0,0,radius*2,radius*.6,0,0,Math.PI*2);c.stroke();for(let i=0;i<7;i++){let a=i*Math.PI*2/7+t*5;disc(c,Math.cos(a)*radius*2,Math.sin(a)*radius*.6,2+i%3,'#e5c893');}c.restore();}c.restore();}
+
+
+/* =============================================================
+   AUDIO DIRECTOR 2 — local audio, real ended events, one voice
+   A missing/blocked MP3 uses its verified expected duration.
+   ============================================================= */
+const AUDIO_CLIP_MS = { pucci: 6008.163, accelerate: 8881.633, ora: 8359.184 };
+function initializeCinematicAudio() {
+  if (typeof Audio === 'undefined') return;
+  giornoTheme = new Audio('assets/giorno-theme.mp3');
+  giornoTheme.loop = true;
+  giornoTheme.preload = 'auto';
+  giornoTheme.volume = 0;
+  giornoTheme.addEventListener('canplay', () => {
+    giornoThemeReady = true;
+    if (audioUnlocked && gameStarted) startGameMusic();
+  }, {once: true});
+  giornoTheme.addEventListener('error', () => { giornoThemeReady = false; }, {once:true});
+}
+function startGameMusic() {
+  if (!audioUnlocked) return;
+  if (giornoTheme && giornoThemeReady) {
+    if (backgroundMusicLoaded && backgroundMusic.isPlaying()) backgroundMusic.stop();
+    if (giornoTheme.paused) {
+      const result = giornoTheme.play();
+      if (result && typeof result.catch === 'function') result.catch(() => {
+        if (backgroundMusicLoaded && !backgroundMusic.isPlaying()) backgroundMusic.loop();
+      });
+    }
+    updateMusicVolume(true);
+  } else if (backgroundMusicLoaded && !backgroundMusic.isPlaying()) backgroundMusic.loop();
+}
+function cancelDirectorVoice() {
+  ++directorVoiceToken;
+  const state = directorVoice;
+  directorVoice = null;
+  if (state && state.audio) {
+    state.audio.onended = null;
+    state.audio.onerror = null;
+    try { state.audio.pause(); state.audio.currentTime = 0; } catch (_) {}
+  }
+}
+function beginDirectorVoice(name, onEnd) {
+  cancelDirectorVoice();
+  stopJoJoVoices();
+  const token = ++directorVoiceToken;
+  const audio = jojoVoiceClips[name] || null;
+  directorVoice = { name, token, audio, started:gameMillis(), duration:AUDIO_CLIP_MS[name] || 3000, done:false, onEnd };
+  if (audio) {
+    audio.onended = () => finishDirectorVoice(token);
+    audio.onerror = () => { if (directorVoice && directorVoice.token === token) directorVoice.audio = null; };
+    try {
+      audio.currentTime = 0;
+      audio.volume = Math.min(1,OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.voices * .93);
+      const p = audio.play();
+      if (p && typeof p.catch === 'function')
+        p.catch(() => { if (directorVoice && directorVoice.token === token) directorVoice.audio = null; });
+    } catch (_) { directorVoice.audio = null; }
+  }
+  updateMusicVolume(true);
+}
+function finishDirectorVoice(token) {
+  const state = directorVoice;
+  if (!state || state.token !== token || state.done) return;
+  state.done = true;
+  if (state.audio) { state.audio.onended = null; state.audio.onerror = null; }
+  directorVoice = null;
+  if (typeof state.onEnd === 'function') state.onEnd();
+}
+function updateDirectorAudio() {
+  if (!directorVoice) return;
+  const state = directorVoice;
+  if (state.audio && state.audio.ended) return finishDirectorVoice(state.token);
+  // Do not strand the game if a referenced MP3 is absent, blocked or corrupted.
+  const liveDuration = state.audio && Number.isFinite(state.audio.duration) ? state.audio.duration * 1000 : state.duration;
+  const margin = state.audio ? 1300 : 0;
+  if (gameMillis() - state.started >= liveDuration + margin) finishDirectorVoice(state.token);
+}
+function directorAudioProgress(fallback) {
+  const state = directorVoice;
+  if (!state) return 0;
+  if (state.audio && Number.isFinite(state.audio.duration) && state.audio.duration > 0 && !state.audio.paused)
+    return constrain(state.audio.currentTime / state.audio.duration,0,1);
+  return constrain((gameMillis()-state.started) / (state.duration || fallback),0,1);
+}
+function skipUniverseDirector() {
+  if (!universeReset.active) return;
+  cancelDirectorVoice();
+  universeReset.phase = 'rebirth';
+  universeReset.phaseStart = gameMillis() - REBIRTH_MS*.50;
+  universeReset.finished = false;
+  if (!universeReset.committed) {commitNewUniverse();playUniverseSound('reborn');}
+}
