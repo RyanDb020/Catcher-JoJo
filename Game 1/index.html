@@ -39,7 +39,7 @@
   </style>
   <script src="vendor/p5.min.js"></script>
   <script src="vendor/p5.sound.min.js"></script>
-  <script defer src="src/sketch.js?v=celestial-20261009-cinematic4"></script>
+  <script defer src="src/sketch.js?v=cinematic-rebuild-20261009"></script>
 </head>
 <body>
   <div id="library-warning" hidden role="alert"><strong>De game kon p5.js niet laden.</strong><p>Controleer je internetverbinding en open deze hele map via Live Server in VS Code. Kijk bij fouten in de browserconsole (F12).</p></div>
@@ -58,14 +58,14 @@
       <label class="toggle"><span>Particles</span><input data-setting="particles" type="checkbox" aria-label="Particles aan"></label>
       <div style="margin-top:20px; border-top:1px solid #86639a; padding-top:14px">
         <strong style="color:#ffdb91">OPTIONELE JOJO-STEMMEN (LOKALE MP3)</strong>
-        <small>Selecteer je zelf gedownloade clips. Werkt direct, zonder externe stream. Je hoeft niets aan sketch.js te veranderen.</small>
+        <small>De nieuwe cinematics zoeken standaard MP3-bestanden in assets/. Je kunt hier een alternatief stemfragment laden. Gebruik alleen clips die je mag gebruiken.</small>
         <label class="voice-file"><span>Pucci / Made in Heaven</span><input type="file" data-voice="pucci" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>Time Accelerate</span><input type="file" data-voice="accelerate" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>ORA ORA</span><input type="file" data-voice="ora" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>Road Roller</span><input type="file" data-voice="roller" accept="audio/mpeg,audio/mp3,audio/*"></label>
       </div>
       <button id="close-options">TERUG NAAR HET SPEL</button>
-      <small>Instellingen en highscore worden lokaal opgeslagen in deze browser. Zelf gekozen stemclips moet je na opnieuw laden nogmaals selecteren; je bestanden verlaten je computer niet.</small>
+      <small>Instellingen en highscore worden lokaal opgeslagen in deze browser. De standaard audiobestanden worden lokaal uit assets/ geladen. Zelfgekozen alternatieven moet je na herladen opnieuw selecteren.</small>
     </section>
   </div>
   <script>
