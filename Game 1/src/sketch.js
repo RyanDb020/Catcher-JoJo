@@ -252,12 +252,15 @@ let giornoTheme = null;
 let giornoThemeReady = false;
 let queuedReset = false;
 let queuedTimeStop = null;
+let resumeAudio = null;
+let resumeAudioObjectUrl = null;
+const RESUME_AUDIO_PATH = 'assets/star-platinum-za-warudo-star-platinum-the-world-time-resume.mp3';
 
 
 // JOJO TIME STOP: instellingen
 const TIME_STOP_INTRO_MS = 4500;      // Duur van de stem + filmische intro
 const TIME_STOP_FREEZE_MS = 500;     // Daarna staat alles helemaal stil
-const TIME_STOP_RELEASE_MS = 850;    // Effect wanneer de tijd terugkomt
+const TIME_STOP_RELEASE_MS = 1950; // 1.8-second Time Resume outro    // Effect wanneer de tijd terugkomt
 const TIME_STOP_SLOW_FACTOR = 0.55;   // Speelbare slowmotion: 55% normale snelheid
 const TIME_STOP_EXTRA_MS = 2000;      // Extra tijd bij tweede S-power-up
 
@@ -330,6 +333,7 @@ function setup() {
   if (timeStopSoundLoaded) timeStopSound.setVolume(0.85 * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.voices);
   prepareJoJoVoiceClips();
   initializeCinematicAudio();
+  initializeTimeResumeAudio();
   const closeBtn = document.getElementById("close-options");
   if (closeBtn) closeBtn.addEventListener("click", () => openOptions(false));
   document.querySelectorAll('[data-voice]').forEach(input => {
@@ -439,6 +443,7 @@ function resetGame() {
   timeStop.phase = "idle";
   timeStop.particles = [];
   if (timeStopSoundLoaded && timeStopSound.isPlaying()) timeStopSound.stop();
+  stopTimeResumeAudio();
 
   for (let i = 0; i < ACTIVE_BALLS; i++) {
     respawnBall(balls[i]);
@@ -694,17 +699,18 @@ function updateTimeStop() {
     timeStop.phaseStart = gameMillis();
     if (gameOver) {
       slowPowerUpEnd = 0;
-      playTimeSound("resume");
+      beginTimeResumeAudio();
     } else slowPowerUpEnd = gameMillis() + SLOW_POWERUP_TIME;
   } else if (timeStop.phase === "slow" && gameMillis() >= slowPowerUpEnd) {
     timeStop.phase = "release";
     timeStop.phaseStart = gameMillis();
     slowPowerUpEnd = 0;
-    playTimeSound("resume");
+    beginTimeResumeAudio();
     updateMusicVolume(true);
   } else if (timeStop.phase === "release" && elapsed >= TIME_STOP_RELEASE_MS) {
     timeStop.phase = "idle";
     timeStop.particles = [];
+    stopTimeResumeAudio();
   }
 }
 
@@ -1140,7 +1146,7 @@ function beginGameOver() {
   if(roadRollerImpact.active) revealAt=max(revealAt,roadRollerImpact.at+ROAD_ROLLER_IMPACT_MS);
   if(timeStop.phase==='intro') revealAt=max(revealAt,timeStop.phaseStart+TIME_STOP_INTRO_MS+TIME_STOP_FREEZE_MS+TIME_STOP_RELEASE_MS);
   else if(timeStop.phase==='freeze') revealAt=max(revealAt,timeStop.phaseStart+TIME_STOP_FREEZE_MS+TIME_STOP_RELEASE_MS);
-  else if(timeStop.phase==='slow') {timeStop.phase='release';timeStop.phaseStart=now;slowPowerUpEnd=0;revealAt=max(revealAt,now+TIME_STOP_RELEASE_MS);playTimeSound('resume');}
+  else if(timeStop.phase==='slow') {timeStop.phase='release';timeStop.phaseStart=now;slowPowerUpEnd=0;revealAt=max(revealAt,now+TIME_STOP_RELEASE_MS);beginTimeResumeAudio();}
   else if(timeStop.phase==='release') revealAt=max(revealAt,timeStop.phaseStart+TIME_STOP_RELEASE_MS);
   for(const name in jojoVoiceClips){const a=jojoVoiceClips[name];if(a&&!a.paused&&Number.isFinite(a.duration)&&Number.isFinite(a.currentTime))revealAt=max(revealAt,now+max(0,a.duration-a.currentTime)*1000+80);}
   gameOverRevealAt=revealAt;
@@ -1785,7 +1791,8 @@ function drawUniverseReset() {
  const t=constrain(age/d,0,1);
  if(phase==='reveal'){
   drawUniverseSnapshot(u.source[u.source.length-1]||null,1,t);
-  drawHeavenReveal(t);
+  if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.heaven(drawingContext,width,height,t,'reveal');
+  else drawHeavenReveal(t);
  }else if(phase==='rewind'){
   const history=u.source,pos=(1-easeInOutCubic(directorAudioProgress(REWIND_MS)))*(history.length-1);
   const i=max(0,floor(pos)),a=history[i]||null,b=history[min(history.length-1,i+1)]||a;
@@ -1797,8 +1804,10 @@ function drawUniverseReset() {
    drawUniverseSnapshot(snap,-1,t,history[max(0,i-9)]);
   }else drawUniverseSnapshot(null,-1,t);
   drawRewindOverlay(t);
+  if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.heavenEcho(drawingContext,width,height,t);
  }else if(phase==='accelerate'){
   drawUniverseSnapshot(u.source[0]||null,1,t);drawAcceleratingUniverse(t);
+  if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.heavenEcho(drawingContext,width,height,t);
  }else if(phase==='collapse')drawUniverseCollapse(t);
  else drawUniverseRebirth(t);
  if(age<d||phase==='reveal'||phase==='rewind')return;
@@ -2224,7 +2233,9 @@ function drawCinematicDirector() {
     }
   }
   if (standRush.active) {
-    drawOraRebuild();
+    if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.ora(drawingContext,width,height,
+      directorVoice&&directorVoice.name==='ora'?directorAudioProgress(ORA_RUSH_DURATION_MS):constrain((gameMillis()-standRush.start)/ORA_RUSH_DURATION_MS,0,1));
+    else drawOraRebuild();
     const t=constrain((gameMillis()-standRush.start)/ORA_RUSH_DURATION_MS,0,1);
     const alpha = 90*(1-t);
     noStroke(); fill(134,75,193,alpha); rect(0,0,10*u,height);
@@ -2355,6 +2366,33 @@ function drawOrrery(t,collapse){if(!visualAtlas.clock)return;const c=drawingCont
    A missing/blocked MP3 uses its verified expected duration.
    ============================================================= */
 const AUDIO_CLIP_MS = { pucci: 6008.163, accelerate: 8881.633, ora: 8359.184 };
+function initializeTimeResumeAudio() {
+ if(typeof Audio==='undefined')return;
+ resumeAudio=new Audio(RESUME_AUDIO_PATH);resumeAudio.preload='auto';
+ const control=document.querySelector('[data-voice="resume"]');
+ if(control)control.addEventListener('change',()=>{
+  const file=control.files&&control.files[0];
+  if(!file||!file.type.startsWith('audio/'))return;
+  stopTimeResumeAudio();
+  if(resumeAudioObjectUrl)URL.revokeObjectURL(resumeAudioObjectUrl);
+  resumeAudioObjectUrl=URL.createObjectURL(file);
+  resumeAudio=new Audio(resumeAudioObjectUrl);resumeAudio.preload='auto';
+ });
+}
+function beginTimeResumeAudio() {
+ stopTimeResumeAudio();
+ if(!resumeAudio){playTimeSound('resume');return;}
+ try{
+  resumeAudio.currentTime=0;
+  resumeAudio.volume=Math.min(1,OVERHAUL_AUDIO.master*OVERHAUL_AUDIO.voices*.9);
+  const result=resumeAudio.play();
+  if(result&&result.catch)result.catch(()=>playTimeSound('resume'));
+ }catch(_){playTimeSound('resume');}
+}
+function stopTimeResumeAudio(){
+ if(!resumeAudio)return;
+ try{resumeAudio.pause();resumeAudio.currentTime=0;}catch(_){}
+}
 function initializeCinematicAudio() {
   if (typeof Audio === 'undefined') return;
   giornoTheme = new Audio('assets/giorno-theme.mp3');
@@ -2511,6 +2549,11 @@ function drawOraRebuild(){
  pop();
 }
 function drawTimeStopRebuild(){
+ if(window.JoJoCharacterDirector && timeStop.phase!=='idle'){
+  window.JoJoCharacterDirector.world(drawingContext,width,height,timeStop.phase,
+    constrain((gameMillis()-timeStop.phaseStart)/(timeStop.phase==='intro'?TIME_STOP_INTRO_MS:timeStop.phase==='freeze'?TIME_STOP_FREEZE_MS:timeStop.phase==='release'?TIME_STOP_RELEASE_MS:1000),0,1));
+  return;
+ }
  if(timeStop.phase==='idle'||timeStop.phase==='slow')return;
  const age=gameMillis()-timeStop.phaseStart;
  push();
