@@ -1,5 +1,15 @@
 # Patch notes — JoJo Catcher: Celestial Edition
 
+## Cinematic Rebuild 3.0 — 9 October 2026
+
+- **Universe Collapse completely re-staged:** breaking remembered gameplay panels, moving foreground shards, perspective cracks, accretion structure and singularity contraction. New original Canvas2D `src/cosmic-director.js`.
+- **Universe Rebirth re-staged:** first light, layered galactic expansion, nebula clouds, parallax stars, a ringed planet, a horizon and a progressive fade-in of the real reset gameplay.
+- **Made in Heaven intro:** now holds for at least **8.664 seconds**; a new uploaded 8.664-second file can be selected privately through Settings. Rewind and Time Accelerate do not start before the full opening.
+- **ORA ORA:** Star Platinum/Jotaro reduced and moved toward the upper-left of the playfield; lower catcher area remains clearer and the lower black cinematic strip is removed.
+- **ZA WARUDO:** World introduction continues to use the gold Stand; Resume lasts **1.95 seconds** and uses a smaller fading release figure instead of hiding the catcher.
+- **Audio rights:** the newly provided copyrighted MP3s are deliberately not added to the publicly accessible repository.
+- **QA:** 8/8 simulated end-to-end state transitions passed; 156 multi-resolution renderer assertions committed, but the new Node suite and real browser were **not run** in this environment. See `CINEMATIC_REBUILD_3_REPORT.md`.
+
 ## Cinematic direction and browser QA — 9 October 2026
 
 - ZA WARUDO now frames its clock below the title, reveals a moving escapement ring and jewel markers, and separates the freeze headline from the face. The frozen clock has a full tick ring and three independently moving sub-dials plus a seconds hand.
