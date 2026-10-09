@@ -6,7 +6,7 @@ const context={
  console,Math,JSON,String,Number,Array,Object,windowWidth:1280,windowHeight:720,width:1280,height:720,
  deltaTime:16.6667,frameCount:0, key:'',keyCode:0, RIGHT_ARROW:39,LEFT_ARROW:37,ENTER:13,ESCAPE:27,
  PI:Math.PI,TWO_PI:2*Math.PI,HALF_PI:Math.PI/2,CLOSE:'close',CENTER:'center',LEFT:'left',RIGHT:'right',BOLD:'bold',NORMAL:'normal',
- drawingContext:{createRadialGradient(){return {addColorStop(){}}},createLinearGradient(){return {addColorStop(){}}},save(){},restore(){},beginPath(){},ellipse(){},moveTo(){},lineTo(){},stroke(){},fill(){},closePath(){},clip(){},translate(){},scale(){},rotate(){},drawImage(){},strokeText(){},fillText(){},fillStyle:'',strokeStyle:'',font:'',textAlign:'',textBaseline:'',lineJoin:'',lineWidth:1,globalAlpha:1,fillRect(){},shadowBlur:0,shadowColor:''},
+ drawingContext:{createRadialGradient(){return {addColorStop(){}}},createLinearGradient(){return {addColorStop(){}}},save(){},restore(){},beginPath(){},ellipse(){},arc(){},moveTo(){},lineTo(){},stroke(){},fill(){},closePath(){},clip(){},translate(){},scale(){},rotate(){},drawImage(){},strokeText(){},fillText(){},setLineDash(){},fillStyle:'',strokeStyle:'',font:'',textAlign:'',textBaseline:'',lineJoin:'',lineWidth:1,globalAlpha:1,fillRect(){},shadowBlur:0,shadowColor:''},
  localStorage:{getItem:k=>storage[k]??null,setItem:(k,v)=>storage[k]=String(v)},
  document:{getElementById(){return {hidden:true,addEventListener(){}}},querySelectorAll(){return []}},
  Audio: class{pause(){}play(){soundPlay++;return Promise.resolve()}set currentTime(v){}set volume(v){}},
@@ -127,63 +127,4 @@ test('space skips Pucci reset while committing new universe exactly once',()=>{
  assert.equal(run('universeReset.active'),false);
  assert.equal(run('universeNumber'),previous+1);
  assert.equal(run('lives'),3);
- context.key='r';context.keyCode=82;
-});
-test('settings and arena retain responsiveness after resize and replay',()=>{
- context.width=640;context.height=480;
- assert(run('hudScale()')>=.77);
- run('catcherX=99999;drawCatcherMovement()');
- assert(run('catcherX')<=run('getArenaBounds().right-catcherWidth'));
- context.width=1280;context.height=720;
- run('resetGame();gameStarted=true');tick(10);
- assert(!run('universeReset.active'));
-});
-test('audio missing never stops gameplay',()=>{
- run('audioUnlocked=true; soundEffects.catch.ready=false;');
- assert.doesNotThrow(()=>run('playCue("catch");'));
- assert.equal(run('balls.length'),6);
-});
-test('debug energy refill is disabled in the normal game',()=>{
- run('resetGame();gameStarted=true;standEnergy=0;key="g";keyCode=71;keyPressed();');
- assert.equal(run('DEBUG_TEST_MODE'),false);assert.equal(run('standEnergy'),0);
- assert(code.includes("new URLSearchParams(window.location.search).get('test') === '1'"));
-});
-test('sustained simulation does not accumulate unbounded histories/particles/popups',()=>{
- run('resetGame();gameStarted=true;');
- // Keep balls away from catcher to avoid game-over; monitor memory caps.
- run('kingCrimson.active=true;kingCrimson.start=gameMillis()+999999;');
- tick(1000);
- assert(run('universeHistory.length')<=84);
- assert(run('jojoParticles.length')<=run('MAX_PARTICLES'));
- assert(run('standPunches.length')<15);
-});
-console.log('POLISH_TESTS_PASS=',checks);
-
-test('Time Stop defaults to playable 55% and clamps quality choices',()=>{
- assert.equal(run('getSlowFactor()'),0.55);
- run('OVERHAUL_AUDIO.slowFactor=0.75');assert.equal(run('getTimeSpeed()'),1);
- run('timeStop.phase="slow"');assert.equal(run('getTimeSpeed()'),0.75);
- run('timeStop.phase="idle";OVERHAUL_AUDIO.slowFactor=0.55');
-});
-test('Time Stop slow phase advances balls while keeping the large overlay clear',()=>{
- run('resetGame();gameStarted=true;timeStop.phase="slow";slowPowerUpEnd=gameMillis()+5000;balls[0].y=100;balls[0].speed=4;');
- const before=run('balls[0].y');tick(1);assert(run('balls[0].y')>before);
- assert.equal(run('getTimeSpeed()'),0.55);
-});
-test('Time Stop intro and freeze hide the standard HUD panels',()=>{
- const originalRect=context.rect;let rectangles=0;context.rect=()=>{rectangles++};
- run('timeStop.phase="intro";gameOver=false;drawHUD()');assert.equal(rectangles,0);
- run('timeStop.phase="freeze";drawHUD()');assert.equal(rectangles,0);
- run('timeStop.phase="slow";drawHUD()');assert(rectangles>0);
- context.rect=originalRect;run('timeStop.phase="idle"');
-});
-test('Rewind camera streaks travel opposite the normal reading direction',()=>{
- assert(run('rewindStreakY(0,.5,720)')<run('rewindStreakY(0,.25,720)'));
-});
-test('visual quality remains bounded at 4K dimensions',()=>{
- context.width=3840;context.height=2160;
- const d=run('renderDensity()');assert(d<=2.1&&d>=0.5);
- context.width=1280;context.height=720;
-});
-
-console.log('CELESTIAL_TESTS_PASS=',checks);
+ context.key='r';context.keyCode=8

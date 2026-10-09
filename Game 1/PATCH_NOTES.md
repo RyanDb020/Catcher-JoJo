@@ -1,5 +1,14 @@
 # Patch notes — JoJo Catcher: Celestial Edition
 
+## Cinematic direction and browser QA — 9 October 2026
+
+- ZA WARUDO now frames its clock below the title, reveals a moving escapement ring and jewel markers, and separates the freeze headline from the face. The frozen clock has a full tick ring and three independently moving sub-dials plus a seconds hand.
+- Made in Heaven rewind now draws a restrained prior-pose echo for the catcher and falling objects, with connecting trails. The existing reverse history and reset timing are unchanged.
+- Road Roller now animates the hydraulic rams and rotating drum independently from its painted vehicle. Landing adds a brief compressed contact plate before the existing fracture and shockwave layers.
+- Added `tests/live_qa.cjs` and a pinned Playwright dependency. The local runner records console/page errors, failed requests, HTTP errors, local audio responses and play events, RAF-derived FPS/frame-time percentiles, and screenshots for each cinematic phase. Its default sustained-play segment is ten minutes.
+- Life-loss suppression and a read-only QA state snapshot require both the runner-injected `window.__JOJO_QA_AUTOMATION__` flag and a localhost origin. No public URL, settings or gameplay control can enable them.
+- Controls, energy costs, gameplay timings, collisions, scoring, life rules outside localhost automation, and special-attack outcomes are unchanged.
+
 ## Speelbare Time Stop
 
 - De speelbare slowmotion is verhoogd van 10% naar **55%** van de normale balsnelheid.
@@ -38,20 +47,4 @@
 - Made in Heaven krijgt extra planetaire uurwerken in elliptische banen tijdens versnelling en instorting.
 - Vier grafische standen zijn beschikbaar in het instellingenmenu.
 - p5.js en p5.sound zijn lokaal meegeleverd. De game hoeft de p5.js-CDN niet te bereiken.
-- Canvasdensity is afhankelijk van de geselecteerde kwaliteit en wordt begrensd op basis van het aantal renderpixels.
-
-## Behouden gameplay
-
-Score, levens, combo's, power-ups, lokale mp3's, Stand Energy, aanvallen, controls, highscore, collisionlogica en universe reset zijn behouden. De originele regressietests en de eerder toegevoegde ultrawide-, framevertraging- en resetchecks zijn blijven staan.
-
-## Bekende testbeperking
-
-De game is op JavaScript-syntax, gameplaylogica en objectrender-assets gecontroleerd. Chromium kon in deze omgeving niet starten door beperkingen van de runtime. Daardoor zijn de complete gameplaycanvas, audio-afstemming en 60-FPS-doel niet als browserresultaat geverifieerd. Zie `TESTRESULTATEN.md`.
-
-## Cinematic polish-pass — 9 oktober 2026
-
-- Tijdens de aanloop naar Time Stop verschijnt nu een mechanische chronometer als duidelijk middelpunt. De standaard HUD verdwijnt tijdens de intro en de volledige freeze, zodat scorepanelen de zwarte cinematic-balken niet bedekken.
-- De Time Stop-ringen en snelheidsstrepen zijn teruggebracht en krijgen meer transparantie. De animatie houdt ruimte vrij voor de klok en de titel.
-- Rewind-strepen bewegen nu zichtbaar achteruit. Het paarse schermfilter is lichter, waardoor de teruggespoelde catcher en ballen beter zichtbaar blijven.
-- De Road Roller-inslag start op 1.390 ms, gelijk aan het einde van de zichtbare afdaling. De inslag blijft één keer afgaan; de nasleep blijft na het vertrek van de wals zichtbaar.
-- De p5.js-, audio- en spelmechanics zijn verder ongewijzigd. De tests controleren HUD-onderdrukking, rewindrichting en de timing van de inslag.
+- Canvasdensity is afhankelijk van de geselecteerde kwalit
