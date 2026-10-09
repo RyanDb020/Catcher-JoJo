@@ -155,3 +155,50 @@ async function waitState(page, predicate, label, timeout = 12000) {
       }
       await page.keyboard.press(elapsed % 4000 < 2000 ? 'ArrowLeft' : 'ArrowRight');
       await delay(Math.min(1800, Math.max(100, durationMs - elapsed)));
+    }
+    const longState = await readState(page);
+    if (!longState || longState.gameOver || longState.lives < 1) throw new Error(`Protected session lost lives: ${JSON.stringify(longState)}`);
+    const longSessionMs = Date.now() - sessionStart;
+
+    // Remove protection inside the localhost test, let ordinary misses occur,
+    // then verify the real Game Over transition and banner timing.
+    await page.evaluate(() => { window.__JOJO_QA_AUTOMATION__ = false; });
+    await page.keyboard.up('ArrowLeft').catch(()=>{}); await page.keyboard.up('ArrowRight').catch(()=>{});
+    await waitState(page, state => state.gameOver, 'natural Game Over', 90000);
+    await delay(1050); screenshots.push(await shot(page,'game-over-reveal'));
+    await delay(550); screenshots.push(await shot(page,'game-over-banner'));
+
+    const metrics = await page.evaluate(() => {
+      const values = window.__qaFrames || [];
+      const sorted = [...values].sort((a,b)=>a-b);
+      const at = p => sorted.length ? Number(sorted[Math.min(sorted.length-1,Math.floor((sorted.length-1)*p))].toFixed(2)) : null;
+      const mean = values.length ? values.reduce((a,b)=>a+b,0)/values.length : null;
+      return {
+        frameSamples:values.length,
+        meanFps:mean ? Number((1000/mean).toFixed(2)) : null,
+        frameTimeMs:{p50:at(.50),p95:at(.95),p99:at(.99),max:values.length?Number(Math.max(...values).toFixed(2)):null},
+        audioEvents:window.__qaAudioEvents || [],
+        canvasCount:document.querySelectorAll('canvas').length,
+        dpr:devicePixelRatio,
+        viewport:{width:innerWidth,height:innerHeight}
+      };
+    });
+    const report = {
+      testedAt:new Date().toISOString(), source:'local Playwright Chromium', commitBase:'c3b20b5',
+      longSessionMs, longSessionState:longState,
+      metrics, screenshots, audioResponses, failures
+    };
+    fs.writeFileSync(path.join(output,`qa-${label}-results.json`),JSON.stringify(report,null,2));
+    console.log(JSON.stringify(report,null,2));
+    const localOrigin = `http://127.0.0.1:${port}/`;
+    const localAssetFailures = failures.requests.filter(item => item.url.startsWith(localOrigin));
+    const localBadResponses = failures.badResponses.filter(item => item.url.startsWith(localOrigin));
+    if (failures.console.length || failures.page.length || localAssetFailures.length || localBadResponses.length) process.exitCode=1;
+  } catch (error) {
+    console.error(error.stack || error);
+    process.exitCode=1;
+  } finally {
+    if (browser) await browser.close();
+    await new Promise(resolve => server.close(resolve));
+  }
+})();

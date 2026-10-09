@@ -127,4 +127,80 @@ test('space skips Pucci reset while committing new universe exactly once',()=>{
  assert.equal(run('universeReset.active'),false);
  assert.equal(run('universeNumber'),previous+1);
  assert.equal(run('lives'),3);
- context.key='r';context.keyCode=8
+ context.key='r';context.keyCode=82;
+});
+test('settings and arena retain responsiveness after resize and replay',()=>{
+ context.width=640;context.height=480;
+ assert(run('hudScale()')>=.77);
+ run('catcherX=99999;drawCatcherMovement()');
+ assert(run('catcherX')<=run('getArenaBounds().right-catcherWidth'));
+ context.width=1280;context.height=720;
+ run('resetGame();gameStarted=true');tick(10);
+ assert(!run('universeReset.active'));
+});
+test('audio missing never stops gameplay',()=>{
+ run('audioUnlocked=true; soundEffects.catch.ready=false;');
+ assert.doesNotThrow(()=>run('playCue("catch");'));
+ assert.equal(run('balls.length'),6);
+});
+test('debug energy refill is disabled in the normal game',()=>{
+ run('resetGame();gameStarted=true;standEnergy=0;key="g";keyCode=71;keyPressed();');
+ assert.equal(run('DEBUG_TEST_MODE'),false);assert.equal(run('standEnergy'),0);
+ assert(code.includes("new URLSearchParams(window.location.search).get('test') === '1'"));
+});
+test('QA life-loss suppression works only for local automation',()=>{
+ context.location={hostname:'localhost'};context.window={__JOJO_QA_AUTOMATION__:true};
+ assert.equal(run('qaSuppressLifeLoss()'),true);
+ run('resetGame();gameStarted=true;balls[0].gold=false;balls[0].y=height+30;lives=3;drawBalls(1)');
+ assert.equal(run('lives'),3);
+ context.location.hostname='ryandb020.github.io';
+ assert.equal(run('qaSuppressLifeLoss()'),false);
+ context.location.hostname='127.0.0.1';context.window.__JOJO_QA_AUTOMATION__=false;
+ assert.equal(run('qaSuppressLifeLoss()'),false);
+ delete context.location;delete context.window;
+});
+test('cinematic renderers execute mechanical clock and roller layers',()=>{
+ run('visualAtlas.clock={};drawTimeStopClock(1500);drawChronometer(width/2,height/2,100,gameMillis()*.01,1)');
+ run('visualAtlas.roller={};roadRoller={active:true,start:gameMillis(),landed:false};roadRollerImpact={active:false,at:0,x:0,y:0};drawRoadRoller()');
+ run('roadRoller.active=false;roadRollerImpact={active:true,at:gameMillis(),x:width/2,y:height*.65};drawRoadRoller()');
+ assert(code.includes('hydraulic')&&code.includes('echoSnapshot'));
+});
+test('sustained simulation does not accumulate unbounded histories/particles/popups',()=>{
+ run('resetGame();gameStarted=true;');
+ // Keep balls away from catcher to avoid game-over; monitor memory caps.
+ run('kingCrimson.active=true;kingCrimson.start=gameMillis()+999999;');
+ tick(1000);
+ assert(run('universeHistory.length')<=84);
+ assert(run('jojoParticles.length')<=run('MAX_PARTICLES'));
+ assert(run('standPunches.length')<15);
+});
+console.log('POLISH_TESTS_PASS=',checks);
+
+test('Time Stop defaults to playable 55% and clamps quality choices',()=>{
+ assert.equal(run('getSlowFactor()'),0.55);
+ run('OVERHAUL_AUDIO.slowFactor=0.75');assert.equal(run('getTimeSpeed()'),1);
+ run('timeStop.phase="slow"');assert.equal(run('getTimeSpeed()'),0.75);
+ run('timeStop.phase="idle";OVERHAUL_AUDIO.slowFactor=0.55');
+});
+test('Time Stop slow phase advances balls while keeping the large overlay clear',()=>{
+ run('resetGame();gameStarted=true;timeStop.phase="slow";slowPowerUpEnd=gameMillis()+5000;balls[0].y=100;balls[0].speed=4;');
+ const before=run('balls[0].y');tick(1);assert(run('balls[0].y')>before);
+ assert.equal(run('getTimeSpeed()'),0.55);
+});
+test('Time Stop intro and freeze hide the standard HUD panels',()=>{
+ const originalRect=context.rect;let rectangles=0;context.rect=()=>{rectangles++};
+ run('timeStop.phase="intro";gameOver=false;drawHUD()');assert.equal(rectangles,0);
+ run('timeStop.phase="freeze";drawHUD()');assert.equal(rectangles,0);
+ run('timeStop.phase="slow";drawHUD()');assert(rectangles>0);
+ context.rect=originalRect;run('timeStop.phase="idle"');
+});
+test('Rewind camera streaks travel opposite the normal reading direction',()=>{
+ assert(run('rewindStreakY(0,.5,720)')<run('rewindStreakY(0,.25,720)'));
+});
+test('visual quality remains bounded at 4K dimensions',()=>{
+ context.width=3840;context.height=2160;
+ const d=run('renderDensity()');assert(d<=2.1&&d>=0.5);
+ context.width=1280;context.height=720;
+});
+
+console.log('CELESTIAL_TESTS_PASS=',checks);

@@ -5,4 +5,8 @@
   "scripts": {
     "test": "node tests/test_polish.cjs",
     "qa:browser": "node tests/live_qa.cjs"
- 
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

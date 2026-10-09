@@ -47,4 +47,20 @@
 - Made in Heaven krijgt extra planetaire uurwerken in elliptische banen tijdens versnelling en instorting.
 - Vier grafische standen zijn beschikbaar in het instellingenmenu.
 - p5.js en p5.sound zijn lokaal meegeleverd. De game hoeft de p5.js-CDN niet te bereiken.
-- Canvasdensity is afhankelijk van de geselecteerde kwalit
+- Canvasdensity is afhankelijk van de geselecteerde kwaliteit en wordt begrensd op basis van het aantal renderpixels.
+
+## Behouden gameplay
+
+Score, levens, combo's, power-ups, lokale mp3's, Stand Energy, aanvallen, controls, highscore, collisionlogica en universe reset zijn behouden. De originele regressietests en de eerder toegevoegde ultrawide-, framevertraging- en resetchecks zijn blijven staan.
+
+## Bekende testbeperking
+
+De game is op JavaScript-syntax, gameplaylogica en objectrender-assets gecontroleerd. Chromium kon in deze omgeving niet starten door beperkingen van de runtime. Daardoor zijn de complete gameplaycanvas, audio-afstemming en 60-FPS-doel niet als browserresultaat geverifieerd. Zie `TESTRESULTATEN.md`.
+
+## Cinematic polish-pass — 9 oktober 2026
+
+- Tijdens de aanloop naar Time Stop verschijnt nu een mechanische chronometer als duidelijk middelpunt. De standaard HUD verdwijnt tijdens de intro en de volledige freeze, zodat scorepanelen de zwarte cinematic-balken niet bedekken.
+- De Time Stop-ringen en snelheidsstrepen zijn teruggebracht en krijgen meer transparantie. De animatie houdt ruimte vrij voor de klok en de titel.
+- Rewind-strepen bewegen nu zichtbaar achteruit. Het paarse schermfilter is lichter, waardoor de teruggespoelde catcher en ballen beter zichtbaar blijven.
+- De Road Roller-inslag start op 1.390 ms, gelijk aan het einde van de zichtbare afdaling. De inslag blijft één keer afgaan; de nasleep blijft na het vertrek van de wals zichtbaar.
+- De p5.js-, audio- en spelmechanics zijn verder ongewijzigd. De tests controleren HUD-onderdrukking, rewindrichting en de timing van de inslag.
