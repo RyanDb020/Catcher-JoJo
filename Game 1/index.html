@@ -39,8 +39,9 @@
   </style>
   <script src="vendor/p5.min.js"></script>
   <script src="vendor/p5.sound.min.js"></script>
-  <script defer src="src/character-director.js?v=3"></script>
-  <script defer src="src/sketch.js?v=character-director-3"></script>
+  <script defer src="src/character-director.js?v=3.1"></script>
+  <script defer src="src/cosmic-director.js?v=3.0"></script>
+  <script defer src="src/sketch.js?v=cinematic-rebuild-3.0"></script>
 </head>
 <body>
   <div id="library-warning" hidden role="alert"><strong>De game kon p5.js niet laden.</strong><p>Controleer je internetverbinding en open deze hele map via Live Server in VS Code. Kijk bij fouten in de browserconsole (F12).</p></div>
@@ -59,8 +60,8 @@
       <label class="toggle"><span>Particles</span><input data-setting="particles" type="checkbox" aria-label="Particles aan"></label>
       <div style="margin-top:20px; border-top:1px solid #86639a; padding-top:14px">
         <strong style="color:#ffdb91">OPTIONELE JOJO-STEMMEN (LOKALE MP3)</strong>
-        <small>Voor Time Resume kun je jouw nieuwe MP3 hieronder selecteren; deze keuze geldt tot het herladen. De cinematics zoeken standaard MP3-bestanden in assets/. Je kunt hier een alternatief stemfragment laden. Gebruik alleen clips die je mag gebruiken.</small>
-        <label class="voice-file"><span>Pucci / Made in Heaven</span><input type="file" data-voice="pucci" accept="audio/mpeg,audio/mp3,audio/*"></label>
+        <small>Voor Time Resume kun je jouw nieuwe MP3 hieronder selecteren; deze keuze geldt tot het herladen. De nieuwe Made in Heaven-MP3 kun je via deze instellingen lokaal selecteren. Na opnieuw laden moet je het bestand opnieuw kiezen. Je kunt hier een alternatief stemfragment laden. Gebruik alleen clips die je mag gebruiken.</small>
+        <label class="voice-file"><span>Made in Heaven · nieuwe 8,664 s MP3</span><input type="file" data-voice="pucci" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>Time Accelerate</span><input type="file" data-voice="accelerate" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>ORA ORA</span><input type="file" data-voice="ora" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>Time Resume · nieuwe MP3</span><input type="file" data-voice="resume" accept="audio/mpeg,audio/mp3,audio/*"></label>
