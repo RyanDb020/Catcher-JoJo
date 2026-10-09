@@ -122,6 +122,7 @@ async function waitState(page, predicate, label, timeout = 12000) {
     // Road Roller: visible descent, the 1.39 s contact frame, and the sustained
     // ground-wave aftermath. G is deliberately the existing test energy refill.
     await page.keyboard.press('g'); await page.keyboard.press('e');
+    await waitState(page, state => state.roadRoller, 'Road Roller start');
     await delay(280); screenshots.push(await shot(page,'road-roller-descent'));
     await delay(1110); screenshots.push(await shot(page,'road-roller-landing'));
     await delay(1050); screenshots.push(await shot(page,'road-roller-aftermath'));
@@ -129,6 +130,7 @@ async function waitState(page, predicate, label, timeout = 12000) {
 
     // ORA ORA: opening, middle barrage, and final punch/recovery.
     await page.keyboard.press('g'); await page.keyboard.press('q');
+    await waitState(page, state => state.ora, 'ORA start');
     await delay(220); screenshots.push(await shot(page,'ora-start'));
     await delay(1150); screenshots.push(await shot(page,'ora-middle'));
     await delay(1450); screenshots.push(await shot(page,'ora-finish'));
@@ -136,6 +138,7 @@ async function waitState(page, predicate, label, timeout = 12000) {
 
     // Made in Heaven: rewind, acceleration/collapse, rebirth and completed run.
     await page.keyboard.press('r');
+    await waitState(page, state => state.universeReset, 'Made in Heaven start');
     await delay(220); screenshots.push(await shot(page,'rewind-start'));
     await delay(2850); screenshots.push(await shot(page,'rewind-acceleration'));
     await delay(1550); screenshots.push(await shot(page,'rewind-collapse'));
@@ -165,8 +168,8 @@ async function waitState(page, predicate, label, timeout = 12000) {
     await page.evaluate(() => { window.__JOJO_QA_AUTOMATION__ = false; });
     await page.keyboard.up('ArrowLeft').catch(()=>{}); await page.keyboard.up('ArrowRight').catch(()=>{});
     await waitState(page, state => state.gameOver, 'natural Game Over', 90000);
-    await delay(1050); screenshots.push(await shot(page,'game-over-reveal'));
-    await delay(550); screenshots.push(await shot(page,'game-over-banner'));
+    await delay(1250); screenshots.push(await shot(page,'game-over-reveal'));
+    await delay(700); screenshots.push(await shot(page,'game-over-banner'));
 
     const metrics = await page.evaluate(() => {
       const values = window.__qaFrames || [];
