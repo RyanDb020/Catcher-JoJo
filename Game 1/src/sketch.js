@@ -105,6 +105,7 @@ function updateRecords() {
   }
 }
 function openOptions(value) {
+  if (value && (universeReset.active || standRush.active || timeStop.phase === 'intro')) return;
   optionsVisible = value;
   const panel = document.getElementById('options-panel');
   if (panel) panel.hidden = !value;
@@ -124,9 +125,7 @@ function applySetting(name, value) {
   if (name === 'slowFactor') OVERHAUL_AUDIO.slowFactor = getSlowFactor();
   if (name === 'quality') rebuildVisuals();
   saveSettings();
-  if (backgroundMusicLoaded && backgroundMusic && backgroundMusic.isPlaying()) {
-    backgroundMusic.setVolume(musicTarget * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.music, 0.12);
-  }
+  updateMusicVolume(true);
 }
 
 let catcherX = 280;
@@ -183,7 +182,7 @@ const DOUBLE_POWERUP_TIME = 7000;
 const STAND_MAX_ENERGY = 100;
 const ORA_RUSH_COST = 55;
 const ROAD_ROLLER_COST = 100;
-const ORA_RUSH_DURATION_MS = 2650;
+const ORA_RUSH_DURATION_MS = 8359;
 const ROAD_ROLLER_DURATION_MS = 3150;
 const ROAD_ROLLER_IMPACT_MS = 2350;
 const ROAD_ROLLER_LAND_MS = 1390;
@@ -223,12 +222,13 @@ let mangaPulse = 0;
 
 // MADE IN HEAVEN: R speelt je laatste seconden achteruit,
 // versnelt de tijd en begint opnieuw in een nieuw universum.
-const REWIND_MS = 1550;
-const ACCELERATE_MS = 2950;
-const SINGULARITY_MS = 1200;
-const REBIRTH_MS = 1650;
-const UNIVERSE_RESET_MS = REWIND_MS + ACCELERATE_MS + SINGULARITY_MS + REBIRTH_MS;
-const HISTORY_MAX_FRAMES = 210;
+const REWIND_MS = 8882;
+const ACCELERATE_MS = 2750;
+const SINGULARITY_MS = 2200;
+const REBIRTH_MS = 2600;
+const HEAVEN_REVEAL_MS = 6008;
+const UNIVERSE_RESET_MS = HEAVEN_REVEAL_MS + REWIND_MS + ACCELERATE_MS + SINGULARITY_MS + REBIRTH_MS;
+const HISTORY_MAX_FRAMES = 550;
 let universeNumber = 1;
 let universeHistory = [];
 let universeReset = { active: false, started: 0, source: [], committed: false,
@@ -239,12 +239,19 @@ let universeReset = { active: false, started: 0, source: [], committed: false,
 // én wanneer Myinstants rechtstreeks afspelen in de browser toestaat.
 // Als een link niet werkt, blijven de effecten en synthgeluiden werken.
 const JOJO_CLIP_URLS = {
-  // Optionele lokale bestanden: worden alleen ingeladen als je ze zelf toevoegt.
-  // De ingesproken ZA WARUDO is al meegeleverd en wordt apart afgespeeld.
+  pucci: 'assets/made-in-heaven.mp3',
+  accelerate: 'assets/time-accelerate.mp3',
+  ora: 'assets/ora-ora.mp3'
 };
 
 let jojoVoiceClips = {};
 let jojoVoiceObjectUrls = {};
+let directorVoice = null;
+let directorVoiceToken = 0;
+let giornoTheme = null;
+let giornoThemeReady = false;
+let queuedReset = false;
+let queuedTimeStop = null;
 
 
 // JOJO TIME STOP: instellingen
@@ -322,6 +329,7 @@ function setup() {
   if (backgroundMusicLoaded) backgroundMusic.setVolume(0.18 * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.music);
   if (timeStopSoundLoaded) timeStopSound.setVolume(0.85 * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.voices);
   prepareJoJoVoiceClips();
+  initializeCinematicAudio();
   const closeBtn = document.getElementById("close-options");
   if (closeBtn) closeBtn.addEventListener("click", () => openOptions(false));
   document.querySelectorAll('[data-voice]').forEach(input => {
@@ -355,10 +363,10 @@ function keyPressed() {
   if (optionsVisible) return false;
   // SPACE slaat lange cinematische scènes over, niet de beloning of reset.
   if (keyCode === 32 && universeReset.active) {
-    stopJoJoVoices();
-    universeReset.started = gameMillis() - UNIVERSE_RESET_MS + 230;
+    skipUniverseDirector();
     return false;
   }
+  if (keyCode === 32 && standRush.active) {cancelDirectorVoice();standRush.active=false;standPunches=[];return false;}
   if (keyCode === 32 && timeStop.phase === 'intro') {
     if (timeStopSoundLoaded && timeStopSound.isPlaying()) timeStopSound.stop();
     timeStop.phase = 'freeze';
@@ -368,7 +376,7 @@ function keyPressed() {
   }
   if (!gameStarted && keyCode === ENTER && !universeReset.active) {
     gameStarted = true;
-    if (backgroundMusicLoaded && !backgroundMusic.isPlaying()) backgroundMusic.loop();
+    startGameMusic();
   }
   if (key === 'r' || key === 'R') {
     startUniverseReset();
@@ -435,10 +443,8 @@ function resetGame() {
   for (let i = 0; i < ACTIVE_BALLS; i++) {
     respawnBall(balls[i]);
   }
-  if (backgroundMusicLoaded) {
-    updateMusicVolume(true);
-    if (gameStarted && !backgroundMusic.isPlaying()) backgroundMusic.loop();
-  }
+  updateMusicVolume(true);
+  if (gameStarted) startGameMusic();
   if (gameOverSoundLoaded && gameOverSound.isPlaying()) gameOverSound.stop();
 }
 
@@ -1148,7 +1154,7 @@ function drawGameOverWorld() {
   drawCatcherGhostTrail();drawBucket(catcherX,catcherY);
   if(standRush.active)drawStandAura();drawStandPunches();
   pop();
-  drawTimeStopEffects();drawCinematicDirector();drawKingCrimsonEffects();
+  drawTimeStopEffects();drawTimeStopRebuild();drawCinematicDirector();drawKingCrimsonEffects();
   drawJoJoParticles();drawRoadRoller();drawJoJoPopups();drawMenacingGlyphs();drawHUD();
   if(gameMillis()>=gameOverRevealAt)drawGameOver();
 }
@@ -1164,9 +1170,11 @@ function draw() {
     drawHUD();
     return;
   }
+  updateDirectorAudio();
   if (universeReset.active) { drawUniverseReset(); return; }
   if (gameOver) { drawGameOverWorld(); return; }
   if (gameStarted && !gameOver) updateTimeStop();
+  if(queuedReset&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active){queuedReset=false;startUniverseReset();}
   const freezePhysics = timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
   if (freezePhysics) {
     const hold = min(50, max(0, deltaTime));
@@ -1215,6 +1223,7 @@ function draw() {
   drawStandPunches();
   pop();
   drawTimeStopEffects();
+  drawTimeStopRebuild();
   drawCinematicDirector();
   drawKingCrimsonEffects();
   drawJoJoParticles();
@@ -1299,16 +1308,11 @@ function notEnoughStandEnergy(cost) {
 
 // Q: Star Platinum-achtige ORA ORA ORA punchrush.
 function startStandRush() {
-  if (!canUseJoJoAttack(ORA_RUSH_COST)) {
-    if (standEnergy < ORA_RUSH_COST) notEnoughStandEnergy(ORA_RUSH_COST);
-    return;
-  }
-  standEnergy -= ORA_RUSH_COST;
-  standRush = { active: true, start: gameMillis(), lastPunch: gameMillis() - STAND_PUNCH_INTERVAL_MS, punches: 0 };
-  mangaPulse = gameMillis() + 450;
-  addJoJoPopup("ORA ORA ORA!", width / 2, height * 0.31, "#f9baff", 1400, 52);
-  playStandSound("rush");
-  playJoJoVoice("ora");
+ if(!canUseJoJoAttack(ORA_RUSH_COST)||timeStop.phase!=='idle'){if(standEnergy<ORA_RUSH_COST)notEnoughStandEnergy(ORA_RUSH_COST);return;}
+ standEnergy-=ORA_RUSH_COST;
+ standRush={active:true,start:gameMillis(),lastPunch:gameMillis(),punches:0,finisher:false};
+ mangaPulse=gameMillis()+450;
+ beginDirectorVoice('ora',()=>{standRush.voiceFinished=true;});
 }
 
 // E: ROAD ROLLER DA! kan alleen tijdens het bevroren of vertraagde tijdvenster.
@@ -1348,7 +1352,7 @@ function punchDangerousBall() {
   const [sx,sy]=sources[n];
   standPunches.push({target,tx:target.x,ty:target.y,start:gameMillis(),impacted:false,
     duration:constrain(dist(sx,sy,target.x,target.y)*.28,150,290),sx,sy,side:n%2?-1:1,
-    finisher:standRush.punches>=12});
+    finisher:standRush.finisher});
 }
 function resolvePunches() {
   const now = gameMillis();
@@ -1400,12 +1404,11 @@ function updateJoJoAttacks() {
   if (!gameStarted) return;
   const now = gameMillis();
   if (standRush.active) {
-    if (now - standRush.start >= ORA_RUSH_DURATION_MS) {
-      standRush.active = false;
-    } else if (!gameOver && now - standRush.lastPunch >= STAND_PUNCH_INTERVAL_MS && standRush.punches < 12) {
-      standRush.lastPunch = now;
-      punchDangerousBall();
-    }
+    const p=directorVoice&&directorVoice.name==='ora'?directorAudioProgress(ORA_RUSH_DURATION_MS):constrain((now-standRush.start)/ORA_RUSH_DURATION_MS,0,1);
+    const interval=p<.12?100000:p<.38?250:p<.72?135:p<.88?80:100000;
+    if(!gameOver&&now-standRush.lastPunch>=interval){standRush.lastPunch=now;punchDangerousBall();}
+    if(p>.88&&!standRush.finisher){standRush.finisher=true;punchDangerousBall();jojoShake=19;mangaPulse=now+620;}
+    if((standRush.voiceFinished&&now-standRush.start>ORA_RUSH_DURATION_MS)||now-standRush.start>ORA_RUSH_DURATION_MS+1200)standRush.active=false;
   }
   if (roadRoller.active) {
     const elapsed = now - roadRoller.start;
@@ -1700,17 +1703,13 @@ function drawStandPunches() {
 }
 
 function prepareJoJoVoiceClips() {
-  if (typeof Audio === "undefined") return;
-  for (const name in JOJO_CLIP_URLS) {
+  if (typeof Audio === 'undefined') return;
+  for (const name of Object.keys(JOJO_CLIP_URLS)) {
     try {
-      const audio = new Audio();
-      audio.preload = "none";
-      audio.src = JOJO_CLIP_URLS[name];
-      audio.volume = name === "continued" ? 0.40 : 0.63;
-      jojoVoiceClips[name] = audio;
-    } catch (_) {
-      // Het programma blijft werken zonder netwerk en zonder extra MP3's.
-    }
+      const sound = new Audio(JOJO_CLIP_URLS[name]);
+      sound.preload = 'auto';
+      jojoVoiceClips[name] = sound;
+    } catch (_) {}
   }
 }
 
@@ -1740,32 +1739,32 @@ function stopJoJoVoices() {
 // te worden tijdens het achteruit afspelen. Max ~3,5 s geheugen.
 function recordUniverseFrame() {
   if (!gameStarted || universeReset.active) return;
-  if (gameMillis() - lastHistoryCapture < 45) return;
+  if (gameMillis() - lastHistoryCapture < 16) return;
   lastHistoryCapture = gameMillis();
   universeHistory.push({
     catcherX, catcherWidth, score, lives, combo,
     balls: balls.map(ball => ({x: ball.x, y: ball.y, gold: ball.gold, kind: ball.kind})),
     powerUps: powerUps.map(p => ({x: p.x, y: p.y, type: p.type}))
   });
-  if (universeHistory.length > 84) universeHistory.shift();
+  if (universeHistory.length > HISTORY_MAX_FRAMES) universeHistory.shift();
 }
 
 // R werkt tijdens normaal spel én bij Game Over. Tijdens de animatie wordt
 // herhaald R genegeerd zodat er niet meerdere resets tegelijk starten.
 function startUniverseReset() {
-  if (universeReset.active) return;
-  gameStarted = true;
-  if (universeHistory.length === 0) recordUniverseFrame();
-  stopJoJoVoices();
-  if (timeStopSoundLoaded && timeStopSound.isPlaying()) timeStopSound.stop();
-  if (gameOverSoundLoaded && gameOverSound.isPlaying()) gameOverSound.stop();
-  updateMusicVolume(true);
-  universeReset = {
-    active: true, started: gameMillis(), source: universeHistory.slice(), committed: false,
-    soundAccelerated: false, soundCollapse: false
-  };
-  playJoJoVoice("pucci");
-  playUniverseSound("charge");
+ if(universeReset.active)return;
+ if(standRush.active || timeStop.phase!=='idle' || roadRoller.active){queuedReset=true;return;}
+ gameStarted=true;
+ if(!universeHistory.length)recordUniverseFrame();
+ universeReset={active:true,started:gameMillis(),source:universeHistory.slice(),committed:false,phase:'reveal',phaseStart:gameMillis()};
+ beginDirectorVoice('pucci',()=>{
+  if(!universeReset.active||universeReset.phase!=='reveal')return;
+  universeReset.phase='rewind';universeReset.phaseStart=gameMillis();
+  beginDirectorVoice('accelerate',()=>{
+   if(!universeReset.active||universeReset.phase!=='rewind')return;
+   universeReset.phase='accelerate';universeReset.phaseStart=gameMillis();playUniverseSound('speed');
+  });
+ });
 }
 
 // Start echt vanaf het begin: score, combo, upgrades, ballen, cooldowns en
@@ -1781,57 +1780,31 @@ function commitNewUniverse() {
 }
 
 function drawUniverseReset() {
-  const elapsed = gameMillis() - universeReset.started;
-  const next1 = REWIND_MS;
-  const next2 = next1 + ACCELERATE_MS;
-  const next3 = next2 + SINGULARITY_MS;
-  const phase = elapsed < next1 ? "rewind" :
-                elapsed < next2 ? "accelerate" :
-                elapsed < next3 ? "collapse" : "rebirth";
-  const t = phase === "rewind" ? constrain(elapsed / REWIND_MS, 0, 1) :
-            phase === "accelerate" ? constrain((elapsed - next1) / ACCELERATE_MS, 0, 1) :
-            phase === "collapse" ? constrain((elapsed - next2) / SINGULARITY_MS, 0, 1) :
-            constrain((elapsed - next3) / REBIRTH_MS, 0, 1);
-
-  if (phase === "accelerate" && !universeReset.soundAccelerated) {
-    universeReset.soundAccelerated = true;
-    stopJoJoVoices(); // Geen overlappende Pucci-clips tijdens de versnelling
-    playJoJoVoice("accelerate");
-    playUniverseSound("speed");
-  }
-  if (phase === "collapse" && !universeReset.soundCollapse) {
-    universeReset.soundCollapse = true;
-    playUniverseSound("collapse");
-  }
-  if (phase === "rebirth" && !universeReset.committed) {
-    commitNewUniverse();
-    playUniverseSound("reborn");
-  }
-
-  if (phase === "rewind") {
-    const history = universeReset.source;
-    const index = max(0, floor((history.length - 1) * (1 - t)));
-    drawUniverseSnapshot(history[index], -1, t, history[max(0,index-2)]);
-    drawRewindOverlay(t);
-  } else if (phase === "accelerate") {
-    const history = universeReset.source;
-    drawUniverseSnapshot(history.length ? history[0] : null, 1, t);
-    drawAcceleratingUniverse(t);
-  } else if (phase === "collapse") {
-    drawUniverseCollapse(t);
-  } else {
-    drawUniverseRebirth(t);
-  }
-
-  if (elapsed >= UNIVERSE_RESET_MS) {
-    universeReset.active = false;
-    universeReset.source = [];
-    universeHistory = [];
-    if (backgroundMusicLoaded) {
-      updateMusicVolume(true);
-      if (!backgroundMusic.isPlaying()) backgroundMusic.loop();
-    }
-  }
+ const u=universeReset,phase=u.phase,age=gameMillis()-u.phaseStart;
+ const d=phase==='reveal'?HEAVEN_REVEAL_MS:phase==='rewind'?REWIND_MS:phase==='accelerate'?ACCELERATE_MS:phase==='collapse'?SINGULARITY_MS:REBIRTH_MS;
+ const t=constrain(age/d,0,1);
+ if(phase==='reveal'){
+  drawUniverseSnapshot(u.source[u.source.length-1]||null,1,t);
+  drawHeavenReveal(t);
+ }else if(phase==='rewind'){
+  const history=u.source,pos=(1-easeInOutCubic(directorAudioProgress(REWIND_MS)))*(history.length-1);
+  const i=max(0,floor(pos)),a=history[i]||null,b=history[min(history.length-1,i+1)]||a;
+  const k=pos-i;
+  if(a&&b){
+   const snap={...a,catcherX:lerp(a.catcherX,b.catcherX,k),
+    catcherWidth:lerp(a.catcherWidth,b.catcherWidth,k),
+    balls:a.balls.map((ball,j)=>{const q=b.balls[j]||ball;return {...ball,x:lerp(ball.x,q.x,k),y:lerp(ball.y,q.y,k)}})};
+   drawUniverseSnapshot(snap,-1,t,history[max(0,i-9)]);
+  }else drawUniverseSnapshot(null,-1,t);
+  drawRewindOverlay(t);
+ }else if(phase==='accelerate'){
+  drawUniverseSnapshot(u.source[0]||null,1,t);drawAcceleratingUniverse(t);
+ }else if(phase==='collapse')drawUniverseCollapse(t);
+ else drawUniverseRebirth(t);
+ if(age<d||phase==='reveal'||phase==='rewind')return;
+ if(phase==='accelerate'){u.phase='collapse';u.phaseStart=gameMillis();playUniverseSound('collapse');}
+ else if(phase==='collapse'){u.phase='rebirth';u.phaseStart=gameMillis();commitNewUniverse();playUniverseSound('reborn');}
+ else{u.active=false;u.source=[];universeHistory=[];startGameMusic();updateMusicVolume(true);}
 }
 
 // Een momentopname tekenen zonder de ballen, levens of sterren te verplaatsen.
@@ -2201,15 +2174,18 @@ function synthFallback(name, intensity) {
   } catch (_) { return false; }
 }
 function updateMusicVolume(force = false) {
-  const cinematic = universeReset.active || timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
-  musicTarget = cinematic ? .055 : timeStop.phase === 'slow' ? .17 : .55;
+  const cinematic = universeReset.active || standRush.active || timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
+  musicTarget = cinematic ? .045 : timeStop.phase === 'slow' ? .18 : .55;
   if (optionsVisible) musicTarget *= .25;
   const intended = musicTarget * OVERHAUL_AUDIO.music * OVERHAUL_AUDIO.master;
-  if (!backgroundMusicLoaded || !backgroundMusic) return;
-  if (force || abs(previousMusicLevel - intended) > .002) {
-    backgroundMusic.setVolume(intended, .18);
-    previousMusicLevel = intended;
+  if (giornoTheme && giornoThemeReady) {
+    const next = force ? intended : giornoTheme.volume + (intended - giornoTheme.volume) * .10;
+    giornoTheme.volume = Math.max(0,Math.min(1,next));
+    if (backgroundMusicLoaded && backgroundMusic.isPlaying()) backgroundMusic.stop();
+  } else if (backgroundMusicLoaded && backgroundMusic) {
+    if (force || abs(previousMusicLevel - intended) > .002) backgroundMusic.setVolume(intended, .18);
   }
+  previousMusicLevel = intended;
 }
 
 function getCinematicCameraScale() {
@@ -2248,6 +2224,7 @@ function drawCinematicDirector() {
     }
   }
   if (standRush.active) {
+    drawOraRebuild();
     const t=constrain((gameMillis()-standRush.start)/ORA_RUSH_DURATION_MS,0,1);
     const alpha = 90*(1-t);
     noStroke(); fill(134,75,193,alpha); rect(0,0,10*u,height);
@@ -2371,3 +2348,198 @@ function paintCosmos(c,w,h){
 }
 function drawCosmicAtlas(){if(!visualAtlas.space)return;const c=drawingContext;c.save();let shift=(catcherX+catcherWidth/2-width/2)/Math.max(1,width)*10;c.drawImage(visualAtlas.space,-12+shift,-8,width+24,height+16);if(timeStop.phase!=='idle'){c.fillStyle='rgba(46,133,160,.075)';c.fillRect(0,0,width,height);}c.restore();}
 function drawOrrery(t,collapse){if(!visualAtlas.clock)return;const c=drawingContext,radius=min(width,height)*(.25+(collapse?-.20*t:.12*t));c.save();c.translate(width/2,height/2);c.rotate(gameMillis()*.00015*(1+t*9));c.strokeStyle='#bfaed344';c.lineWidth=1;for(let j=0;j<3;j++){c.save();c.rotate(j*Math.PI/3);c.beginPath();c.ellipse(0,0,radius*2,radius*.6,0,0,Math.PI*2);c.stroke();for(let i=0;i<7;i++){let a=i*Math.PI*2/7+t*5;disc(c,Math.cos(a)*radius*2,Math.sin(a)*radius*.6,2+i%3,'#e5c893');}c.restore();}c.restore();}
+
+
+/* =============================================================
+   AUDIO DIRECTOR 2 — local audio, real ended events, one voice
+   A missing/blocked MP3 uses its verified expected duration.
+   ============================================================= */
+const AUDIO_CLIP_MS = { pucci: 6008.163, accelerate: 8881.633, ora: 8359.184 };
+function initializeCinematicAudio() {
+  if (typeof Audio === 'undefined') return;
+  giornoTheme = new Audio('assets/giorno-theme.mp3');
+  giornoTheme.loop = true;
+  giornoTheme.preload = 'auto';
+  giornoTheme.volume = 0;
+  giornoTheme.addEventListener('canplay', () => {
+    giornoThemeReady = true;
+    if (audioUnlocked && gameStarted) startGameMusic();
+  }, {once: true});
+  giornoTheme.addEventListener('error', () => { giornoThemeReady = false; }, {once:true});
+}
+function startGameMusic() {
+  if (!audioUnlocked) return;
+  if (giornoTheme && giornoThemeReady) {
+    if (backgroundMusicLoaded && backgroundMusic.isPlaying()) backgroundMusic.stop();
+    if (giornoTheme.paused) {
+      const result = giornoTheme.play();
+      if (result && typeof result.catch === 'function') result.catch(() => {
+        if (backgroundMusicLoaded && !backgroundMusic.isPlaying()) backgroundMusic.loop();
+      });
+    }
+    updateMusicVolume(true);
+  } else if (backgroundMusicLoaded && !backgroundMusic.isPlaying()) backgroundMusic.loop();
+}
+function cancelDirectorVoice() {
+  ++directorVoiceToken;
+  const state = directorVoice;
+  directorVoice = null;
+  if (state && state.audio) {
+    state.audio.onended = null;
+    state.audio.onerror = null;
+    try { state.audio.pause(); state.audio.currentTime = 0; } catch (_) {}
+  }
+}
+function beginDirectorVoice(name, onEnd) {
+  cancelDirectorVoice();
+  stopJoJoVoices();
+  const token = ++directorVoiceToken;
+  const audio = jojoVoiceClips[name] || null;
+  directorVoice = { name, token, audio, started:gameMillis(), duration:AUDIO_CLIP_MS[name] || 3000, done:false, onEnd };
+  if (audio) {
+    audio.onended = () => finishDirectorVoice(token);
+    audio.onerror = () => { if (directorVoice && directorVoice.token === token) directorVoice.audio = null; };
+    try {
+      audio.currentTime = 0;
+      audio.volume = Math.min(1,OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.voices * .93);
+      const p = audio.play();
+      if (p && typeof p.catch === 'function')
+        p.catch(() => { if (directorVoice && directorVoice.token === token) directorVoice.audio = null; });
+    } catch (_) { directorVoice.audio = null; }
+  }
+  updateMusicVolume(true);
+}
+function finishDirectorVoice(token) {
+  const state = directorVoice;
+  if (!state || state.token !== token || state.done) return;
+  state.done = true;
+  if (state.audio) { state.audio.onended = null; state.audio.onerror = null; }
+  directorVoice = null;
+  if (typeof state.onEnd === 'function') state.onEnd();
+}
+function updateDirectorAudio() {
+  if (!directorVoice) return;
+  const state = directorVoice;
+  if (state.audio && state.audio.ended) return finishDirectorVoice(state.token);
+  // Do not strand the game if a referenced MP3 is absent, blocked or corrupted.
+  const liveDuration = state.audio && Number.isFinite(state.audio.duration) ? state.audio.duration * 1000 : state.duration;
+  const margin = state.audio ? 1300 : 0;
+  if (gameMillis() - state.started >= liveDuration + margin) finishDirectorVoice(state.token);
+}
+function directorAudioProgress(fallback) {
+  const state = directorVoice;
+  if (!state) return 0;
+  if (state.audio && Number.isFinite(state.audio.duration) && state.audio.duration > 0 && !state.audio.paused)
+    return constrain(state.audio.currentTime / state.audio.duration,0,1);
+  return constrain((gameMillis()-state.started) / (state.duration || fallback),0,1);
+}
+function skipUniverseDirector() {
+  if (!universeReset.active) return;
+  cancelDirectorVoice();
+  universeReset.phase = 'rebirth';
+  universeReset.phaseStart = gameMillis() - REBIRTH_MS*.50;
+  universeReset.finished = false;
+  if (!universeReset.committed) {commitNewUniverse();playUniverseSound('reborn');}
+}
+
+function drawHeavenReveal(t){
+ push();const cx=width*.5,cy=height*.51,e=easeInOutCubic(t);
+ noStroke();fill(6,4,24,80+150*e);rect(0,0,width,height);
+ for(const side of [-1,1]){
+  push();translate(cx+side*width*(.16+.35*e),cy);rotate(side*(.07+.2*e));
+  fill(14,8,35,230);rect(-width*.38,-height,width*.76,height*2);
+  stroke(244,206,151,140);strokeWeight(2);for(let i=0;i<8;i++)line(i*36,-height,i*36,height);pop();
+ }
+ push();translate(cx,cy);scale(.45+e*.67);
+ drawChronometer(0,0,min(width,height)*.38,-t*TWO_PI*.25,.9);
+ noStroke();fill('#e2d3fd');ellipse(0,-88,46,53);quad(-32,-62,32,-62,30,25,-30,25);
+ rect(-29,12,23,78,10);rect(8,12,23,78,10);
+ fill('#8d56dc');rect(-19,-54,38,14,5);pop();
+ textAlign(CENTER,CENTER);stroke('#160522');strokeWeight(5);fill('#ffe9b7');
+ textStyle(BOLD);textSize(min(64,width*.067));text('MADE IN HEAVEN',cx,height*.2);
+ noStroke();fill('#dabaff');textSize(17);text('THE END IS THE BEGINNING',cx,height*.28);pop();
+}
+
+function drawOraRebuild(){
+ if(!standRush.active)return;
+ const age=gameMillis()-standRush.start,p=constrain(age/ORA_RUSH_DURATION_MS,0,1);
+ const phase=p<.11?0:p<.36?1:p<.70?2:p<.88?3:p<.96?4:5;
+ const force=[.12,.25,.37,.53,.89,.17][phase];
+ const cx=catcherX+catcherWidth*.5,cy=catcherY-140;
+ push();noStroke();fill(21,2,43,38+force*95);rect(0,0,width,height);
+ push();translate(cx,cy);rotate(sin(age*.014)*force*.14);scale(1+force*.25);
+ drawingContext.shadowColor='#bb88ff';drawingContext.shadowBlur=22;
+ stroke('#241344');strokeWeight(4);fill('#8965bd');
+ quad(-56,-48,56,-48,74,67,-74,67);
+ fill('#dbbbfa');quad(-54,-41,-13,-66,5,-5,-60,18);
+ quad(54,-41,13,-66,-5,-5,60,18);
+ fill('#361954');ellipse(0,-89,86,92);
+ fill('#dbf9ff');ellipse(-18,-98,14,8);ellipse(18,-98,14,8);
+ for(const side of [-1,1]){
+  const beat=sin(age*(phase>=2?.029:.017)+side*1.5);
+  push();translate(side*58,-17);rotate(side*(.28+beat*.55));
+  fill('#dac5fa');rect(-17,-9,34,86,12);
+  fill('#6d4697');rect(-11,8,22,48,6);
+  fill('#eee2ff');ellipse(0,80,39,42);pop();
+ }
+ pop();
+ if(phase>0&&phase<5&&visualAtlas.fist){
+  const count=[0,5,10,16,5][phase]||0;
+  for(let i=0;i<count;i++){
+   const t=(age*.0024*(phase+1)+i/count)%1,side=i%2?1:-1;
+   push();translate(lerp(cx+side*width*.24,width*.5+side*width*.06,t),
+      lerp(cy-height*.26,cy+height*.16,t));
+   rotate(side*(-.55+t*.8));scale(.28+t*1.25);
+   drawingContext.globalAlpha=(1-t)*(.21+force*.5);
+   drawingContext.drawImage(visualAtlas.fist,-28,-28,56,132);pop();
+  }
+ }
+ if(phase===4){
+  const t=easeOutCubic(constrain((p-.88)/.08,0,1));
+  stroke(255,242,208,205*(1-t));strokeWeight(6);
+  for(let i=0;i<18;i++){
+   const a=i*TWO_PI/18;
+   line(width*.5+cos(a)*22,height*.46+sin(a)*22,
+   width*.5+cos(a)*(80+t*width*.53),height*.46+sin(a)*(80+t*height*.53));
+  }
+  if(OVERHAUL_AUDIO.flashes){noStroke();fill(255,245,225,100*(1-t));rect(0,0,width,height);}
+ }
+ const bar=min(55,height*.075);noStroke();fill(3,2,14,235);
+ rect(0,0,width,bar);rect(0,height-bar,width,bar);
+ fill('#ffe2b7');textStyle(BOLD);textAlign(LEFT,CENTER);textSize(min(25,width*.033));
+ text(['STAND REVEAL','FIRST STRIKES','ORA ORA ORA','OVERDRIVE','FINISHER','RECOVERY'][phase],22,bar*.5);
+ pop();
+}
+function drawTimeStopRebuild(){
+ if(timeStop.phase==='idle'||timeStop.phase==='slow')return;
+ const age=gameMillis()-timeStop.phaseStart;
+ push();
+ if(timeStop.phase==='intro'){
+  const t=constrain(age/TIME_STOP_INTRO_MS,0,1);
+  translate(width*.5,height*.49);
+  for(let i=0;i<4;i++){
+   const q=constrain(t*1.5-i*.18,0,1);
+   push();rotate((i%2?-1:1)*(1-q)*2.3);
+   noFill();stroke(i%2?'#d4b9ff':'#fff2be',150*q);strokeWeight(2+i);
+   ellipse(0,0,(.28+i*.11)*min(width,height)*(1+q*1.8),
+      (.28+i*.11)*min(width,height)*(1+q*.38));pop();
+  }
+  for(let i=0;i<14;i++){
+   const a=i*TWO_PI/14+t*2.1,r=min(width,height)*(.1+.52*t);
+   push();translate(cos(a)*r,sin(a)*r);rotate(a+PI/2);
+   stroke('#f6e3ab');strokeWeight(2);line(-9,0,9,0);pop();
+  }
+ }else if(timeStop.phase==='freeze'){
+  stroke(210,238,255,180);strokeWeight(2);
+  for(let i=0;i<18;i++){
+   const x=width*.5+cos(i*2.399)*width*.48,y=height*.5+sin(i*2.399)*height*.43;
+   line(x,y,width*.5+(x-width*.5)*.8,height*.5+(y-height*.5)*.8);
+  }
+ }else if(timeStop.phase==='release'){
+  const t=constrain(age/TIME_STOP_RELEASE_MS,0,1);
+  noFill();stroke(250,231,182,200*(1-t));strokeWeight(10*(1-t)+1);
+  const r=easeOutCubic(t)*max(width,height);
+  ellipse(width/2,height/2,r*2,r*1.5);
+ }
+ pop();
+}

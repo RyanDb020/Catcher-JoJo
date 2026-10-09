@@ -128,3 +128,20 @@ De game heeft ook een startscherm met spelregels, een bewegende sterrenachtergro
   - De score wordt teruggezet naar 0.
   - De levens worden teruggezet naar 3.
   - De ballen worden opnieuw boven het speelveld geplaatst.
+
+## Cinematic rebuild — 9 oktober 2026
+
+De game gebruikt voor Game 1 de volgende lokale bestanden in `assets/`:
+
+- `giorno-theme.mp3` — achtergrondmuziek, looping na ENTER
+- `made-in-heaven.mp3` — Made in Heaven-intro, ±6,008 s
+- `time-accelerate.mp3` — begint na het einde van de intro, ±8,882 s
+- `ora-ora.mp3` — ORA-reveal, barrage en finisher, ±8,359 s
+
+De vier bestanden zitten in het meegeleverde `JoJo_Cinematic_Audio_Assets.zip`-pakket. Pak de inhoud uit zodat de bestanden in `Game 1/assets/` staan; de JS-code en de bestanden moeten in **dezelfde** Game 1-map staan. Dit pakket is vanwege publicatierechten niet automatisch naar GitHub geüpload.
+
+**Belangrijk:** De bronopnames zijn niet automatisch vrij te herpubliceren. Gebruik GitHub Pages met deze audio alleen als je daarvoor de nodige toestemming of rechten hebt. De game heeft getimede fallbacks als de audio ontbreekt, maar de bedoelde auditieve ervaring vereist de lokale MP3's.
+
+De echte Rewind begint op het `ended`-event van Made in Heaven; de volgende fase op het `ended`-event van Time Accelerate. Tussenfasen worden getekend vanuit gameplayhistorie (circa 9 seconden bij 60 Hz). ORA duurt zolang als het bijbehorende MP3-fragment plus afloopfase; de gameplay stopt tijdens universe reset. 
+
+Nog vereist voor volledige acceptatie: nieuwe regressietests voor de gewijzigde timing, een echte browser-run, audioluistertest en beoordeling van opname-/publicatierechten.
