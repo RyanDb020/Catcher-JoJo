@@ -233,6 +233,17 @@
     oval(c,-3,-166,35,48,'#7d5a57',ink,3);
     polygon(c,[[-44,-191],[-17,-223],[33,-211],[41,-170],[17,-194],[-30,-178]],'#e3d4d3',ink,3);
     oval(c,-13,-169,5,4,'#f4e9dd',null);
+    // Priest collar, coat pleats, cross ornaments and sculpted facial features.
+    polygon(c,[[-47,-96],[-8,-112],[37,-93],[15,-61],[-28,-64]],'#ded5ca',ink,2.5);
+    polygon(c,[[-24,-95],[0,-104],[24,-90],[7,-71]],'#503449',null);
+    for(let i=0;i<5;i++)line(c,[[-51+i*20,36],[-43+i*18,191]],'rgba(222,169,158,.24)',1.6);
+    polygon(c,[[-9,-83],[4,-83],[4,50],[-9,50]],'#caa56d',null);
+    polygon(c,[[-34,-17],[30,-17],[31,-10],[-35,-10]],'#c8a16c',null);
+    polygon(c,[[-12,-184],[8,-190],[25,-182],[18,-167],[-4,-161]],'#886568',null);
+    line(c,[[-24,-177],[-9,-180],[1,-175]],'#291b2b',2.8);
+    line(c,[[8,-176],[23,-176],[29,-169]],'#291b2b',2.8);
+    line(c,[[-2,-163],[3,-155],[-7,-151]],'#34222e',1.8);
+
     polygon(c,[[-56,238],[-7,237],[-25,351],[-67,355]],'#3a2337',ink,4);
     polygon(c,[[0,240],[43,236],[71,349],[17,350]],'#432c3d',ink,4);
     c.restore();
@@ -277,6 +288,41 @@
     oval(c,46,37,20,17,'#f5d9ab',ink,3);
     oval(c,46,37,9,8,'#9db6ce',ink,2);
     inkHatch(c,52,93,-.4,13,4);
+    // Layered ceramic harness, breastplate engravings and sculpted side panels.
+    polygon(c,[[-88,-13],[-52,-34],[-31,64],[-52,115],[-92,70]],'#b1c8d9',ink,2.5);
+    polygon(c,[[67,-38],[100,-16],[91,73],[65,110],[48,71]],'#a8bfd3',ink,2.5);
+    polygon(c,[[-73,-22],[-47,-44],[-28,48],[-55,64]],'#f4fcff',null);
+    polygon(c,[[57,-40],[79,-17],[68,53],[48,68]],'#edf8fc',null);
+    for(let i=0;i<5;i++){
+      const yy=-20+i*26;
+      line(c,[[-43,yy],[-32,yy+6],[-9,yy+7]],'rgba(58,83,120,.38)',1.8);
+      line(c,[[34,yy],[45,yy+7],[55,yy+4]],'rgba(58,83,120,.32)',1.8);
+    }
+    // Double-layered pauldron crests, with fasteners rather than plain tubes.
+    for(const side of [-1,1]){
+      polygon(c,[[side*70,-83],[side*104,-90],[side*144,-41],[side*95,-25]],
+        '#c5dced',ink,3);
+      polygon(c,[[side*79,-76],[side*104,-81],[side*124,-52],[side*100,-44]],
+        '#fbffff',null);
+      for(let i=0;i<3;i++)oval(c,side*(96+i*12),-46+i*7,3,3,'#d5b67f',ink,1);
+      line(c,[[side*93,2],[side*113,19],[side*115,34]],'#8aa6bd',2.5);
+    }
+    // Articulated clavicle segments, vents and inset gold hardware.
+    polygon(c,[[-38,32],[-8,16],[17,22],[42,38],[24,72],[-12,63]],'#e9f3fa',ink,2.6);
+    polygon(c,[[-20,35],[0,30],[27,41],[9,59],[-14,54]],'#8ca5bf',null);
+    for(let i=0;i<4;i++){
+      oval(c,-19+i*13,76,4.5,2.7,'#748eac',null);
+      line(c,[[-21+i*13,85],[-24+i*13,96]],'#8aa0b5',1.5);
+    }
+    oval(c,46,37,25,22,'#ebd8ab',ink,2.3);
+    oval(c,46,37,17,15,'#6585a7','#fff6d3',1.8);
+    oval(c,46,37,7,7,'#e7f4fa',ink,1.5);
+    // More distinctive facial mask with cheek etching and an elongated muzzle.
+    polygon(c,[[-34,-112],[-2,-111],[-9,-96],[-33,-98]],'#647c9a',null);
+    polygon(c,[[8,-106],[45,-118],[32,-96],[12,-92]],'#7b95b1',null);
+    line(c,[[-17,-97],[-5,-92],[-9,-84]],'#536d86',2.2);
+    line(c,[[19,-95],[29,-89],[22,-81]],'#536d86',2.2);
+    line(c,[[-15,-65],[4,-54],[20,-64]],'#8094a7',2.5);
     c.restore();
   }
   function figure(c,w,h,drawing,options={}) {
@@ -403,7 +449,7 @@
   }
   function heavenEcho(c,w,h,t) {
     if (!ctxReady(c))return;
-    c.save(); c.globalAlpha=.18+.22*Math.sin(t*PI);
+    c.save(); c.globalAlpha=.11+.13*Math.sin(t*PI);
     const s=Math.min(w/960,h/740)*1.06;
     c.translate(w*.71,h*.59);c.scale(s,s);heavenFigure(c,t*16);c.restore();
   }
