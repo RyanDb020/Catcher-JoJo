@@ -2274,7 +2274,7 @@ function drawCinematicDirector() {
   push();
   const u = hudScale();
   noStroke();
-  if (timeStop.phase === 'intro') {
+  if (timeStop.phase === 'intro' && !window.JoJoCharacterDirector) {
     const t = constrain((gameMillis()-timeStop.phaseStart)/TIME_STOP_INTRO_MS,0,1);
     const bar = min(54*u,height*.09) * easeOutCubic(min(1,t*5));
     fill(3,2,12,224); rect(0,0,width,bar); rect(0,height-bar,width,bar);
