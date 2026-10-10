@@ -81,7 +81,9 @@
     c.fillStyle=accent;c.fillRect(0,bar-3,w*.4,3);
     c.font='bold '+Math.max(12,Math.min(20,w*.017))+'px Arial';
     c.textBaseline='middle';c.textAlign='left';c.fillStyle='#ffefd3';
-    c.fillText(title,Math.max(16,w*.037),bar*.52);
+    // Keep phase labels between the score HUD (left) and energy HUD (right).
+    c.textAlign='center';c.font='bold '+Math.max(11,Math.min(17,w*.014))+'px Arial';
+    c.fillText(title,w*.55,bar*.52);
     c.restore();
   }
   function stage(c,w,h,rgb,t,intensity=1) {
