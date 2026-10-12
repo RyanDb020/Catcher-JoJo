@@ -6,6 +6,7 @@ try{
  page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(()=>{window.__JOJO_QA_AUTOMATION__=true;window.__packPlayback=[];const play=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){window.__packPlayback.push(this.src);return play.call(this)}});
  await page.goto('http://127.0.0.1:'+server.address().port+'/index.html?test=1');await page.waitForFunction(()=>window.__JOJO_QA_STATE__?.gameStarted===false);await page.keyboard.press('Enter');
  await page.waitForFunction(()=>Object.keys(window.__JOJO_QA_STATE__.clips).length>=20&&['hand','tusk','cmoon','giorno','yes','resume'].every(k=>window.__JOJO_QA_STATE__.clips[k].duration>0));
+ await page.evaluate(()=>{powerUps=[];gameplayFrames=-100000});
  await page.keyboard.press('o');
  const keys=await page.locator('#pack-preview option').evaluateAll(opts=>opts.map(o=>o.value));assert.equal(keys.length,17);
  for(const key of keys){await page.selectOption('#pack-preview',key);await page.click('#pack-listen');await page.waitForFunction(()=>packPreview&&packPreview.currentTime>0);await page.click('#pack-stop');results.push({clip:key,previewPlayed:true});}
@@ -21,7 +22,7 @@ try{
   }
   await page.waitForFunction(()=>!window.__JOJO_QA_STATE__.packMove,{},{timeout:22000});results.push({move:kind,completed:true});if(kind==='cmoon'){await page.waitForFunction(()=>window.__JOJO_QA_STATE__.timeStop==='intro');await page.keyboard.press('Space');await page.waitForFunction(()=>window.__JOJO_QA_STATE__.timeStop==='idle',{},{timeout:25000});results.push({trigger:'queued blue Time Stop pickup',completed:true});}
  }
- await page.keyboard.press('g');await page.keyboard.press('f');await page.waitForFunction(()=>window.__JOJO_QA_STATE__.clips.crimson.currentTime>0);results.push({trigger:'King Crimson',played:true});
+ await page.waitForFunction(()=>window.__JOJO_QA_STATE__.timeStop==='idle',{},{timeout:25000});await page.keyboard.press('g');await page.keyboard.press('f');await page.waitForFunction(()=>window.__JOJO_QA_STATE__.clips.crimson.currentTime>0);results.push({trigger:'King Crimson',played:true});
  await page.waitForTimeout(4500);
  const triggers=[
   ['kira',()=>explodeBomb(width/2,height/2,null)],
