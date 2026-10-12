@@ -29,8 +29,8 @@ jobs:
 
   browser-3d:
     name: 3D Playwright smoke test (manual)
-    # Browser QA is opt-in until the CDN and headless WebGL environment are validated.
-    if: github.event_name == 'workflow_dispatch'
+    # Explicit opt-in with [3d-qa] on a commit, or run manually; not required for every Arcade change.
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[3d-qa]')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
