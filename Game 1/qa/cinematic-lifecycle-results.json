@@ -1,0 +1,14 @@
+{
+  "revision": "2fe18c1e3763a7282117ac91be85796c6970a7ae",
+  "results": [
+    {
+      "route": "all missing cinematic audio + skip",
+      "passed": true
+    },
+    {
+      "route": "14.2 s local ORA + synchronized pause/resume",
+      "passed": true,
+      "duration": 14200
+    }
+  ]
+}
