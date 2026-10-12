@@ -9,9 +9,10 @@ const root=path.join(__dirname,'..');
  let checks=0;
  const test=(title,fn)=>{fn();console.log('PASS: '+title);checks++};
  test('3D launch files exist without overwriting Arcade index',()=>{
-  for(const f of ['combat.html','combat.css','src/3d/main.mjs','src/3d/rules.mjs'])assert(fs.existsSync(path.join(root,f)),f);
+  for(const f of ['combat.html','combat.css','src/3d/main.mjs','src/3d/rules.mjs','src/3d/fallback.mjs'])assert(fs.existsSync(path.join(root,f)),f);
   assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/src\/sketch\.js/);
   assert.match(fs.readFileSync(path.join(root,'combat.html'),'utf8'),/src\/3d\/main\.mjs/);
+  assert.match(fs.readFileSync(path.join(root,'combat.html'),'utf8'),/src\/3d\/fallback\.mjs/);
  });
  test('mission has four ramping waves and a distinct final boss',()=>{
   assert.equal(MISSION_WAVES,5);
