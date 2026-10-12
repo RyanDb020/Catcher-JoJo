@@ -50,8 +50,7 @@ try{
   renderer.toneMappingExposure=1.55;
   UI.viewport.appendChild(renderer.domElement);
 }catch(error){
-  UI.intro.hidden=true;UI.fatal.hidden=false;
-  $('fatal-text').textContent='WebGL kon niet gestart worden: '+(error?.message||String(error));
+  // Let combat.html start the Canvas2D fallback when WebGL is unavailable.
   throw error;
 }
 scene.add(new THREE.HemisphereLight(0x9fc9ff,0x180e24,2.6));
