@@ -36,6 +36,8 @@ async function run(){
   await page.keyboard.up('w');
   const after=await page.evaluate(()=>window.__SHATTERED_QA__);
   if(!(after.player.z<before.player.z-.20))throw Error('WASD movement failed: '+JSON.stringify({before:before.player,after:after.player}));
+  const followOffset=Math.hypot(after.camera.focus.x-after.player.x,after.camera.focus.z-after.player.z);
+  if(!(followOffset<=1.2))throw Error('Combat camera lost the player while moving: '+JSON.stringify(after.camera));
   if(after.enemyState==='patrol')throw Error('Enemy never entered chase behavior');
   await page.mouse.click(700,370);
   await page.waitForTimeout(550);
