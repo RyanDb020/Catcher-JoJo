@@ -115,7 +115,7 @@ const root=path.join(__dirname,'..');
  });
  test('Canvas2D fallback keeps distinct character silhouettes and district landmarks',()=>{
   const fallback=fs.readFileSync(path.join(root,'src/3d/fallback.mjs'),'utf8');
-  for(const marker of ['function drawFigure','Articulated arms','Split legs','clock=world(0,-16.6)','const arch=world(-15,1)','const facade=world(15,-1)',"'#b784e2',.82,'stand'"])assert(fallback.includes(marker),marker);
+  for(const marker of ['function drawFigure','Articulated arms','Split legs','clock=world(0,-7.8)','const arch=world(-9.5,-2.5)','const facade=world(11,-2.5)',"'#b784e2',1.10,'stand'","Scuffed stone pavers"])assert(fallback.includes(marker),marker);
  });
  test('combat audio is local, preference-controlled and backed by credited Ogg files',()=>{
   const js=fs.readFileSync(path.join(root,'src/3d/audio.mjs'),'utf8');
