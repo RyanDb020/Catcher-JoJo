@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090718">
+  <title>Shattered Universe — 3D Combat Prototype 0.1</title>
+  <link rel="stylesheet" href="combat.css?v=01">
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
+  </script>
+  <script type="module" src="src/3d/main.mjs?v=01"></script>
+</head>
+<body>
+  <div id="viewport" aria-label="3D Stand combat arena"></div>
+  <div id="vignette" aria-hidden="true"></div>
+  <div class="topline">
+    <a class="back" href="./index.html"><span>←</span> ARCADE MODE</a>
+    <div class="brand"><small>JOJO CATCHER / EXPERIMENTAL</small><strong>SHATTERED <em>UNIVERSE</em></strong></div>
+    <span class="build">3D COMBAT <b>0.1</b></span>
+  </div>
+  <div id="hud" aria-live="off">
+    <section class="stats hud-panel">
+      <span class="eyebrow">PLAYER STATUS <span class="status-light"></span> <b id="level">LV 01</b></span>
+      <div class="meterline"><span>HEALTH</span><strong id="hp-num">100 / 100</strong></div>
+      <div class="meter health"><i id="hp-fill"></i></div>
+      <div class="meterline"><span>STAND ENERGY</span><strong id="energy-num">30 / 100</strong></div>
+      <div class="meter energy"><i id="energy-fill"></i></div>
+      <div class="meterline tiny"><span>XP PROGRESSION</span><span id="xp-num">0 / 80</span></div>
+      <div class="meter xp"><i id="xp-fill"></i></div>
+      <div class="stats-bottom"><span id="score-num">0 <small>KILLS</small></span><span id="wave-num">WAVE 01</span><span id="combo-num">COMBO ×0</span></div>
+    </section>
+    <section class="objective hud-panel">
+      <span class="eyebrow">CURRENT OBJECTIVE</span>
+      <strong>RUINED CLOCK DISTRICT</strong>
+      <p id="objective-text">Versla de Chrono Shade en beheers je Stand.</p>
+      <div id="enemy-hud"><div class="enemy-name"><span>CHRONO SHADE</span><b id="enemy-hp-num">100 / 100</b></div><div class="meter enemy"><i id="enemy-fill"></i></div></div>
+    </section>
+    <div id="reticle" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <div id="impact-label" aria-live="polite"></div>
+    <section class="abilities">
+      <div class="ability"><kbd>Q</kbd><div><b>ORA ORA</b><span>55 ENERGY</span></div><i id="ora-ready"></i></div>
+      <div class="ability"><kbd>T</kbd><div><b>ZA WARUDO</b><span>40 ENERGY</span></div><i id="stop-ready"></i></div>
+      <div class="ability primary"><kbd>LMB</kbd><div><b>STAND COMBO</b><span>3 HIT CHAIN</span></div></div>
+      <div class="ability"><kbd>RMB</kbd><div><b>HEAVY STRIKE</b><span>STAGGER</span></div></div>
+    </section>
+    <div class="hint">WASD BEWEGEN <span>·</span> MUIS CAMERA <span>·</span> SHIFT DASH <span>·</span> ESC PAUZE</div>
+    <div id="time-indicator" hidden>ZA WARUDO <b id="time-count">3.2</b></div>
+    <div id="fps">FPS --</div>
+  </div>
+  <div id="toast" role="status"></div>
+  <div id="intro" class="overlay">
+    <div class="intro-ornament" aria-hidden="true"></div>
+    <div class="intro-panel">
+      <div class="chapter">CHAPTER 01 <span>THE FIRST ENCOUNTER</span></div>
+      <h1>THE WORLD IS<br><em>FRACTURING.</em></h1>
+      <p>Je betreedt de Ruined Clock District. Roep Star Platinum op en versla de Chrono Shade. Elke succesvolle aanval bouwt Stand Energy op.</p>
+      <div class="intro-controls"><span><b>WASD</b> BEWEGEN</span><span><b>MOUSE</b> CAMERA</span><span><b>LMB</b> COMBO</span><span><b>Q / T</b> KRAchten</span></div>
+      <button id="start-btn" type="button">ENTER THE ARENA <span>→</span></button>
+      <div class="intro-note">Prototype 0.1 · één arena, één vijandtype, werkende combat · Desktop / toetsenbord + muis</div>
+      <div id="loading-note" aria-live="polite"></div>
+    </div>
+  </div>
+  <div id="pause" class="overlay" hidden>
+    <div class="intro-panel narrow"><div class="chapter">SYSTEM PAUSED</div><h2>TIME HAS<br><em>STOPPED.</em></h2>
+      <p>Klik op hervatten om de arena opnieuw te betreden. Je voortgang blijft behouden zolang deze pagina openstaat.</p>
+      <button id="resume-btn" type="button">HERVAT GEVECHT <span>→</span></button>
+      <a class="sub-link" href="./index.html">Terug naar Arcade Mode</a>
+    </div>
+  </div>
+  <div id="gameover" class="overlay" hidden>
+    <div class="intro-panel narrow"><div class="chapter">YOUR STORY IS NOT OVER</div><h2>TO BE<br><em>CONTINUED...</em></h2>
+      <p id="end-stats">Je bent gevallen in de Ruined Clock District.</p>
+      <button id="retry-btn" type="button">PROBEER OPNIEUW <span>↻</span></button>
+      <a class="sub-link" href="./index.html">Terug naar Arcade Mode</a>
+    </div>
+  </div>
+  <div id="fatal" class="overlay" hidden>
+    <div class="intro-panel narrow"><h2>3D MODE NIET GELADEN</h2><p id="fatal-text">Je browser heeft ondersteuning voor WebGL en toegang tot Three.js nodig.</p><a class="sub-link" href="./index.html">Terug naar de speelbare Arcade Mode →</a></div>
+  </div>
+</body>
+</html>
