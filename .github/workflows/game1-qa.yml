@@ -1,0 +1,55 @@
+name: Game 1 Regression QA
+on:
+  push:
+    paths:
+      - 'Game 1/**'
+      - '.github/workflows/game1-qa.yml'
+  pull_request:
+    paths:
+      - 'Game 1/**'
+      - '.github/workflows/game1-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node-regression:
+    name: Arcade + 3D Node tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Arcade and 3D regression suites
+        working-directory: 'Game 1'
+        run: npm test
+
+  browser-3d:
+    name: 3D Playwright smoke test (manual)
+    # Browser QA is opt-in until the CDN and headless WebGL environment are validated.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test dependencies
+        working-directory: 'Game 1'
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Exercise playable 3D Combat Mode
+        working-directory: 'Game 1'
+        run: npm run qa:3d
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shattered-universe-3d-qa
+          path: Game 1/tests/artifacts/
+          if-no-files-found: ignore
