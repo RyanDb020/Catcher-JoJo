@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "scripts": {
     "test": "node tests/test_polish.cjs && node tests/test_cinematic_directors.cjs && node tests/test_3d.cjs",
-    "qa:browser": "node tests/live_qa.cjs"
+    "qa:browser": "node tests/live_qa.cjs",
+    "qa:3d": "node tests/test_3d_browser.cjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"
