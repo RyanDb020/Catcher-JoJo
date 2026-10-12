@@ -291,7 +291,7 @@ function preload() {
     () => { timeStopSoundLoaded = false; });
   for (const key of ['catch', 'perfect', 'power', 'punch', 'impact', 'rewind', 'rebirth', 'roller', 'miss']) {
     soundEffects[key] = { sound: null, ready: false };
-    soundEffects[key].sound = loadSound('assets/sfx-' + key + '.mp3?v=foley-1.5',
+    soundEffects[key].sound = loadSound('assets/sfx-' + key + '.mp3?v=foley-1.5.1',
       () => { soundEffects[key].ready = true; },
       () => { soundEffects[key].ready = false; });
   }

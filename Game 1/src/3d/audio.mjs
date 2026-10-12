@@ -56,7 +56,7 @@ export function createCombatAudio(){
         const paths=Array.isArray(file)?file.map(stem=>'../../assets/foley/'+stem+'.ogg'):['../../assets/combat-audio/'+file];
         const decoded=await Promise.all(paths.map(async path=>{
           try{
-            const response=await fetch(new URL(path,import.meta.url));
+            const response=await fetch(new URL(path+'?v=foley-1.5.1',import.meta.url));
             if(!response.ok)throw Error('Audio asset '+path+' returned '+response.status);
             return await context.decodeAudioData(await response.arrayBuffer());
           }catch(error){console.warn('Combat audio asset unavailable:',path,error);return null;}

@@ -28,3 +28,7 @@ The following existing Arcade files now contain converted recordings from those 
 Existing generated ambience, music, summon, Chrono Echo and time cues remain documented in `AUDIO_CREDITS.md`. They are not recordings and have not been replaced in this pass. Existing user-supplied JoJo voices/music were retained; their redistribution rights are not established by this document. This pass adds no anime rips or MyInstants files.
 
 Technical decoding/playback checks do not establish perceived sound quality. A listening review remains required for the complete mix and cinematic synchronization.
+
+## Recorded time-resume cue
+
+`assets/combat-audio/time-resume.ogg` and `assets/sfx-rebirth.mp3` now contain a mix of Kenney's `impactBell_heavy_000.ogg` (gain 0.45), `impactMetal_medium_000.ogg` (gain 0.65) and reversed `cloth2.ogg` (gain 0.25). All source clips are CC0 from the packs credited above. FFmpeg combines them without oscillator synthesis, limits the peak to 0.8 and fades the final 0.4 seconds. The stereo 48 kHz source is encoded as Opus/Ogg and MP3. This is used for arena Time Resume / anchor release / victory and the Arcade resume/rebirth event. It adds no anime voice.

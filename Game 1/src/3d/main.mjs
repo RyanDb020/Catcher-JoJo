@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createCombatAudio} from './audio.mjs?v=1.5.0';
+import {createCombatAudio} from './audio.mjs?v=1.5.1';
 import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone} from './rules.mjs?v=1.4.0';
 
 // Shattered Universe 1.0: a complete five-wave mission, separate from the Arcade game.
@@ -499,6 +499,7 @@ function reset(){
   state.playerPos.set(0,0,6);state.facing.set(0,0,-1);
   state.yaw=0;state.pitch=.22;
   state.moveVelocity.set(0,0,0);keys.clear();
+  state.lastStrike={damage:12,heavy:false};
   state.echoSlow=0;state.chronoEcho=null;echoActor.visible=false;state.hitFlash=0;
   state.anchorPulseTimer=3.8;if(state.anchorWave){scene.remove(state.anchorWave.mesh);state.anchorWave.mesh.geometry.dispose();state.anchorWave.mesh.material.dispose();}state.anchorWave=null;state.anchorWaveIndex=0;
   timeAnchors.forEach(anchor=>{anchor.active=true;anchor.crystal.visible=true;anchor.halo.visible=true;anchor.rune.material=M.lavender;anchor.root.scale.setScalar(1)});

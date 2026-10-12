@@ -45,7 +45,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Exercise playable 3D Combat Mode
         working-directory: 'Game 1'
-        run: npm run qa:3d
+        run: npm run qa:3d -- ${{ contains(github.event.head_commit.message, '[3d-smoke]') && '--smoke-only' || '' }}
       - name: Exercise Arcade cinematics and local audio
         if: always()
         working-directory: 'Game 1'

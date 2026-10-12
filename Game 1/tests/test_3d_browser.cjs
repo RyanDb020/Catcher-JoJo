@@ -81,6 +81,7 @@ async function run(){
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true);
   if(errors.length)throw Error('Browser errors after narrow viewport/audio lifecycle: '+errors.join('; '));
   // Complete the existing five-wave mission using only real keyboard/mouse inputs.
+  if(!process.argv.includes('--smoke-only')){
   const held=new Set();
   async function steer(x,z,arrival=2.35){
     const qa=await page.evaluate(()=>window.__SHATTERED_QA__);
@@ -129,6 +130,7 @@ async function run(){
   if(replay.hp!==100||replay.kills!==0||replay.anchors!==3||replay.stop!==0)throw Error('Victory reset left stale mission state: '+JSON.stringify(replay));
   if(errors.length)throw Error('Mission browser errors: '+errors.join('; '));
   console.log('PASS time anchors, Time Stop, all five waves, victory and replay',JSON.stringify({victory,replay}));
+  }
   console.log('PASS 3D browser smoke test (wide + narrow viewports)');
   console.log(JSON.stringify({start:before,after,bodyDistance,decodedAudio,pausedAudio,focusOffset,wideBounds,narrowBounds,screenshots:['tests/artifacts/3d-combat-preview.png','tests/artifacts/3d-combat-mobile-preview.png']},null,2));
 

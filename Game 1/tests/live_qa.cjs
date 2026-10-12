@@ -193,7 +193,7 @@ async function waitState(page, predicate, label, timeout = 12000) {
       };
     });
     const report = {
-      testedAt:new Date().toISOString(), source:'local Playwright Chromium', commitBase:'c3b20b5',
+      testedAt:new Date().toISOString(), source:'local Playwright Chromium', commitBase: process.env.GITHUB_SHA || null,
       longSessionMs, longSessionState:longState,
       metrics, screenshots, audioResponses, failures
     };
