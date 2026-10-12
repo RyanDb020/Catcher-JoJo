@@ -1811,8 +1811,8 @@ function drawUniverseReset() {
       x:lerp(ball.x,q.x,k),y:lerp(ball.y,q.y,k)}})};
    drawUniverseSnapshot(snap,-1,t,h[max(0,i-9)]);
   }else drawUniverseSnapshot(null,-1,t);
-  drawRewindOverlay(t);
   if(window.JoJoCharacterDirector)window.JoJoCharacterDirector.heavenEcho(drawingContext,width,height,t);
+  drawRewindOverlay(t);
  }else if(phase==='accelerate'){
   drawUniverseSnapshot(u.source[0]||null,1,t);
   drawAcceleratingUniverse(t);

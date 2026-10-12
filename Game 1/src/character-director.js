@@ -435,7 +435,7 @@
         line(c,[[x-3,y],[x+3,y]],'rgba(218,248,255,.6)',1);
         line(c,[[x,y-3],[x,y+3]],'rgba(218,248,255,.4)',1);
       }
-      c.save();c.globalAlpha=.5;figure(c,w,h,cc=>worldFigure(cc,1,true),{zoom:.47,x:.80,y:.58});c.restore();
+      c.save();figure(c,w,h,cc=>worldFigure(cc,1,true),{zoom:.47,x:.80,y:.58});c.restore();
       border(c,w,h,'ZA WARUDO  /  TIME STOPPED','ALLE BALLEN STAAN STIL','#a7e4ed');
       c.restore();return;
     }
