@@ -1,6 +1,6 @@
 import {createUpgradeMenu} from './upgrades.mjs?v=1.6.2';
 import * as THREE from 'three';
-import {createCombatAudio} from './audio.mjs?v=1.5.1';
+import {createCombatAudio} from './audio.mjs?v=jojo-6.0';
 import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone, freshUpgrades, enemyThreatens} from './rules.mjs?v=1.6.2';
 
 // Shattered Universe 1.0: a complete five-wave mission, separate from the Arcade game.

@@ -16,6 +16,7 @@ Object.assign(FILES,{
   'guard':['impactMetal_medium_000'],
   'enemy-telegraph':['metalLatch']
 });
+Object.assign(FILES,{'time-stop':'jojo/starstop.mp3','time-resume':'jojo/resume.mp3','chrono-echo':'jojo/teleport.mp3'});
 const defaults={master:.75,music:.24,ambience:.35,effects:.68,muted:false};
 export function createCombatAudio(){
   let context=null,buffers=new Map(),ready=null,active=false,musicSource=null,ambienceSource=null;
@@ -53,7 +54,7 @@ export function createCombatAudio(){
     ready=(async()=>{
       const entries=Object.entries(FILES);
       await Promise.all(entries.map(async([name,file])=>{
-        const paths=Array.isArray(file)?file.map(stem=>'../../assets/foley/'+stem+'.ogg'):['../../assets/combat-audio/'+file];
+        const paths=Array.isArray(file)?file.map(stem=>'../../assets/foley/'+stem+'.ogg'):[file.startsWith('jojo/')?'../../assets/'+file:'../../assets/combat-audio/'+file];
         const decoded=await Promise.all(paths.map(async path=>{
           try{
             const response=await fetch(new URL(path+'?v=foley-1.5.1',import.meta.url));
@@ -86,6 +87,7 @@ export function createCombatAudio(){
   function play(name,volume=1,pan=0){
     if(!active||prefs.muted||!ensure())return false;
     const emit=()=>{
+      if(name==='time-resume')for(const [source,event] of voices){if(event==='time-stop'){try{source.stop()}catch{}}}
       const bank=buffers.get(name);if(!bank||!active||prefs.muted)return false;
       const variant=variants.get(name)||0,buffer=bank[variant%bank.length];
       const now=context.currentTime;

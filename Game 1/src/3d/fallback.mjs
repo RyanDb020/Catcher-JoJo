@@ -1,6 +1,6 @@
 import {createUpgradeMenu} from './upgrades.mjs?v=1.6.2';
 import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone, freshUpgrades} from './rules.mjs?v=1.6.2';
-import {createCombatAudio} from './audio.mjs?v=1.5.1';
+import {createCombatAudio} from './audio.mjs?v=jojo-6.0';
 const audio=createCombatAudio();
 
 // Playable Canvas2D backup for browsers without a working WebGL context.

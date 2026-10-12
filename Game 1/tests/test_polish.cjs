@@ -228,3 +228,26 @@ test('all cinematic defaults use substantial local recordings',()=>{
  for(const name of ['reveal','rewind','ora-track','time-activate','time-freeze','time-resume','acceleration','collapse','genesis','finisher','defeat','district-bed'])assert(fs.statSync(path.join(root,'assets/cinematic',name+'.mp3')).size>1000,name);
  for(const name of ['giorno-theme','made-in-heaven','ora-ora','time-accelerate','za-warudo-toki-wo-tomare_WJVdsYt'])assert(code.includes('assets/'+name+'.mp3')); 
 });
+test('The Hand erases only its nearby forward zone and spends energy once',()=>{
+ run('resetGame();gameStarted=true;standEnergy=100;balls[0].x=catcherX+catcherWidth/2;balls[0].y=catcherY-90;balls[1].x=catcherX-240;balls[1].y=catcherY-90;startPackMove("hand")');
+ assert.equal(run('standEnergy'),65);assert.equal(run('startPackMove("tusk")'),false);
+ const far=run('balls[1].y');run('gameClock=packMove.start+400;updatePackMove()');assert(run('balls[0].y')<0);assert.equal(run('balls[1].y'),far);
+ run('updatePackMove()');assert.equal(run('standEnergy'),65);
+});
+test('Tusk follows a target and resolves its catch exactly once',()=>{
+ run('resetGame();gameStarted=true;standEnergy=100;balls.forEach(b=>b.y=-300);balls[0].x=catcherX+catcherWidth/2;balls[0].y=catcherY-50;startPackMove("tusk");updatePackMove()');
+ assert.equal(run('standEnergy'),75);assert(run('balls[0].targeted'));const before=run('score');for(let i=0;i<20;i++)run('updatePackMove()');assert(run('score')>before);assert(!run('balls[0].targeted'));
+ const after=run('score');run('updatePackMove()');assert.equal(run('score'),after);
+});
+test('C-Moon reverses balls but full time freeze remains motionless',()=>{
+ run('resetGame();gameStarted=true;standEnergy=100;balls[0].y=200;startPackMove("cmoon")');const y=run('balls[0].y');run('drawBalls(1)');assert(run('balls[0].y')<y);const frozen=run('balls[0].y');run('drawBalls(0)');assert.equal(run('balls[0].y'),frozen);
+ run('gameClock=packMove.end+1;updatePackMove()');assert.equal(run('packMove.kind'),null);const normal=run('balls[0].y');run('drawBalls(1)');assert(run('balls[0].y')>normal);
+});
+test('Giorno barrage continues for long audio and reset clears every added move',()=>{
+ run('resetGame();gameStarted=true;standEnergy=100;jojoVoiceClips.giorno.duration=14.3;startPackMove("giorno");gameClock=packMove.start+9000;updatePackMove()');assert.equal(run('packMove.kind'),'giorno');assert.equal(run('standEnergy'),25);
+ run('resetGame()');assert.equal(run('packMove.kind'),null);assert.equal(run('Object.keys(packCooldowns).length'),0);
+});
+test('new moves cannot activate in pause, game over or a cinematic',()=>{
+ run('resetGame();gameStarted=true;standEnergy=100;optionsVisible=true');assert.equal(run('startPackMove("hand")'),false);run('optionsVisible=false;gameOver=true');assert.equal(run('startPackMove("hand")'),false);run('gameOver=false;timeStop.phase="freeze"');assert.equal(run('startPackMove("cmoon")'),false);run('resetGame()');
+});
+test('all 17 personal pack assets decode-sized and local',()=>{const records=JSON.parse(fs.readFileSync(path.join(__dirname,'../JOJO_AUDIO_PACK.json')));assert.equal(records.length,17);for(const item of records){assert(fs.statSync(path.join(__dirname,'..',item.path)).size>1000,item.key);assert(item.duration>0);assert(code.includes("assets/jojo/"+item.key+".mp3"),item.key);}});

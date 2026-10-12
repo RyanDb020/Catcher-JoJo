@@ -56,6 +56,9 @@ jobs:
         if: always() && !contains(github.event.head_commit.message, '[visual-only]')
         working-directory: 'Game 1'
         run: node tests/test_cinematic_browser.cjs
+      - name: Verify complete JoJo audio pack in browser
+        working-directory: 'Game 1'
+        run: node tests/test_jojo_pack_browser.cjs
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4

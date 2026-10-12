@@ -37,7 +37,7 @@ function publishQaState() {
         !(location.hostname === 'localhost' || location.hostname === '127.0.0.1') ||
         typeof window.__JOJO_QA_AUTOMATION__ !== 'boolean') return;
     window.__JOJO_QA_STATE__ = {
-      gameStarted, gameOver, score, lives, timeStop: timeStop.phase,
+      gameStarted, gameOver, score, lives, standEnergy, packMove:packMove.kind, timeStop: timeStop.phase,
       roadRoller: roadRoller.active, ora: standRush.active,
       universeReset: universeReset.active,
       universePhase: universeReset.active ? universeReset.phase : 'idle', gameMillis: gameClock,
@@ -111,6 +111,7 @@ function updateRecords() {
 }
 function openOptions(value) {
 
+  if(!value)stopPackPreview();
   optionsVisible = value;
   const panel = document.getElementById('options-panel');
   if (panel) panel.hidden = !value;
@@ -255,7 +256,9 @@ let universeReset = { active: false, started: 0, source: [], committed: false,
 const JOJO_CLIP_URLS = {
   pucci: 'assets/made-in-heaven.mp3?v=personal-jojo-1',
   accelerate: 'assets/time-accelerate.mp3?v=personal-jojo-1',
-  ora: 'assets/ora-ora.mp3?v=personal-jojo-1'
+  ora: 'assets/ora-ora.mp3?v=personal-jojo-1',
+  cmoon: 'assets/jojo/cmoon.mp3?v=pack-1',  wryyy: 'assets/jojo/wryyy.mp3?v=pack-1',  dio: 'assets/jojo/dio.mp3?v=pack-1',  run: 'assets/jojo/run.mp3?v=pack-1',  giorno: 'assets/jojo/giorno.mp3?v=pack-1',  crimson: 'assets/jojo/crimson.mp3?v=pack-1',  muda: 'assets/jojo/muda.mp3?v=pack-1',  starstop: 'assets/jojo/starstop.mp3?v=pack-1',  kira: 'assets/jojo/kira.mp3?v=pack-1',  hand: 'assets/jojo/hand.mp3?v=pack-1',  freezefx: 'assets/jojo/freezefx.mp3?v=pack-1',  teleport: 'assets/jojo/teleport.mp3?v=pack-1',  tusk: 'assets/jojo/tusk.mp3?v=pack-1',  yes: 'assets/jojo/yes.mp3?v=pack-1',  kiratheme: 'assets/jojo/kiratheme.mp3?v=pack-1',  overheaven: 'assets/jojo/overheaven.mp3?v=pack-1',  resume: 'assets/jojo/resume.mp3?v=pack-1'
+
 };
 
 let jojoVoiceClips = {};
@@ -366,6 +369,7 @@ function setup() {
   prepareJoJoVoiceClips();
   initializeCinematicAudio();
   initializeTimeResumeAudio();
+  initializeJoJoPack();
   const closeBtn = document.getElementById("close-options");
   if (closeBtn) closeBtn.addEventListener("click", () => openOptions(false));
   document.querySelectorAll('[data-voice]').forEach(input => {
@@ -421,6 +425,8 @@ function keyPressed() {
     return false;
   }
   if (universeReset.active) return false;
+  const moveKeys={h:'hand',j:'tusk',c:'cmoon',m:'muda',n:'giorno'};
+  if(moveKeys[String(key).toLowerCase()]){startPackMove(moveKeys[String(key).toLowerCase()]);return false;}
   if ((key === 't' || key === 'T') && gameStarted && !gameOver) startTimeStop(catcherX + catcherWidth / 2, catcherY);
   if ((key === 'q' || key === 'Q') && gameStarted && !gameOver) startStandRush();
   if ((key === 'e' || key === 'E') && gameStarted && !gameOver) startRoadRoller();
@@ -436,6 +442,7 @@ function resetGame() {
   for(const item of Object.values(soundEffects))if(item?.sound&&item.ready)try{item.sound.stop();}catch(_){}
   if(gameOverSoundLoaded)gameOverSound.stop();
   cancelDirectorVoice();stopJoJoVoices();stopCinematicEffects();pausedHtmlAudio=[];
+  packMove={kind:null,start:0,end:0,shots:[]};packCooldowns={};packVoiceUntil=0;
   score = 0;
   lives = START_LIVES;
   combo = 0;
@@ -682,8 +689,9 @@ function startTimeStop(x, y) {
     if (timeStop.phase === 'slow') slowPowerUpEnd += TIME_STOP_EXTRA_MS;
     return;
   }
+  if(packMove.kind)return;
   stopJoJoVoices();
-  timeStop.introDuration=jojoVoiceObjectUrls.stop?cinematicDuration('stop',TIME_STOP_INTRO_MS):TIME_STOP_INTRO_MS;
+  timeStop.introDuration=(jojoVoiceObjectUrls.stop||packTimeVoice!=='classic')?cinematicDuration(packTimeVoice==='classic'?'stop':packTimeVoice,TIME_STOP_INTRO_MS):TIME_STOP_INTRO_MS;
   timeStop.releaseDuration=TIME_STOP_RELEASE_MS;
   timeStop.phase = "intro";
   timeStop.phaseStart = gameMillis();
@@ -693,6 +701,7 @@ function startTimeStop(x, y) {
   timeStop.freezePlayed = false;
   timeStop.particles = [];
   slowPowerUpEnd = 0;
+  packTeleportX=catcherX;
 
   // Deeltjes van de explosie worden eenmaal aangemaakt
   for (let i = 0; i < 80; i++) {
@@ -707,6 +716,7 @@ function startTimeStop(x, y) {
 
   // Het originele meegestuurde spraakfragment start tegelijk met de animatie
   if(jojoVoiceObjectUrls.stop){playJoJoVoice('stop');}
+  else if(packTimeVoice!=='classic'){playJoJoVoice(packTimeVoice);}
   else if (timeStopSoundLoaded) {
     timeStopSound.stop();
     timeStopSound.setVolume(0.85 * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.voices);
@@ -720,7 +730,7 @@ function startTimeStop(x, y) {
 function updateTimeStop() {
   if (timeStop.phase === "idle") return;
   const elapsed = gameMillis() - timeStop.phaseStart;
-  if(timeStop.phase==='intro'&&jojoVoiceObjectUrls.stop)timeStop.introDuration=Math.max(stopIntroDuration(),cinematicDuration('stop',TIME_STOP_INTRO_MS));
+  if(timeStop.phase==='intro'&&(jojoVoiceObjectUrls.stop||packTimeVoice!=='classic'))timeStop.introDuration=Math.max(stopIntroDuration(),cinematicDuration(jojoVoiceObjectUrls.stop?'stop':packTimeVoice,TIME_STOP_INTRO_MS));
   if(timeStop.phase==='release'&&resumeAudio&&Number.isFinite(resumeAudio.duration))timeStop.releaseDuration=Math.max(stopReleaseDuration(),resumeAudio.duration*1000);
 
   if (timeStop.phase === "intro") {
@@ -771,6 +781,7 @@ function getTimeSpeed() {
 // Extra geluidseffecten zonder aparte mp3's: synthese via de browser
 function playTimeSound(kind) {
   const sfx = {charge: 'rewind', impact: 'impact', freeze: 'time-freeze', resume: 'time-resume'};
+  if(kind==='freeze'){playPackEffect('freezefx',.4);return;}
   playCue(sfx[kind] || 'power', 0.85);
 }
 
@@ -1016,7 +1027,8 @@ function drawBalls(speedFactor) {
   for (let i = 0; i < balls.length; i++) {
     const ball = balls[i];
     const previousY = ball.y;
-    ball.y += ball.speed * speedFactor * frameStep * getDifficultyScale();
+    ball.y += ball.speed * speedFactor * frameStep * getDifficultyScale() * (packMove.kind==='cmoon'?-0.72:1);
+    if(packMove.kind==='cmoon'&&ball.y<-BALL_SIZE)ball.y=-BALL_SIZE;
     drawOrb(ball.x, ball.y, BALL_SIZE, ball.kind === 'bomb' ? 'bomb' : ball.gold ? 'gold' : 'normal');
 
     // Niet scoren of verliezen in de filmische intro
@@ -1027,7 +1039,7 @@ function drawBalls(speedFactor) {
       respawnBall(ball);
     } else if (ball.y > height) {
       if (!ball.gold && !kingCrimson.active && !qaSuppressLifeLoss()) {
-        lives--;
+        lives--;if(lives===1)playCharacterCue('run',.65);
         lifePulseEnd = gameMillis() + 650;
         combo = 0;
         playCue("miss");
@@ -1099,7 +1111,7 @@ function drawHUD() {
   noStroke(); textAlign(RIGHT, CENTER); fill('#d8baff'); textSize(13 * u);
   text(footer, width - m, height - 24 * u);
   fill('#a8a1c0'); textSize(10 * u);
-  if (width > 920) text('← →  MOVE    Q ORA    E ROLLER    F CRIMSON    O SETTINGS    R RESET', width - m, height - 42 * u);
+  if (width > 920) text('← → MOVE · Q ORA · E ROLLER · F CRIMSON · H/J/C/M/N STANDS · O SETTINGS', width - m, height - 42 * u);
   if (gameMillis() < waveNoticeUntil) {
     const t = min(1, (waveNoticeUntil - gameMillis()) / 600);
     textAlign(CENTER); textSize(25 * u); fill(255, 218, 127, t * 255);
@@ -1125,7 +1137,7 @@ function drawStartScreen() {
   drawingContext.shadowBlur = 0;
   fill('#edbdff'); textSize(31*u); text('STAND OVERDRIVE', x, y - 49*u);
   fill('#d3c4e5'); textSize(14*u);
-  text('← → VERPLAATSEN    ·    Q ORA    ·    E ROAD ROLLER    ·    F KING CRIMSON', x, y + 15*u);
+  text('← → MOVE · Q ORA · E ROLLER · F CRIMSON · O: ALLE STAND-CONTROLS', x, y + 15*u);
   text('S POWER-UP = ZA WARUDO    ·    R = MADE IN HEAVEN', x, y + 43*u);
   text('CATCH · BUILD COMBOS · UNLEASH YOUR STAND', x, y + 73*u);
   const pulse = .84 + .16 * sin(gameMillis()*.006);
@@ -1183,6 +1195,7 @@ function drawGameOver() {
 function beginGameOver() {
   if(gameOver)return;
   gameOver=true;gameOverAt=gameMillis();gameOverBannerPlayed=false;
+  if(packMove.kind){for(const nail of packMove.shots)nail.target.targeted=false;packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;}
   const now=gameMillis();let revealAt=now+850;
   if(standRush.active) revealAt=max(revealAt,standRush.start+ORA_RUSH_DURATION_MS+420);
   for(const punch of standPunches) revealAt=max(revealAt,punch.start+(punch.duration||180)+470);
@@ -1224,7 +1237,8 @@ function draw() {
   if (universeReset.active) { drawUniverseReset(); return; }
   if (gameOver) { drawGameOverWorld(); return; }
   if (gameStarted && !gameOver) updateTimeStop();
-  if(queuedReset&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active){queuedReset=false;startUniverseReset();}
+  if(gameStarted&&!gameOver)updatePackMove();
+  if(queuedReset&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active&&!packMove.kind){queuedReset=false;startUniverseReset();}
   const freezePhysics = timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
   if (freezePhysics) {
     const hold = min(50, max(0, deltaTime));
@@ -1271,6 +1285,7 @@ function draw() {
   drawCatcherGhostTrail();
   drawBucket(catcherX, catcherY);
   drawStandPunches();
+  drawPackMove();
   pop();
   drawTimeStopEffects();
   drawTimeStopRebuild();
@@ -1336,6 +1351,7 @@ function scoreBall(ball, fromStand) {
     addJoJoPopup('YARE YARE DAZE!', width / 2, height * 0.29, '#f1b7ff', 1050, 35);
     burstJoJoParticles(ball.x, max(50, ball.y), '#be90ff', 19);
     playStandSound('combo');
+    if(combo%20===0)playCharacterCue('yes',.65);
   }
   if (combo > 0 && combo % 15 === 0) startAwakening();
   if (ball.gold) {
@@ -1348,7 +1364,7 @@ function scoreBall(ball, fromStand) {
 function canUseJoJoAttack(cost) {
   return gameStarted && !gameOver && standEnergy >= cost &&
          !standRush.active && !roadRoller.active && !kingCrimson.active &&
-         !universeReset.active && timeStop.phase !== 'intro';
+         !universeReset.active && !packMove.kind && timeStop.phase !== 'intro';
 }
 
 function notEnoughStandEnergy(cost) {
@@ -1420,7 +1436,7 @@ function resolvePunches() {
     }
     jojoShake = max(jojoShake, 5);
     burstJoJoParticles(x, y, '#e6a8ff', 17);
-    addJoJoPopup(standRush.punches % 3 === 0 ? 'ORA!' : 'ドドド', x, y, '#f4b1ff', 480, 27);
+    addJoJoPopup(packMove.kind==='muda'||packMove.kind==='giorno'?'MUDA!':standRush.punches % 3 === 0 ? 'ORA!' : 'ドドド', x, y, '#f4b1ff', 480, 27);
     playStandSound('punch');
   }
   standPunches = standPunches.filter(p => now - p.start < (p.duration||180)+470);
@@ -1464,7 +1480,7 @@ function updateJoJoAttacks() {
   if (roadRoller.active) {
     const elapsed = now - roadRoller.start;
     if (elapsed >= ROAD_ROLLER_LAND_MS && !roadRoller.landed) {
-      roadRoller.landed = true;
+      roadRoller.landed = true;playCharacterCue('wryyy',.75,true);
       slamRoadRoller();
     }
     if (elapsed >= ROAD_ROLLER_DURATION_MS) roadRoller.active = false;
@@ -1804,7 +1820,7 @@ function recordUniverseFrame() {
 // herhaald R genegeerd zodat er niet meerdere resets tegelijk starten.
 function startUniverseReset() {
  if(universeReset.active)return;
- if(standRush.active || timeStop.phase!=='idle' || roadRoller.active){queuedReset=true;return;}
+ if(standRush.active || timeStop.phase!=='idle' || roadRoller.active || packMove.kind){queuedReset=true;return;}
  if(gameOverSoundLoaded)gameOverSound.stop();stopCinematicEffects();
  gameStarted=true;
  if(!universeHistory.length)recordUniverseFrame();
@@ -2194,7 +2210,7 @@ function startKingCrimson() {
   standEnergy -= KING_CRIMSON_COST;
   kingCrimson = { active: true, start: gameMillis(), used: true };
   addJoJoPopup('KING CRIMSON!', width / 2, height * 0.33, '#ff89ae', 1300, 44);
-  playCue('rewind');
+  playCharacterCue('crimson',.75);
 }
 function drawKingCrimsonEffects() {
   if (!kingCrimson.active) return;
@@ -2228,6 +2244,7 @@ function explodeBomb(x, y, source) {
   if (hits) addJoJoPopup('CHAIN REACTION +' + hits * 2, x, y - 32, '#ffb2d4', 1000, 25);
   else addJoJoPopup('KILLER QUEEN!', x, y - 32, '#ffb2d4', 800, 23);
   playCue('impact');
+  playCharacterCue('kira',.7);
   updateRecords();
 }
 function drawBackdropDetails() {
@@ -2294,7 +2311,7 @@ function synthFallback(name, intensity) {
   } catch (_) { return false; }
 }
 function updateMusicVolume(force = false) {
-  const cinematic = universeReset.active || standRush.active || timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
+  const cinematic = !!packMove.kind || gameMillis()<packVoiceUntil || universeReset.active || standRush.active || timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
   musicTarget = cinematic ? .045 : timeStop.phase === 'slow' ? .18 : .55;
   if (optionsVisible) musicTarget *= .25;
   const intended = musicTarget * OVERHAUL_AUDIO.music * OVERHAUL_AUDIO.master;
@@ -2479,9 +2496,8 @@ function drawOrrery(t,collapse){if(!visualAtlas.clock)return;const c=drawingCont
 const AUDIO_CLIP_MS = { pucci: 8664, accelerate: 8881.633, ora: 8359.184 };
 function initializeTimeResumeAudio() {
  if(typeof Audio==='undefined')return;
- // The uploaded commercial voice clip is deliberately not auto-published.
- // Selecting it in Options enables private local playback without a 404 request.
- resumeAudio=null;
+ // Default personal-use upload; local selector may replace it.
+ resumeAudio=new Audio('assets/jojo/resume.mp3?v=pack-1');resumeAudio.preload='auto';
  const control=document.querySelector('[data-voice="resume"]');
  if(control)control.addEventListener('change',()=>{
   const file=control.files&&control.files[0];
@@ -2665,7 +2681,7 @@ function drawOraRebuild(){
 function drawTimeStopRebuild(){
  if(window.JoJoCharacterDirector && timeStop.phase!=='idle'){
   window.JoJoCharacterDirector.world(drawingContext,width,height,timeStop.phase,
-    constrain((gameMillis()-timeStop.phaseStart)/(timeStop.phase==='intro'?stopIntroDuration():timeStop.phase==='freeze'?TIME_STOP_FREEZE_MS:timeStop.phase==='release'?stopReleaseDuration():1000),0,1),{remaining:timeStop.phase==='freeze'?max(0,(TIME_STOP_FREEZE_MS-(gameMillis()-timeStop.phaseStart))/1000):max(0,(slowPowerUpEnd-gameMillis())/1000)});
+    constrain((gameMillis()-timeStop.phaseStart)/(timeStop.phase==='intro'?stopIntroDuration():timeStop.phase==='freeze'?TIME_STOP_FREEZE_MS:timeStop.phase==='release'?stopReleaseDuration():1000),0,1),{character:packTimeVoice==='starstop'?'jotaro':'dio',remaining:timeStop.phase==='freeze'?max(0,(TIME_STOP_FREEZE_MS-(gameMillis()-timeStop.phaseStart))/1000):max(0,(slowPowerUpEnd-gameMillis())/1000)});
   return;
  }
  if(timeStop.phase==='idle'||timeStop.phase==='slow')return;
@@ -2699,4 +2715,86 @@ function drawTimeStopRebuild(){
   ellipse(width/2,height/2,r*2,r*1.5);
  }
  pop();
+}
+
+// Personal JoJo pack: one voice channel, separate short effects, no queued stale playback.
+let packTimeVoice='classic',packVoiceUntil=0,packPreview=null,packTeleportX=0;
+let packMove={kind:null,start:0,end:0,shots:[]},packCooldowns={};
+function stopPackPreview(){if(packPreview){try{packPreview.pause();packPreview.currentTime=0;}catch(_){}packPreview=null;}}
+function playPackEffect(name,volume=.5){
+ const a=jojoVoiceClips[name];if(!a||optionsVisible||gameOver)return false;
+ try{a.pause();a.currentTime=0;a.volume=Math.min(1,OVERHAUL_AUDIO.master*OVERHAUL_AUDIO.effects*volume);const p=a.play();if(p?.catch)p.catch(()=>{});return true;}catch(_){return false;}
+}
+function playCharacterCue(name,volume=.75,force=false){
+ if(optionsVisible||gameOver||universeReset.active||directorVoice||(!force&&(timeStop.phase!=='idle'||gameMillis()<packVoiceUntil)))return false;
+ if(!jojoVoiceClips[name])return false;
+ playJoJoVoice(name);jojoVoiceClips[name].volume=Math.min(1,OVERHAUL_AUDIO.master*OVERHAUL_AUDIO.voices*volume);
+ packVoiceUntil=gameMillis()+cinematicDuration(name,1000);return true;
+}
+function initializeJoJoPack(){
+ try{const v=localStorage.getItem('jojo.pack.time');if(['classic','starstop','overheaven','dio'].includes(v))packTimeVoice=v;}catch(_){}
+ const voice=document.getElementById('pack-time-voice');if(voice){voice.value=packTimeVoice;voice.addEventListener('change',()=>{packTimeVoice=voice.value;try{localStorage.setItem('jojo.pack.time',packTimeVoice)}catch(_){}});}
+ const music=document.getElementById('pack-music');let selection='giorno';try{selection=localStorage.getItem('jojo.pack.music')||selection;}catch(_){}
+ function setMusic(value){if(!giornoTheme)return;giornoTheme.pause();giornoTheme.src=value==='kiratheme'?'assets/jojo/kiratheme.mp3?v=pack-1':'assets/giorno-theme.mp3?v=personal-jojo-1';giornoTheme.load?.();try{localStorage.setItem('jojo.pack.music',value)}catch(_){}}
+ if(music){music.value=selection==='kiratheme'?'kiratheme':'giorno';if(selection==='kiratheme')setMusic(selection);music.addEventListener('change',()=>setMusic(music.value));}
+ document.getElementById('pack-listen')?.addEventListener('click',()=>{
+  stopPackPreview();const name=document.getElementById('pack-preview')?.value,a=jojoVoiceClips[name];if(!a)return;
+  packPreview=a;a.currentTime=0;a.volume=OVERHAUL_AUDIO.master*OVERHAUL_AUDIO.voices*.7;const p=a.play();if(p?.catch)p.catch(()=>{});
+ });
+ document.getElementById('pack-stop')?.addEventListener('click',stopPackPreview);
+}
+function startPackMove(kind){
+ const costs={hand:35,tusk:25,cmoon:40,muda:55,giorno:75},cost=costs[kind];
+ if(!cost||optionsVisible||timeStop.phase!=='idle'||!canUseJoJoAttack(cost))return false;
+ if(gameMillis()<(packCooldowns[kind]||0))return false;
+ standEnergy-=cost;stopJoJoVoices();packVoiceUntil=0;
+ const duration=kind==='hand'?1050:kind==='tusk'?1650:kind==='cmoon'?4000:cinematicDuration(kind,kind==='giorno'?14200:5000);
+ packMove={kind,start:gameMillis(),end:gameMillis()+duration,shots:[],hit:false,lastShot:0};
+ packCooldowns[kind]=gameMillis()+duration+1200;
+ playCharacterCue(kind,.75,true);
+ addJoJoPopup(({hand:'THE HAND',tusk:'TUSK · NAIL SHOT',cmoon:'C-MOON · GRAVITY INVERTED',muda:'THE WORLD · MUDA',giorno:'GOLD EXPERIENCE · MUDA'})[kind],width*.5,height*.28,'#f0da94',1000,30);
+ return true;
+}
+function updatePackMove(){
+ if(timeStop.phase==='freeze'&&Math.abs(catcherX-packTeleportX)>75){playPackEffect('teleport',.45);packTeleportX=catcherX;}
+ const p=packMove;if(!p.kind)return;
+ if(p.kind==='muda'||p.kind==='giorno')p.end=Math.max(p.end,p.start+cinematicDuration(p.kind,p.kind==='giorno'?14200:5000));
+ if(timeStop.phase==='intro'||timeStop.phase==='freeze'||roadRoller.active){const d=Math.min(deltaTime,50);p.start+=d;p.end+=d;return;}
+ const age=gameMillis()-p.start,x=catcherX+catcherWidth/2;
+ if(p.kind==='hand'&&age>340&&!p.hit){
+  p.hit=true;for(const ball of balls)if(ball.y>catcherY-210&&ball.y<catcherY&&Math.abs(ball.x-x)<125){burstJoJoParticles(ball.x,ball.y,'#7cd5ff',12);respawnBall(ball);}
+  jojoShake=Math.max(jojoShake,8);playCue('impact',.6);
+ }
+ if(p.kind==='tusk'&&!p.hit){p.hit=true;const target=balls.filter(b=>b.y>0&&b.y<catcherY&&!b.targeted).sort((a,b)=>b.y-a.y)[0];if(target){target.targeted=true;p.shots.push({x,y:catcherY-15,target});}}
+ for(const nail of p.shots){const d=Math.hypot(nail.target.x-nail.x,nail.target.y-nail.y),step=17*frameStep;if(d<=step+12){if(!gameOver&&nail.target.targeted){scoreBall(nail.target,true);respawnBall(nail.target);}nail.done=true;}else{nail.x+=(nail.target.x-nail.x)/d*step;nail.y+=(nail.target.y-nail.y)/d*step;}}
+ p.shots=p.shots.filter(n=>!n.done);
+ if((p.kind==='muda'||p.kind==='giorno')&&age>500&&gameMillis()-p.lastShot>(age>(p.end-p.start)*.75?100:220)){p.lastShot=gameMillis();punchDangerousBall();}
+ if(gameMillis()>=p.end){for(const nail of p.shots)nail.target.targeted=false;packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;updateMusicVolume(true);}
+}
+function drawPackMove(){
+ const p=packMove;if(!p.kind)return;const c=drawingContext,age=gameMillis()-p.start,t=constrain(age/(p.end-p.start),0,1),x=catcherX+catcherWidth/2,y=catcherY-110;
+ c.save();
+ for(const nail of p.shots){c.save();c.translate(nail.x,nail.y);c.rotate(age*.023);c.strokeStyle='#ffd5ec';c.lineWidth=3;for(let i=0;i<3;i++){c.beginPath();c.arc(0,0,4+i*4,0,Math.PI*1.4);c.stroke();}c.restore();}
+ if(p.kind==='cmoon'){
+  c.strokeStyle='#a8ed86';c.lineWidth=2;for(let i=0;i<5;i++){const gy=catcherY-60-i*55-(age*.06%55);c.beginPath();c.moveTo(x-140,gy+15);c.lineTo(x-140,gy);c.lineTo(x-148,gy+8);c.moveTo(x+140,gy+15);c.lineTo(x+140,gy);c.lineTo(x+148,gy+8);c.stroke();}
+ }
+ c.translate(x,y);const scaleV=Math.min(1.1,width/850);c.scale(scaleV,scaleV);
+ const col=p.kind==='hand'?'#68baff':p.kind==='cmoon'?'#b8d87a':p.kind==='tusk'?'#f2b3da':p.kind==='giorno'?'#e5c56b':'#d0af55';
+ c.fillStyle=col;c.strokeStyle='#241b39';c.lineWidth=3;
+ // Armoured torso, collar, separate shoulders, elbows, forearms and fists.
+ c.beginPath();c.moveTo(-36,-38);c.lineTo(-24,37);c.lineTo(24,37);c.lineTo(36,-38);c.lineTo(12,-48);c.lineTo(-12,-48);c.closePath();c.fill();c.stroke();
+ for(const side of [-1,1]){
+  const strike=(p.kind==='muda'||p.kind==='giorno')?Math.max(0,Math.sin(age*.027+side*Math.PI)):(p.kind==='hand'?Math.sin(Math.min(1,age/650)*Math.PI):.15);
+  const sx=side*40,ex=side*(58+strike*22),ey=-5-strike*22,hx=side*(45+strike*100),hy=20-strike*50;
+  c.strokeStyle=col;c.lineWidth=18;c.lineCap='round';c.beginPath();c.moveTo(sx,-26);c.lineTo(ex,ey);c.lineTo(hx,hy);c.stroke();
+  c.strokeStyle='#e9e3bd';c.lineWidth=4;c.beginPath();c.moveTo(ex,ey);c.lineTo(hx,hy);c.stroke();c.fillStyle=col;c.beginPath();c.ellipse(hx,hy,13+strike*5,11,side*.3,0,Math.PI*2);c.fill();
+  c.strokeStyle='#312743';c.lineWidth=1.5;for(let k=0;k<3;k++){c.beginPath();c.moveTo(hx-6+k*5,hy-8);c.lineTo(hx-6+k*5,hy+2);c.stroke();}
+ }
+ c.fillStyle=col;c.strokeStyle='#241b39';c.lineWidth=2;c.beginPath();c.ellipse(0,-65,23,28,0,0,Math.PI*2);c.fill();c.stroke();
+ c.fillStyle='#352545';c.fillRect(-17,-70,12,4);c.fillRect(5,-70,12,4);c.fillRect(-8,-48,16,3);
+ if(p.kind==='giorno'){c.fillStyle='#ce5098';for(const hx of [-18,0,18]){c.beginPath();c.ellipse(hx,-38,6,8,0,0,Math.PI*2);c.fill();}c.strokeStyle='#6f854e';c.lineWidth=3;for(const hx of [-16,0,16]){c.beginPath();c.arc(hx,-88,8,0,Math.PI*2);c.stroke();}}
+ if(p.kind==='hand'){c.strokeStyle='#eee7db';c.lineWidth=4;c.beginPath();c.moveTo(0,-91);c.lineTo(0,-43);c.stroke();c.fillStyle='#eaca5c';c.fillRect(-28,-27,56,6);}
+ if(p.kind==='cmoon'){c.strokeStyle='#d85665';c.lineWidth=3;c.beginPath();c.moveTo(-20,-84);c.lineTo(20,-45);c.moveTo(20,-84);c.lineTo(-20,-45);c.stroke();}
+ c.restore();
+ push();fill('#f4e2a8');noStroke();textSize(15);textAlign(CENTER);text(p.kind.toUpperCase()+' · '+Math.max(0,(p.end-gameMillis())/1000).toFixed(1)+'s',width*.5,height*.18);pop();
 }

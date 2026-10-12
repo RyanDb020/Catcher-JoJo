@@ -49,9 +49,9 @@
   </style>
   <script src="vendor/p5.min.js"></script>
   <script src="vendor/p5.sound.min.js"></script>
-  <script defer src="src/character-director.js?v=5.2"></script>
+  <script defer src="src/character-director.js?v=6.0"></script>
   <script defer src="src/cosmic-director.js?v=4.0"></script>
-  <script defer src="src/sketch.js?v=personal-jojo-5.3"></script>
+  <script defer src="src/sketch.js?v=jojo-pack-6.0"></script>
 </head>
 <body>
   <div id="library-warning" hidden role="alert"><strong>De game kon p5.js niet laden.</strong><p>Controleer je internetverbinding en open deze hele map via Live Server in VS Code. Kijk bij fouten in de browserconsole (F12).</p></div>
@@ -71,13 +71,19 @@
       <div style="margin-top:20px; border-top:1px solid #86639a; padding-top:14px">
         <strong style="color:#ffdb91">OPTIONELE JOJO-STEMMEN (LOKALE MP3)</strong>
         <label class="voice-file"><span>Time Stop · eigen audio</span><input type="file" data-voice="stop" accept="audio/*"></label>
-        <small>Kies eigen audio vóór het activeren van een cinematic. Je keuze blijft alleen in deze browser tot herladen. De standaardversie gebruikt opgenomen effecten met een vrije licentie. Gebruik eigen clips alleen met toestemming.</small>
+        <small>Kies eigen audio vóór het activeren van een cinematic. Je keuze blijft alleen in deze browser tot herladen. De meegeleverde JoJo-clips staan al klaar. Hier kun je ze vervangen door eigen audio.</small>
         <label class="voice-file"><span>Made in Heaven · eigen audio</span><input type="file" data-voice="pucci" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>Time Accelerate</span><input type="file" data-voice="accelerate" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>ORA ORA</span><input type="file" data-voice="ora" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>Time Resume · eigen audio</span><input type="file" data-voice="resume" accept="audio/mpeg,audio/mp3,audio/*"></label>
         <label class="voice-file"><span>Road Roller</span><input type="file" data-voice="roller" accept="audio/mpeg,audio/mp3,audio/*"></label>
       </div>
+<div style="margin-top:18px;border-top:1px solid #86639a;padding-top:14px"><strong>JOJO AUDIO PACK</strong>
+<p>H · The Hand (35) &nbsp; J · Tusk (25) &nbsp; C · C-Moon (40)<br>M · MUDA (55) &nbsp; N · Giorno MUDA (75). Kosten in Stand-energie.</p>
+<label class="volume"><span>Time Stop stem</span><select id="pack-time-voice"><option value="classic">DIO · origineel</option><option value="starstop">Star Platinum</option><option value="overheaven">Over Heaven</option><option value="dio">DIO · langere intro</option></select></label>
+<label class="volume"><span>Soundtrack</span><select id="pack-music"><option value="giorno">Giorno · origineel</option><option value="kiratheme">Kira</option></select></label>
+<label class="volume"><span>Luister naar clips</span><select id="pack-preview"><option value="cmoon">C-Moon · gravity inversion</option><option value="wryyy">DIO · WRYYY</option><option value="dio">DIO · alternate introduction</option><option value="run">Joseph · last life</option><option value="giorno">Giorno · seven page MUDA</option><option value="crimson">King Crimson · time erasure</option><option value="muda">MUDA · barrage (voice attribution unconfirmed)</option><option value="starstop">Star Platinum · Time Stop</option><option value="kira">Killer Queen · bomb</option><option value="hand">The Hand · erasure</option><option value="freezefx">Eyes of Heaven · freeze</option><option value="teleport">Time Stop · displacement</option><option value="tusk">Tusk · nail shot</option><option value="yes">YES YES · combo reward</option><option value="kiratheme">Kira · optional soundtrack</option><option value="overheaven">The World Over Heaven · alternate activation</option><option value="resume">The World · Time Resume</option></select></label><button id="pack-listen">BELUISTER</button> <button id="pack-stop">STOP AUDIO</button>
+<small>Alle 17 clips zijn beschikbaar. Luisteren verandert je gameplay niet.</small></div>
       <button id="close-options">TERUG NAAR HET SPEL</button>
       <small>Instellingen en highscore worden lokaal opgeslagen in deze browser. De standaard audiobestanden worden lokaal uit assets/ geladen. Zelfgekozen alternatieven moet je na herladen opnieuw selecteren.</small>
     </section>

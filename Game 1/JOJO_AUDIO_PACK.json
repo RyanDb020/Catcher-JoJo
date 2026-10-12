@@ -1,0 +1,155 @@
+[
+  {
+    "key": "cmoon",
+    "source": "appear-c-moon.mp3",
+    "label": "C-Moon \u00b7 gravity inversion",
+    "path": "assets/jojo/cmoon.mp3",
+    "duration": 2.690612,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "wryyy",
+    "source": "dio-wryyy.mp3",
+    "label": "DIO \u00b7 WRYYY",
+    "path": "assets/jojo/wryyy.mp3",
+    "duration": 3.004082,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "dio",
+    "source": "dio_JbyIlwx.mp3",
+    "label": "DIO \u00b7 alternate introduction",
+    "path": "assets/jojo/dio.mp3",
+    "duration": 12.303673,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "run",
+    "source": "joestar-run.mp3",
+    "label": "Joseph \u00b7 last life",
+    "path": "assets/jojo/run.mp3",
+    "duration": 4.571429,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "giorno",
+    "source": "jojos-bizarre-adventure-giorno-giovannas-7-page-muda.mp3",
+    "label": "Giorno \u00b7 seven page MUDA",
+    "path": "assets/jojo/giorno.mp3",
+    "duration": 14.236735,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "crimson",
+    "source": "king-crimson-sound-effect_QnjzH1n.mp3",
+    "label": "King Crimson \u00b7 time erasure",
+    "path": "assets/jojo/crimson.mp3",
+    "duration": 4.101224,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "muda",
+    "source": "muda_muda_muda_sound_effect.mp3",
+    "label": "MUDA \u00b7 barrage (voice attribution unconfirmed)",
+    "path": "assets/jojo/muda.mp3",
+    "duration": 5.041633,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "starstop",
+    "source": "star-platinum-za-warudo-bass-busted_ws2fMMQ.mp3",
+    "label": "Star Platinum \u00b7 Time Stop",
+    "path": "assets/jojo/starstop.mp3",
+    "duration": 3.813878,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "kira",
+    "source": "s_killaqueencatchphrase.mp3",
+    "label": "Killer Queen \u00b7 bomb",
+    "path": "assets/jojo/kira.mp3",
+    "duration": 3.73551,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "hand",
+    "source": "thehand.mp3",
+    "label": "The Hand \u00b7 erasure",
+    "path": "assets/jojo/hand.mp3",
+    "duration": 1.776327,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "freezefx",
+    "source": "time-stop-sound-effect-eyes-of-heaven_128k-mp3cut.mp3",
+    "label": "Eyes of Heaven \u00b7 freeze",
+    "path": "assets/jojo/freezefx.mp3",
+    "duration": 3.160816,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "teleport",
+    "source": "timestop-teleport.mp3",
+    "label": "Time Stop \u00b7 displacement",
+    "path": "assets/jojo/teleport.mp3",
+    "duration": 0.444082,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "tusk",
+    "source": "tusk-chimimi.mp3",
+    "label": "Tusk \u00b7 nail shot",
+    "path": "assets/jojo/tusk.mp3",
+    "duration": 2.011429,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "yes",
+    "source": "yes-yes-yes-yes-yes.mp3",
+    "label": "YES YES \u00b7 combo reward",
+    "path": "assets/jojo/yes.mp3",
+    "duration": 4.231837,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "kiratheme",
+    "source": "yoshikage-kira-theme-ringtone.mp3",
+    "label": "Kira \u00b7 optional soundtrack",
+    "path": "assets/jojo/kiratheme.mp3",
+    "duration": 12.329796,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "overheaven",
+    "source": "za-warudo-over-heaven-sound-effect.mp3",
+    "label": "The World Over Heaven \u00b7 alternate activation",
+    "path": "assets/jojo/overheaven.mp3",
+    "duration": 5.485714,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  },
+  {
+    "key": "resume",
+    "source": "za-warudo-the-world-time-resume.mp3",
+    "label": "The World \u00b7 Time Resume",
+    "path": "assets/jojo/resume.mp3",
+    "duration": 2.115918,
+    "rights": "User supplied for personal use; licence not verified",
+    "identification": "Filename-based, not confirmed by perceptual listening"
+  }
+]

@@ -1,3 +1,7 @@
+## Uploaded JoJo audio pack (personal version)
+
+All 17 recordings from the user-provided `all jojo mp3.zip` are local MP3 files in `assets/jojo/`. Source filenames, measured durations and candidate character names are in `JOJO_AUDIO_PACK.json`. Identification is based on filenames; voices have not been independently identified by listening. The user asked for personal use and integration. No licence grant or creator attribution was provided; these recordings are not claimed CC0 or cleared for redistribution. The original archive was preserved. Derived clips use FFmpeg loudness normalization (-19 LUFS, -2 dB true peak), 15 ms fade-in, stereo 44.1 kHz MP3; duration preserved. Existing Kenney effects remain separately credited below.
+
 ## Persoonlijke audio hersteld
 
 Op verzoek zijn de oorspronkelijke JoJo-stemmen (Pucci, tijdversnelling, ORA en ZA WARUDO), achtergrondmuziek, Giorno-theme en game-overgeluid weer de standaard. De gebruiker heeft aangegeven dat dit voor persoonlijk gebruik is. De gebruiksrechten van deze oorspronkelijke clips zijn niet geverifieerd; er wordt geen vrije licentie geclaimd. De nieuwe CC0-scène-effecten en verbeterde audio-cleanup blijven behouden. De bestaande hosting is hierdoor niet technisch afgeschermd.

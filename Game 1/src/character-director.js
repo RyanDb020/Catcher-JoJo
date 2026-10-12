@@ -666,7 +666,7 @@
     if(phase==='freeze'){
       c.save();c.fillStyle='rgba(10,35,49,.23)';c.fillRect(0,0,w,h);
       c.save();c.translate(w*.5,h*.28);c.scale(.30,.30);c.translate(-w*.5,-h*.49);timeDial(c,w,h,1,true);c.restore();
-      figure(c,w,h,cc=>worldFigure(cc,1,true),{x:.84,y:.58,zoom:.29});
+      figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,1,5):worldFigure(cc,1,true),{x:.84,y:.58,zoom:.29});
       border(c,w,h,'ZA WARUDO / TIME LOCK',Number.isFinite(settings.remaining)?settings.remaining.toFixed(1)+' s REMAINING':'REALITY IS FROZEN','#a9e3e5');c.restore();return;
     }
     c.save();
@@ -680,12 +680,12 @@
     const p=smooth((t-.22)/.4),lock=smooth((t-.76)/.12);
     stage(c,w,h,'211,162,74',t,.63);
     timeDial(c,w,h,Math.min(t/.82,1),t>.82);
-    figure(c,w,h,cc=>dioFigure(cc,t),{x:.24,y:.59,zoom:.65});
+    figure(c,w,h,cc=>settings.character==='jotaro'?jotaro(cc,t):dioFigure(cc,t),{x:.24,y:.59,zoom:.65});
     // The Stand arrives from behind DIO, then locks into the final outstretched pose.
     c.save();c.translate(w*.018*Math.sin(t*PI)*(1-lock),0);
-    figure(c,w,h,cc=>worldFigure(cc,t*2,t>.80),{x:.56+(1-p)*.13,y:.53,zoom:.57+.26*p});c.restore();
+    figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,t*2,0):worldFigure(cc,t*2,t>.80),{x:.56+(1-p)*.13,y:.53,zoom:.57+.26*p});c.restore();
     if(t>.72&&t<.97){const q=clamp((t-.72)/.25),r=ease(q)*Math.max(w,h);oval(c,w*.52,h*.46,r,r*.66,'rgba(0,0,0,0)','rgba(235,222,178,'+(.75*(1-q))+')',4+6*(1-q));}
-    border(c,w,h,t<.22?'DIO / THE WORLD':t<.76?'THE WORLD / CHRONOSTASIS':'ZA WARUDO / REALITY LOCK','SPACE TO SKIP THE REVEAL','#ead29a');
+    border(c,w,h,t<.22?(settings.character==='jotaro'?'JOTARO / STAR PLATINUM':'DIO / THE WORLD'):t<.76?(settings.character==='jotaro'?'STAR PLATINUM / CHRONOSTASIS':'THE WORLD / CHRONOSTASIS'):'ZA WARUDO / REALITY LOCK','SPACE TO SKIP THE REVEAL','#ead29a');
     c.restore();
   }
   function ora(c,w,h,t,settings={}){
