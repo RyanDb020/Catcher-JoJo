@@ -13,12 +13,14 @@ Input: `20261012-1931-12.2789377.mp4` (19.7 s), supplied with the task. At appro
 
 ## Verification status
 
-- `npm test`: passed (15 setup/gameplay tests, 19 regression tests, 30 polish tests, 35 cinematic tests, 156 cinematic viewport/keyframe checks, and 15 3D rule/source/asset checks).
+- `npm test`: passed (15 setup/gameplay tests, 19 regression tests, 30 polish tests, 35 cinematic tests, 156 cinematic viewport/keyframe checks, and 16 3D rule/source/asset checks).
 - `node --check` is run on the gameplay modules before publishing.
-- `npm run qa:3d`: not runnable in this managed workspace; Node's HTTP server fails to listen on `127.0.0.1` with `EPERM`. Therefore a local Playwright gameplay run, in-game audio listening check, and local screenshot capture are not claimed.
-- The connected Chrome test browser disables WebGL. It can verify the Canvas2D fallback after the GitHub Pages update but cannot certify the 3D renderer.
-- The uploaded baseline video is the before reference; a post-change browser screenshot and live Pages check will be recorded after the commit is deployed.
+- `npm run qa:3d`: blocked in this managed workspace; Node’s HTTP server cannot listen on `127.0.0.1` (`EPERM`), and no local Playwright browser binary is installed.
+- GitHub Actions: Arcade/3D Node regression workflow and GitHub Pages build/deploy both succeeded for commit `373bfcfb358bf36ff493fa0d9b7eab720cfa17fa`.
+- Live Chrome at 1363×936: Arcade start/game HUD appeared and progressed. 3D Combat loaded Canvas2D because WebGL is disabled here. I tested start, health/energy/HUD updates, a landed hit, enemy damage, Time Stop’s timer/cost, and the mute toggle. The displayed screenshot confirms the fallback’s clock landmark, paving, figures and HUD. This verifies only the no-WebGL renderer, not the 3D scene.
+- Live audio playback and speakers could not be listened to through this browser, so the audio tracks are integrated but not acoustically verified. The browser console is not exposed through this connected browser, so no clean-console claim is made.
+- The source video remains the before reference. The post-change screenshot was inspected live but could not be exported from the connected browser into a repository image. The 375×667 small viewport is covered by the existing responsive/cinematic test suite, not a live mobile browser run.
 
-This is a visible code-level rebuild, but final 3D rendering, exact attack timing, audio quality on speakers, and the entire mission from start through boss defeat still require a browser with WebGL and working audio.
+The 3D model rendering, 3D combat timing, actual sound output, full mission completion/reset in browser, and the three cinematics in a live browser still need a WebGL-capable browser with audio output.
 
 The published HTML briefly served a stale module with the former URL. Combat imports now carry build `1.4.0` cache keys so the current renderer, fallback and audio files load as a unit. The Canvas2D backup now draws distinct segmented Jotaro, Star Platinum and Chrono Shade silhouettes plus a clock face, broken arch, district facade and lantern. Its fallback camera frames these landmarks and keeps fighter sprites large enough to read on standard desktop sizes.
