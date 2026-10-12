@@ -485,6 +485,7 @@ function placeEnemy(){
   UI.enemyFill.style.transform='scaleX(1)';
 }
 function reset(){
+  audio.setActive(false);
   if(audioEndTimer){clearTimeout(audioEndTimer);audioEndTimer=null;}
   footstepTimer=0;
   state.running=true;state.dead=false;state.victory=false;state.paused=false;state.started=true;
@@ -631,6 +632,7 @@ function dodge(){
   const perfect=state.enemy.state==='windup'&&state.enemy.timer<=.26&&state.stopRemaining<=0&&
     Math.hypot(state.enemyPosition.x-state.playerPos.x,state.enemyPosition.z-state.playerPos.z)<=2.65;
   if(perfect){
+    state.invuln=.60; // Covers the short Echo slow as well as the announced strike.
     state.stand=clamp(state.stand+18,0,100);state.echoSlow=.22;
     state.chronoEcho={age:0,damage:state.lastStrike.damage,heavy:state.lastStrike.heavy,triggered:false,from:state.playerPos.clone()};
     banner('PERFECT DODGE · CHRONO ECHO!',1.35);impact('CHRONO ECHO',.28);

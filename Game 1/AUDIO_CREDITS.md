@@ -17,7 +17,7 @@ All twelve Ogg/Opus files in `assets/combat-audio/` are original, locally genera
 | `time-resume.ogg` | Time Stop release, anchor disable and mission finish |
 | `chrono-echo.ogg` | Perfect dodge / Chrono Echo |
 
-The 3D audio manager loads these local files only after the start click, offers master/music/ambience/effects levels and mute, and persists the settings in local storage. Audio timing, perceived quality and speaker output still need live-browser listening checks; this environment's local Playwright server cannot bind its port (`EPERM`). No Mixkit or MyInstants download was added. The repository's pre-existing Arcade MP3s are unchanged and retain their existing licensing status described in `THIRD_PARTY_NOTICES.md`.
+The audio manager begins after a start/resume click, exposes master/music/ambience/effects and mute, and retains preferences. The active mapping now mixes Kenney recordings and the existing generated time/ambient cues described below. Browser decoding/playback and perceived speaker quality are separate checks. Existing user-supplied voices retain their previous licensing status; no new MyInstants or anime fragment is introduced.
 
 ## Foley update — 12 October 2026
 
