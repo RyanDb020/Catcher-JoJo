@@ -81,7 +81,9 @@
     c.fillStyle=accent;c.fillRect(0,bar-3,w*.4,3);
     c.font='bold '+Math.max(12,Math.min(20,w*.017))+'px Arial';
     c.textBaseline='middle';c.textAlign='left';c.fillStyle='#ffefd3';
-    c.fillText(title,Math.max(16,w*.037),bar*.52);
+    // Keep phase labels between the score HUD (left) and energy HUD (right).
+    c.textAlign='center';c.font='bold '+Math.max(11,Math.min(17,w*.014))+'px Arial';
+    c.fillText(title,w*.55,bar*.52);
     c.restore();
   }
   function stage(c,w,h,rgb,t,intensity=1) {
@@ -233,51 +235,162 @@
     oval(c,-3,-166,35,48,'#7d5a57',ink,3);
     polygon(c,[[-44,-191],[-17,-223],[33,-211],[41,-170],[17,-194],[-30,-178]],'#e3d4d3',ink,3);
     oval(c,-13,-169,5,4,'#f4e9dd',null);
+    // Priest collar, coat pleats, cross ornaments and sculpted facial features.
+    polygon(c,[[-47,-96],[-8,-112],[37,-93],[15,-61],[-28,-64]],'#ded5ca',ink,2.5);
+    polygon(c,[[-24,-95],[0,-104],[24,-90],[7,-71]],'#503449',null);
+    for(let i=0;i<5;i++)line(c,[[-51+i*20,36],[-43+i*18,191]],'rgba(222,169,158,.24)',1.6);
+    polygon(c,[[-9,-83],[4,-83],[4,50],[-9,50]],'#caa56d',null);
+    polygon(c,[[-34,-17],[30,-17],[31,-10],[-35,-10]],'#c8a16c',null);
+    polygon(c,[[-12,-184],[8,-190],[25,-182],[18,-167],[-4,-161]],'#886568',null);
+    line(c,[[-24,-177],[-9,-180],[1,-175]],'#291b2b',2.8);
+    line(c,[[8,-176],[23,-176],[29,-169]],'#291b2b',2.8);
+    line(c,[[-2,-163],[3,-155],[-7,-151]],'#34222e',1.8);
+
     polygon(c,[[-56,238],[-7,237],[-25,351],[-67,355]],'#3a2337',ink,4);
     polygon(c,[[0,240],[43,236],[71,349],[17,350]],'#432c3d',ink,4);
     c.restore();
   }
-  function heavenFigure(c,time) {
-    const gallop=Math.sin(time*8),lean=Math.sin(time*2)*.05;
-    c.save();c.rotate(lean);
-    // Hooves and forward horse-like legs.
-    limb(c,[[-51,129],[-103,229],[-112+13*gallop,323]],48,'#bed1e1','#f3faff','#7a90ae');
-    limb(c,[[46,136],[127,227],[150-14*gallop,315]],48,'#d2e3ee','#fffaf4','#758ba5');
-    polygon(c,[[-143,300],[-97,297],[-93,339],[-158,350]],'#e8d7a5',ink,3);
-    polygon(c,[[122,303],[168,301],[185,341],[128,349]],'#f0d0a2',ink,3);
-    // Equine neck and tapered nose, layered ceramic chest armor.
-    polygon(c,[[-79,-48],[83,-65],[108,61],[65,167],[-59,178],[-107,88]],
-      '#d3e9ef',ink,5);
-    polygon(c,[[-43,-40],[17,-82],[65,-54],[43,93],[-6,134],[-57,85]],'#f4f9ff',ink,4);
-    polygon(c,[[-8,55],[39,83],[18,133],[-32,128]],'#b5c9dd',ink,3);
-    polygon(c,[[-42,98],[47,103],[20,172],[-31,168]],'#ffffff',ink,4);
-    polygon(c,[[-30,127],[18,130],[-3,165]],'#eac3bd',null);
-    // Winged feather fans.
-    for(const side of [-1,1])for(let i=0;i<5;i++){
-      const x=side*(55+i*16),y=-73-i*18;
-      polygon(c,[[side*38,-78],[x,y-61],[side*(75+i*11),y-5]],
-        i%2?'#dee5f9':'#b9d6ec',ink,2);
+
+  // Character Director 4: painted, anatomically joined curves replace the box rig
+  // in the Made in Heaven reveal. All shapes are original authored vector paths.
+  function heavenFigurePainted(c,t){
+    const motion=Math.sin(t*2.1),stride=Math.sin(t*4.6),face=Math.sin(t*1.3)*.065;
+    const dark='#26314e',edge='#30415c';
+    function shape(points,base,shine,thick=3){
+      c.beginPath();
+      for(const p of points){
+        if(p.length===2)c.moveTo(p[0],p[1]);
+        else if(p.length===6)c.bezierCurveTo(...p);
+        else if(p.length===4)c.quadraticCurveTo(...p);
+      }
+      c.closePath();c.fillStyle=base;c.fill();
+      if(shine){c.strokeStyle=shine;c.lineWidth=thick;c.lineJoin='round';c.stroke();}
     }
-    limb(c,[[-88,-54],[-153,-2],[-143+20*gallop,91]],39,'#dae9ee','#ffffff','#839bb6');
-    limb(c,[[83,-55],[142,-6],[146-19*gallop,82]],41,'#e0eff2','#ffffff','#879bb2');
-    fist(c,-140+20*gallop,100,.58,'#e1ecf5','#ffffff');
-    fist(c,143-20*gallop,91,.58,'#d6e2eb','#fff7ed');
-    // Long pointy mask, temple plume and eyes.
-    polygon(c,[[-52,-165],[12,-205],[68,-163],[61,-116],[22,-89],[-40,-102]],'#e6f4ff',ink,4);
-    polygon(c,[[-23,-166],[17,-226],[46,-159],[20,-136]],'#8ebad0',ink,3);
-    polygon(c,[[-57,-157],[-84,-184],[-59,-112]],'#cde4f5',ink,3);
-    polygon(c,[[60,-158],[88,-187],[67,-112]],'#d9e7ec',ink,3);
-    polygon(c,[[-60,-126],[-17,-115],[-8,-100],[-53,-102]],'#96b9d2',ink,3);
-    polygon(c,[[12,-111],[58,-126],[50,-100],[18,-95]],'#a0bfd8',ink,3);
-    polygon(c,[[-42,-130],[-8,-126],[-21,-116],[-42,-118]],'#fff7d5',ink,2);
-    polygon(c,[[12,-127],[46,-136],[34,-119],[19,-115]],'#fff7d5',ink,2);
-    oval(c,-25,-123,3,4,'#75457d',null);oval(c,28,-126,3,4,'#75457d',null);
-    polygon(c,[[-18,-100],[17,-94],[34,-56],[-10,-63]],'#c9e1ee',ink,4);
-    line(c,[[-11,-76],[8,-73],[17,-80]],'#5a6e85',3);
-    oval(c,46,37,20,17,'#f5d9ab',ink,3);
-    oval(c,46,37,9,8,'#9db6ce',ink,2);
-    inkHatch(c,52,93,-.4,13,4);
+    function stroke(points,col,w=2){
+      c.beginPath();
+      for(const p of points){
+        if(p.length===2)c.moveTo(...p);
+        else if(p.length===6)c.bezierCurveTo(...p);
+        else if(p.length===4)c.quadraticCurveTo(...p);
+      }
+      c.strokeStyle=col;c.lineWidth=w;c.lineCap='round';c.stroke();
+    }
+    function gradient(x0,y0,x1,y1,colors){
+      const g=c.createLinearGradient(x0,y0,x1,y1);
+      colors.forEach(([stop,col])=>g.addColorStop(stop,col));return g;
+    }
+    function joint(x,y,r){oval(c,x,y,r,r*.92,'#eaf7ff',edge,3);oval(c,x-r*.18,y-r*.23,r*.57,r*.43,'#9ebacf',null);}
+    function feathers(side){
+      c.save();c.scale(side,1);
+      for(let i=0;i<7;i++){
+        const a=i/6,xx=39+i*13,yy=-145+i*7;
+        shape([[35,-134],[xx+2,yy-60+i*3,xx+25,yy-43,xx+21,yy-13],
+          [xx+40,yy+14,xx+30,-107,42,-107]],i%2?'#c6dcea':'#f0faff',edge,2.6);
+        stroke([[xx-3,yy-6],[xx+8,yy-33,xx+12,yy-29,xx+16,yy-11]],'#7294b2',1.6);
+      }
+      c.restore();
+    }
+    c.save();
+    c.rotate(motion*.018);
+    // Rear equine body and hindquarters carry a proper lower-anatomy silhouette.
+    shape([[-84,68],[-119,111,-102,174,-65,191],[-12,217,80,202,99,141],
+      [104,90,76,57,44,42]],gradient(-110,30,98,200,[[0,'#f9feff'],[.5,'#b8d2e5'],[1,'#688bb1']]),dark,5);
+    // Independent hind legs bend at hock joints rather than rotating as rods.
+    c.save();c.translate(-49,158);c.rotate(-.09+stride*.11);
+    shape([[0,0],[-26,8,-41,46,-62,74],[-69,92,-51,111,-37,113],
+      [-15,92,4,51,26,19]],gradient(-60,0,30,110,[[0,'#f9fcff'],[1,'#83a2c3']]),dark,4);
+    joint(-57,83,19);
+    shape([[-56,90],[-72,102,-91,126,-75,152],[-53,164,-22,147,-26,118]],
+      '#f0f9fd',dark,3);
+    shape([[-89,138],[-95,145,-112,159,-90,171],[-56,182,-35,157,-37,145]],
+      '#e6c991',dark,3);c.restore();
+    c.save();c.translate(64,161);c.rotate(.10-stride*.1);
+    shape([[0,0],[18,5,41,33,54,81],[71,110,58,120,39,119],
+      [16,91,-8,65,-17,29]],gradient(-22,0,74,120,[[0,'#f7fdff'],[1,'#7da2c4']]),dark,4);
+    joint(48,94,17);
+    shape([[47,90],[70,99,76,127,58,151],[35,164,24,152,31,121]],
+      '#f0f9fc',dark,3);
+    shape([[31,144],[18,150,23,172,49,173],[83,169,78,149,61,143]],
+      '#e3c894',dark,3);c.restore();
+    // Glistening embossed breastplate and waist seams on a slanted equine torso.
+    shape([[-80,-63],[-114,-31,-122,51,-92,110],[-65,160,42,158,82,107],
+      [122,47,104,-38,73,-73],[29,-91,-40,-92,-80,-63]],
+      gradient(-100,-100,110,170,[[0,'#ffffff'],[.28,'#e4f6ff'],[.63,'#b5d1e2'],[1,'#7694b6']]),dark,5);
+    shape([[-61,-38],[-82,0,-78,77,-48,110],[-16,129,40,107,62,66],
+      [64,1,49,-53,18,-66],[-16,-74,-46,-57,-61,-38]],
+      gradient(-65,-75,55,115,[[0,'#fffefe'],[.57,'#cddfe9'],[1,'#a1bdd3']]),edge,3);
+    shape([[-48,106],[-33,121,35,123,51,107],[39,145,3,170,-37,144]],
+      '#eff5f9',edge,3);
+    stroke([[-79,28],[-67,71,-63,85,-44,100]],'#7195b0',3);
+    stroke([[74,-3],[85,48,68,83,43,102]],'#6d8cab',3);
+    for(let i=0;i<7;i++){
+      const y=-20+i*16;
+      stroke([[-46,y],[-36,y+3,-29,y+5,-17,y+2]],'rgba(75,106,147,.32)',1.2);
+    }
+    // Shoulder plumes, each with individual inner veins.
+    feathers(-1);feathers(1);
+    // True attached arm rigs; elbows remain at the end of the humerus.
+    function arm(side,phase){
+      c.save();c.scale(side,1);c.translate(0,Math.sin(t*3+phase)*7);
+      shape([[71,-74],[99,-96,132,-60,127,-33],[120,-14,101,5,82,-1],
+        [69,-6,61,-52,71,-74]],
+        gradient(65,-90,133,0,[[0,'#ffffff'],[1,'#92b0c9']]),edge,3.6);
+      shape([[105,-14],[132,-26,153,7,155,33],[161,66,131,91,112,66],
+        [102,44,91,7,105,-14]],
+        gradient(101,-15,163,100,[[0,'#e6f6ff'],[1,'#7696b6']]),dark,3.5);
+      joint(118,-9,23);joint(137,64,19);
+      shape([[115,77],[128,95,166,93,171,77],[178,52,161,46,148,53],
+        [125,41,107,51,115,77]],'#e6f0fa',edge,3);
+      for(let i=0;i<4;i++){
+        shape([[126+i*10,57],[128+i*10,48,137+i*10,48,137+i*10,61],
+          [136+i*10,79,124+i*10,77,126+i*10,57]],
+          i%2?'#e7f3fb':'#ffffff',edge,1.4);
+      }
+      stroke([[111,23],[123,28,135,37,139,45]],'#9dbad0',2);
+      c.restore();
+    }
+    arm(-1,0);arm(1,2);
+    // Sculpted flank hinge ornament, set into armor rather than free-floating.
+    oval(c,51,49,28,26,'#d4b991',dark,3);
+    oval(c,51,49,18,17,'#f4e4c4',edge,2);
+    oval(c,51,49,9,9,'#89acc5',dark,1.6);
+    for(let i=0;i<7;i++){
+      const a=i*TAU/7;oval(c,51+22*Math.cos(a),49+21*Math.sin(a),2.3,2.3,'#fff4dd',null);
+    }
+    // Character head is its own moving articulated piece, not an elliptical face.
+    c.save();c.translate(0,-140);c.rotate(face);
+    shape([[-52,0],[-68,-24,-61,-73,-36,-96],[-5,-119,38,-109,54,-75],
+      [66,-40,61,-8,34,19],[12,26,-26,17,-52,0]],
+      gradient(-64,-116,69,30,[[0,'#ffffff'],[.50,'#d7edfa'],[1,'#789cb5']]),dark,4.8);
+    // Long, pointed facial plate with a pronounced horse-like muzzle.
+    shape([[-23,-68],[5,-109,24,-96,33,-57],[27,-24,17,-14,23,6],
+      [13,32,-7,51,-25,18],[-20,-7,-42,-23,-23,-68]],
+      gradient(-25,-101,30,50,[[0,'#d6eefb'],[.35,'#f9fdff'],[1,'#86acc7']]),edge,3.8);
+    shape([[-28,-51],[-4,-66,4,-68,10,-57],[-8,-42,-12,-35,-27,-30]],'#8dadc7',dark,2);
+    shape([[15,-57],[31,-74,47,-76,49,-61],[51,-42,33,-39,19,-38]],'#a5c4d8',dark,2);
+    shape([[-39,-29],[-14,-33,-7,-23,-8,-15],[-32,-9,-42,-15,-39,-29]],'#fff4db',edge,2);
+    shape([[12,-23],[25,-39,45,-43,48,-26],[39,-10,18,-8,12,-23]],'#fff4db',edge,2);
+    oval(c,-23,-23,3.2,5,'#6c4f85',null);oval(c,30,-23,3.2,5,'#6c4f85',null);
+    stroke([[-15,18],[-2,27,9,25,16,18]],'#546b89',2);
+    for(let side of [-1,1]){
+      c.save();c.scale(side,1);
+      shape([[46,-73],[67,-102,83,-132,88,-146],[82,-97,93,-62,69,-36],
+        [56,-29,49,-40,46,-73]],'#e3f4ff',edge,3);
+      shape([[56,-73],[72,-111,81,-121,79,-82],[74,-51,67,-44,56,-73]],
+        '#9cbed9',null);
+      c.restore();
+    }
+    // Front coronet with pointed central crest.
+    shape([[-34,-90],[-13,-118,1,-142,10,-160],[25,-139,36,-114,47,-93],
+      [16,-106,-10,-100,-34,-90]],'#c3e5f5',dark,3);
+    stroke([[-17,-105],[8,-137,16,-141,26,-113]],'#ffffff',3);
     c.restore();
+    // The silhouette remains legible when every VFX layer is disabled.
+    c.restore();
+  }
+
+  function heavenFigure(c,time) {
+    heavenFigurePainted(c,time);
   }
   function figure(c,w,h,drawing,options={}) {
     const size=Math.min(w/960,h/740)*1.18*(options.zoom || 1);
@@ -403,7 +516,7 @@
   }
   function heavenEcho(c,w,h,t) {
     if (!ctxReady(c))return;
-    c.save(); c.globalAlpha=.18+.22*Math.sin(t*PI);
+    c.save(); c.globalAlpha=.11+.13*Math.sin(t*PI);
     const s=Math.min(w/960,h/740)*1.06;
     c.translate(w*.71,h*.59);c.scale(s,s);heavenFigure(c,t*16);c.restore();
   }
