@@ -177,6 +177,10 @@ Click **ENTER THE ARENA** on a desktop browser with WebGL support. Mouse look us
 
 ### Test & QA
 
-Run \`npm test\` from \`Game 1\` to execute existing Arcade tests and \`tests/test_3d.cjs\`. The new Node suite covers attack direction/range, movement boundaries, enemy telegraph/freeze/death, XP and required page files. Test real 3D graphics separately in a browser: Node tests are not proof of WebGL rendering.
+Run `npm test` from \`Game 1\` to execute existing Arcade tests and \`tests/test_3d.cjs\`. The new Node suite covers attack direction/range, movement boundaries, enemy telegraph/freeze/death, XP and required page files. Test real 3D graphics separately in a browser: Node tests are not proof of WebGL rendering.
 
 **Release strategy:** Keep \`index.html\` unchanged as the Arcade entry, build 3D Combat separately under \`Game 1\`, and only switch the main menu to the 3D version after complete gameplay/browser testing. This avoids replacing the student's original game with an unfinished prototype.
+
+### Optional real-browser smoke test
+
+Run `npm install`, `npx playwright install chromium`, then `npm run qa:3d`. This opens the new page in a headless Chromium instance, verifies WASD movement and enemy pursuit, and saves one local screenshot to `tests/artifacts/3d-combat-preview.png`. The CDN must be accessible. This test is provided but **has not been run from this chat environment**.
