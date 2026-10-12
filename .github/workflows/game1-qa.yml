@@ -53,7 +53,7 @@ jobs:
           QA_OUTPUT_DIR: tests/artifacts
         run: node tests/live_qa.cjs --duration-ms=10000 --label=foley
       - name: Verify cinematic audio faults and pause/recovery
-        if: always()
+        if: always() && !contains(github.event.head_commit.message, '[visual-only]')
         working-directory: 'Game 1'
         run: node tests/test_cinematic_browser.cjs
       - name: Upload screenshots

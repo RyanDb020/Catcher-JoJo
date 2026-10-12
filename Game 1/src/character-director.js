@@ -231,12 +231,22 @@
     line(c,[[-10,-109],[4,-105],[18,-109]],'#32264b',3);
     line(c,[[-38,-152],[-14,-157],[-5,-151]],'#2a2338',2);line(c,[[10,-155],[34,-154],[42,-149]],'#2a2338',2);
     line(c,[[-2,-148],[2,-127],[-5,-121]],'#4b355f',2);line(c,[[-29,-121],[-18,-111]],'#c1a1dc',2);line(c,[[21,-118],[32,-126]],'#aa88cb',2);
+    // One attached leading arm: the finisher extends this limb rather than adding a third.
+    if(phase===4){
+      const q=smooth((time/8.359-.88)/.085),ex=-153+q*64,ey=-38-q*24,hx=-135+q*174,hy=91-q*73;
+      limb(c,[[-93,-97],[ex,ey],[hx,hy]],76,'#725097','#d1abef','#392b5f');
+      oval(c,ex,ey,47,43,'#b392d9',ink,4);
+      c.save();c.translate(hx,hy);c.rotate(-.12+q*.28);
+      armor(c,[[-44,-15],[39,-16],[45,21],[-43,23]],'#3a4056','#9da4bf');
+      fist(c,0,42,1.25+q*.85,'#674d8b','#e0c8fc');c.restore();
+    }else{
     // Leading giant arm, segmented gauntlet and foreshortened punch.
     limb(c,[[-93,-97],[-177,-35],[-160-55*strike,64-25*strike]],
       76,'#725097','#d1abef','#392b5f');
     oval(c,-179,-36,48,43,'#b392d9',ink,4);
     armor(c,[[-200,40],[-126,52],[-113,94],[-194,97]],'#3a4056','#9da4bf');
     fist(c,-156-119*strike,112-38*strike,1.17+.47*strike,'#674d8b','#e0c8fc');
+    }
     inkHatch(c,-84,33,.32);inkHatch(c,57,47,-.5);
     c.restore();
   }
@@ -700,9 +710,7 @@
       }
     }
     if(phase===4){
-      const q=smooth((t-.88)/.085);c.save();c.translate(w*.57,h*.49);c.rotate(-.18+.3*q);
-      const size=Math.min(w,h)/740*(.4+q*.75);c.scale(size,size);
-      limb(c,[[-120,-90],[-68,-31],[0,0]],79,'#69518a','#e1c2ec','#2d2542');fist(c,0,40,1.8,'#76539d','#efd5fb');c.restore();
+      const q=smooth((t-.88)/.085);
       // A visible impact contour expands around the fist; it does not wash out the scene.
       for(let i=0;i<18;i++){const a=i*TAU/18,d=Math.min(w,h)*(.12+q*.25);line(c,[[w*.57+Math.cos(a)*d*.7,h*.49+Math.sin(a)*d*.7],[w*.57+Math.cos(a)*d,h*.49+Math.sin(a)*d]],'rgba(248,228,186,'+(.7*(1-q))+')',i%3===0?3:1);}
     }
