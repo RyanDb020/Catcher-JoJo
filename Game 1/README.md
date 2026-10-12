@@ -149,12 +149,12 @@ Nog vereist voor volledige acceptatie: nieuwe regressietests voor de gewijzigde 
 
 ---
 
-## Shattered Universe — 3D Combat Prototype 0.1
+## Shattered Universe — 3D Combat Mission 1.0
 
 **New preview:** Open [3D Combat Mode](./combat.html) or click the new **3D COMBAT MODE** button in the existing Arcade game.
 
 The current \`index.html\` still runs the original p5.js Catcher; it has **not** been replaced.
-\`combat.html\` is an independent browser prototype using pinned Three.js 0.180.0 ES modules from jsDelivr. Internet is required for this CDN dependency.
+\`combat.html\` is an independent, finite 3D combat mission using pinned Three.js 0.180.0 ES modules from jsDelivr. Internet is required for this CDN dependency. This 1.0 scope is one complete arena mission, separate from the larger open-world RPG idea.
 
 ### Play
 
@@ -171,19 +171,19 @@ Click **ENTER THE ARENA** on a desktop browser with WebGL support. Mouse look us
 | T | ZA WARUDO: freeze enemies for 3.2 s, costs 40 energy |
 | Esc | Pause / mouse unlock |
 
-**Included:** 3D arena with clock tower, follow camera and obstacle avoidance, stylized player and articulated procedural Star Platinum, visible enemy with HP, chase/telegraph/attack/stagger states, knockback effects, sound synthesized in browser, Stand Energy, XP and waves, Time Stop, game-over/retry.
+**Included:** 3D arena with clock tower, follow camera and obstacle avoidance, stylized player and articulated procedural Star Platinum, four increasingly difficult Time Wraith fights, a larger 420 HP Chrono Shade boss, readable enemy attack warnings, knockback effects, original generated sound, Stand Energy, XP and level-ups, Time Stop, game-over, mission victory and replay. Wave 05 ends the mission instead of spawning an endless loop.
 
-**Not yet included:** imported detailed Blender models, full Universe Rebirth 3.0, permanent saves, multiple AI types, advanced boss and open world. These are future milestones; do not present this as the finished 3D RPG. No copyrighted audio was added to 3D Combat Mode.
+**Outside this mission release:** imported rigged Blender models, the full Universe Rebirth 3.0, permanent saves, multiple enemy AI types, and an open world. The arena uses original procedural geometry and is not the full 3D RPG. No copyrighted anime audio was added to 3D Combat Mode.
 
 ### Test & QA
 
-Run `npm test` from \`Game 1\` to execute existing Arcade tests and \`tests/test_3d.cjs\`. The new Node suite covers attack direction/range, movement boundaries, enemy telegraph/freeze/death, XP and required page files. Test real 3D graphics separately in a browser: Node tests are not proof of WebGL rendering.
+Run `npm test` from \`Game 1\` to execute the Arcade and 3D regression suites. The Node suite covers mission waves and boss stats, attack direction/range, movement boundaries, enemy telegraph/freeze/death, XP and required page files. Test real 3D graphics separately in a browser: Node tests are not proof of WebGL rendering.
 
-**Release strategy:** Keep \`index.html\` unchanged as the Arcade entry, build 3D Combat separately under \`Game 1\`, and only switch the main menu to the 3D version after complete gameplay/browser testing. This avoids replacing the student's original game with an unfinished prototype.
+**Release strategy:** Keep \`index.html\` as the original Arcade entry and open the complete 3D mission from its separate Combat Mode link. This preserves the existing game and its controls.
 
 ### Optional real-browser smoke test
 
-Run `npm install`, `npx playwright install chromium`, then `npm run qa:3d`. This opens the new page in a headless Chromium instance, verifies WASD movement and enemy pursuit, and saves one local screenshot to `tests/artifacts/3d-combat-preview.png`. The CDN must be accessible. This test **passed on GitHub Actions on 12 October 2026**: [Playwright run](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38294270710). The real Chromium smoke test confirmed startup, WASD movement, camera state and enemy pursuit without page JavaScript errors. A screenshot was uploaded as a workflow artifact. Full combat, long-session performance, boss fights and audio synchronization remain untested.
+Run `npm install`, `npx playwright install chromium`, then `npm run qa:3d`. This opens the page in headless Chromium and verifies WASD movement and enemy pursuit. The existing Playwright smoke test passed on GitHub Actions before the 1.0 mission update: [previous run](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38294270710). The new five-wave flow and boss still need browser testing. The local browser test could not start here because the environment blocks local server binding (`listen EPERM`).
 
 ### Interrupted-session recovery (12 October 2026)
 

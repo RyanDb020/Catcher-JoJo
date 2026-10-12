@@ -1,16 +1,16 @@
 import * as THREE from 'three';
-import {RULES, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone} from './rules.mjs';
+import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone} from './rules.mjs';
 
-// Shattered Universe 0.1: separate Three.js entry. Arcade's p5 sketch is unchanged.
+// Shattered Universe 1.0: a complete five-wave mission, separate from the Arcade game.
 const $=id=>document.getElementById(id);
 const UI={
-  viewport:$('viewport'), intro:$('intro'), pause:$('pause'), gameover:$('gameover'), fatal:$('fatal'),
+  viewport:$('viewport'), intro:$('intro'), pause:$('pause'), gameover:$('gameover'), victory:$('victory'), fatal:$('fatal'),
   hpFill:$('hp-fill'),energyFill:$('energy-fill'),xpFill:$('xp-fill'),enemyFill:$('enemy-fill'),
   hp:$('hp-num'),energy:$('energy-num'),xp:$('xp-num'),enemyHp:$('enemy-hp-num'),level:$('level'),
   kills:$('score-num'),wave:$('wave-num'),combo:$('combo-num'),objective:$('objective-text'),
   reticle:$('reticle'),ora:$('ora-ready'),stop:$('stop-ready'),impact:$('impact-label'),toast:$('toast'),
   time:$('time-indicator'),timeCount:$('time-count'),fps:$('fps'),endStats:$('end-stats'),
-  start:$('start-btn'),resume:$('resume-btn'),retry:$('retry-btn'),loading:$('loading-note')
+  enemyTitle:$('enemy-title'),start:$('start-btn'),resume:$('resume-btn'),retry:$('retry-btn'),victoryRetry:$('victory-retry-btn'),victoryStats:$('victory-stats'),loading:$('loading-note')
 };
 const V=new THREE.Vector3();
 const UP=new THREE.Vector3(0,1,0);
@@ -236,7 +236,7 @@ const enemyShadow=add(scene,new THREE.CircleGeometry(.8,26),new THREE.MeshBasicM
 
 const keys=new Set();
 const state={
-  running:false,paused:false,dead:false,pointerLocked:false,started:false,
+  running:false,paused:false,dead:false,victory:false,pointerLocked:false,started:false,
   hp:100,maxHp:100,stand:30,level:1,xp:0,kills:0,wave:1,combo:0,
   attack:null,ultimate:null,stopRemaining:0,dodgeTime:0,dodgeCooldown:0,invuln:0,
   arenaTime:0,shake:0,impactTimer:0,enemyRespawn:-1,toastUntil:0,hitstop:0,comboExpiresAt:0,
@@ -249,23 +249,26 @@ function placeEnemy(){
   const index=state.wave%6;
   const a=index*1.047+Math.PI;
   const r=6.8+(index%3)*1.5;
-  state.enemy=createEnemy(state.wave);
+  state.enemy=createEnemy(state.wave,isBossWave(state.wave));
   state.enemyPosition.set(Math.sin(a)*r,0,Math.cos(a)*r);
   enemyModel.root.visible=true;
+  enemyModel.root.scale.setScalar(state.enemy.boss?1.58:1);
+  enemyModel.aura.material=state.enemy.boss?M.enemyGlow:M.purple;
+  enemyModel.aura.scale.setScalar(state.enemy.boss?1.6:1);
   enemyShadow.visible=true;
   enemyModel.warn.visible=false;
   enemyModel.root.position.copy(state.enemyPosition);
   UI.enemyFill.style.transform='scaleX(1)';
 }
 function reset(){
-  state.running=true;state.dead=false;state.paused=false;state.started=true;
+  state.running=true;state.dead=false;state.victory=false;state.paused=false;state.started=true;
   Object.assign(state,{hp:100,maxHp:100,stand:30,level:1,xp:0,kills:0,wave:1,combo:0,
     attack:null,ultimate:null,stopRemaining:0,dodgeTime:0,dodgeCooldown:0,invuln:0,
     enemyRespawn:-1,arenaTime:0,shake:0,impactTimer:0,hitstop:0,comboExpiresAt:0,toastUntil:0});
   state.playerPos.set(0,0,6);state.facing.set(0,0,-1);
   state.yaw=0;state.pitch=.22;
   state.moveVelocity.set(0,0,0);keys.clear();
-  hero.rotation.y=Math.PI;placeEnemy();UI.gameover.hidden=true;UI.pause.hidden=true;
+  hero.rotation.y=Math.PI;placeEnemy();UI.gameover.hidden=true;UI.victory.hidden=true;UI.pause.hidden=true;
   UI.impact.classList.remove('show');UI.toast.classList.remove('visible');
   stand.arms.forEach(arm=>{arm.rotation.x=0;});
   state.ultimate=null;
@@ -299,13 +302,21 @@ function gameOver(){
   if(document.pointerLockElement===renderer.domElement)document.exitPointerLock?.();
   sound(135,.24,'sawtooth',.09);
 }
+function completeMission(){
+  state.victory=true;state.running=false;keys.clear();
+  UI.victoryStats.textContent='Chrono Shade verslagen · '+state.kills+' overwinningen · level '+state.level+'. Je hebt de Ruined Clock District bevrijd.';
+  UI.victory.hidden=false;
+  if(document.pointerLockElement===renderer.domElement)document.exitPointerLock?.();
+  sound(540,.36,'triangle',.065);setTimeout(()=>sound(810,.5,'sine',.045),150);
+}
 UI.start.addEventListener('click',start);
 UI.resume.addEventListener('click',resume);
 UI.retry.addEventListener('click',()=>{reset();requestPointerLock()});
+UI.victoryRetry.addEventListener('click',()=>{reset();requestPointerLock()});
 document.addEventListener('pointerlockchange',()=>{
   const was=state.pointerLocked;
   state.pointerLocked=document.pointerLockElement===renderer.domElement;
-  if(was&&!state.pointerLocked&&!state.dead&&state.running)pause();
+  if(was&&!state.pointerLocked&&!state.dead&&!state.victory&&state.running)pause();
 });
 window.addEventListener('keydown',event=>{
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code))event.preventDefault();
@@ -432,11 +443,15 @@ function enemyHit(damage,heavy=false){
   makeBurst(state.enemyPosition,heavy?0xffd48f:0xd99aff,heavy?16:10);
   sound(heavy?105:178,heavy?.24:.14,'sawtooth',heavy?.08:.055);
   if(result.killed){
-    state.kills++;state.wave++;
-    const leveled=grantXP(state,42+Math.floor(state.wave*4));
+    state.kills++;
+    const defeatedBoss=state.enemy.boss;
+    const leveled=grantXP(state,defeatedBoss?260:42+Math.floor(state.wave*4));
     if(leveled)banner('LEVEL UP — LV '+state.level,2.1);else banner('ENEMY DEFEATED +XP',1.5);
-    state.enemyRespawn=2.1;enemyModel.root.visible=false;enemyShadow.visible=false;
     state.combo=0;state.comboExpiresAt=0;
+    enemyModel.root.visible=false;enemyShadow.visible=false;
+    const mission=resolveDefeat(state.wave,defeatedBoss);
+    if(mission.completed){completeMission();}
+    else {state.wave=mission.nextWave;state.enemyRespawn=2.1;}
   }
   return true;
 }
@@ -515,7 +530,7 @@ function updateEnemy(dt){
   if(state.enemy.dead){
     if(state.enemyRespawn>0){
       state.enemyRespawn-=dt;
-      if(state.enemyRespawn<=0){placeEnemy();banner('WAVE '+state.wave+' — NEW CHALLENGER!',2);}
+      if(state.enemyRespawn<=0){placeEnemy();banner(isBossWave(state.wave)?'FINAL WAVE — CHRONO SHADE!':'WAVE '+state.wave+' / '+MISSION_WAVES+' — NEW CHALLENGER!',2);}
     }
     return;
   }
@@ -528,9 +543,8 @@ function updateEnemy(dt){
   enemyModel.root.rotation.y=Math.atan2(dx,dz);
   enemyModel.warn.visible=result.telegraph||state.enemy.state==='windup';
   enemyModel.warn.scale.setScalar(.95+Math.sin(state.arenaTime*23)*.12);
-  enemyModel.aura.material=M.purple;
   if(result.attack&&state.invuln<=0){
-    state.hp=Math.max(0,state.hp-(RULES.enemyBaseDamage+Math.floor(state.wave*.75)));
+    state.hp=Math.max(0,state.hp-state.enemy.damage);
     state.shake=.22;state.invuln=.52;impact('ENEMY HIT!',.44);sound(98,.25,'sawtooth',.09);
     if(state.hp<=0)gameOver();
   }
@@ -565,14 +579,15 @@ function updateHud(){
   UI.xp.textContent=state.xp+' / '+xpRequired(state.level);
   UI.level.textContent='LV '+String(state.level).padStart(2,'0');
   UI.enemyHp.textContent=Math.ceil(state.enemy.hp)+' / '+state.enemy.maxHp;
+  UI.enemyTitle.textContent=state.enemy.boss?'CHRONO SHADE · BOSS':'TIME WRAITH';
   UI.kills.innerHTML=state.kills+' <small>KILLS</small>';
-  UI.wave.textContent='WAVE '+String(state.wave).padStart(2,'0');
+  UI.wave.textContent='WAVE '+String(Math.min(state.wave,MISSION_WAVES)).padStart(2,'0')+' / '+MISSION_WAVES;
   UI.combo.textContent='COMBO ×'+(state.combo%3);
   UI.ora.classList.toggle('ready',state.stand>=RULES.oraCost);
   UI.stop.classList.toggle('ready',state.stand>=RULES.timeStopCost);
   UI.time.hidden=state.stopRemaining<=0;
   UI.timeCount.textContent=state.stopRemaining.toFixed(1)+'s';
-  UI.objective.textContent=state.enemy.dead?'Chrono Shade verslagen. Bereid je voor op de volgende golf.':
+  UI.objective.textContent=state.enemy.dead?(isBossWave(state.wave)?'Chrono Shade verslagen.':state.wave===MISSION_WAVES-1?'Laatste golf nadert: de Chrono Shade.':'Volgende golf nadert.'):state.enemy.boss?'Versla de Chrono Shade om de missie te voltooien.':
     state.enemy.state==='windup'?'Gevaar! De vijand bereidt een aanval voor. Dodge met Shift.':
     'Versla de Chrono Shade en beheers je Stand.';
 }
@@ -611,9 +626,9 @@ function loop(now){
 }
 // A read-only snapshot helps browser QA without adding cheat controls.
 Object.defineProperty(window,'__SHATTERED_QA__',{get:()=>Object.freeze({
-  started:state.started,running:state.running,paused:state.paused,dead:state.dead,
+  started:state.started,running:state.running,paused:state.paused,dead:state.dead,victory:state.victory,
   hp:state.hp,stand:state.stand,enemyHp:state.enemy.hp,enemyState:state.enemy.state,
-  kills:state.kills,wave:state.wave,level:state.level,stop:state.stopRemaining,
+  kills:state.kills,wave:state.wave,missionWaves:MISSION_WAVES,boss:state.enemy.boss,level:state.level,stop:state.stopRemaining,
   combo:state.combo,attackActive:!!state.attack,ultimateActive:!!state.ultimate,
   pointerLocked:state.pointerLocked,enemyVisible:enemyModel.root.visible,
   player:{x:state.playerPos.x,z:state.playerPos.z},

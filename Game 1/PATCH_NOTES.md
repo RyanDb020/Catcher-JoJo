@@ -1,15 +1,16 @@
 # Patch notes — JoJo Catcher: Celestial Edition
 
-## Shattered Universe — Combat Prototype 0.1 (12 October 2026)
+## Shattered Universe — 3D Combat Mission 1.0 (12 October 2026)
 
 - New **`combat.html`** with independently loaded Three.js 0.180.0 and a custom responsive HUD.
 - Added **`combat.css`**, **`src/3d/main.mjs`** and **`src/3d/rules.mjs`**. The new arena includes a shattered clock tower, boundary columns, celestial props and a third-person camera.
 - Added a controllable player, provisional articulated 3D Star Platinum, 3-hit punch combo, heavy attack, a basic ORA ORA ultimate, Time Stop, dodge, generated impact SFX and hit feedback.
-- One active enemy type: pursuit, warning before attack, recovery, stagger, HP, defeat and a new enemy in the next wave. Basic XP/levels included.
+- Finished the combat loop as a five-wave mission: four scaling Time Wraith encounters and a final Chrono Shade boss with 420 HP, stronger hits and a larger arena model.
+- Added a mission-complete screen, final-wave objective and replay action. Winning stops enemy respawns; defeat still offers retry.
 - Arcade Mode remains at `index.html`; a new in-game link opens `combat.html`. The old `sketch.js`, Rewind, audio and existing p5.js game were **not rewritten**.
-- New `tests/test_3d.cjs` checks 3D rules. `npm run qa:3d` invokes the separate Playwright browser test. The browser test is authored but has **not** been run in this environment.
-- Validation performed: V8 syntax evaluation, 15 source/rules checks, simulated scene initialization and 150 engine-update frames using a mocked Three.js environment. **Actual WebGL visuals, CDN availability and GitHub Pages deployment were not verified.**
-- Next: validated browser screenshot and performance measurements; replace temporary procedural characters with properly rigged models; add multi-enemy combat, boss AI and true Universe Rebirth 3.0.
+- Expanded `tests/test_3d.cjs` with mission length, boss stats, victory, and replay checks. `npm run qa:3d` invokes the separate Playwright browser test.
+- Validation performed: `npm test` passed, including 19 combined arcade regression checks, 156 multi-resolution cinematic renderer checks and 12 3D checks. `npm run qa:3d` could not start because the sandbox blocks local server binding (`listen EPERM`). Actual WebGL visuals, CDN availability and GitHub Pages deployment remain unverified.
+- This 1.0 scope is one complete arena mission, not the larger open-world RPG. Procedural character models remain, and the boss reuses the current enemy behavior with higher health and damage rather than a separate AI moveset.
 
 ## Cinematic Rebuild 3.0 — 9 October 2026
 

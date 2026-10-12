@@ -1,17 +1,37 @@
-// Stand Combat 0.1 - Node-only regression tests; no WebGL or browser needed.
+// Stand Combat 1.0 mission - Node-only regression tests; no WebGL/browser needed.
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const root=path.join(__dirname,'..');
 (async()=>{
- const {RULES,withinAttackCone,enforceArena,createEnemy,damageEnemy,stepEnemy,grantXP,xpRequired}=await import(pathToFileURL(path.join(root,'src/3d/rules.mjs')).href);
+ const {RULES,MISSION_WAVES,isBossWave,resolveDefeat,withinAttackCone,enforceArena,createEnemy,damageEnemy,stepEnemy,grantXP,xpRequired}=await import(pathToFileURL(path.join(root,'src/3d/rules.mjs')).href);
  let checks=0;
  const test=(title,fn)=>{fn();console.log('PASS: '+title);checks++};
  test('3D launch files exist without overwriting Arcade index',()=>{
   for(const f of ['combat.html','combat.css','src/3d/main.mjs','src/3d/rules.mjs'])assert(fs.existsSync(path.join(root,f)),f);
   assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/src\/sketch\.js/);
   assert.match(fs.readFileSync(path.join(root,'combat.html'),'utf8'),/src\/3d\/main\.mjs/);
+ });
+ test('mission has four ramping waves and a distinct final boss',()=>{
+  assert.equal(MISSION_WAVES,5);
+  assert.equal(isBossWave(4),false);
+  assert.equal(isBossWave(5),true);
+  const regular=createEnemy(4),boss=createEnemy(5,true);
+  assert.equal(regular.boss,false);
+  assert.equal(boss.boss,true);
+  assert.equal(boss.hp,420);
+  assert(boss.damage>regular.damage);
+  assert(boss.speed<regular.speed);
+  assert.deepEqual(resolveDefeat(4,false),{completed:false,nextWave:5});
+  assert.deepEqual(resolveDefeat(5,true),{completed:true,nextWave:5});
+ });
+ test('final boss defeat can complete a mission and replay cleanly',()=>{
+  const main=fs.readFileSync(path.join(root,'src/3d/main.mjs'),'utf8');
+  assert.match(main,/function completeMission\(\)/);
+  assert.match(main,/resolveDefeat\(state\.wave,defeatedBoss\)/);
+  assert.match(main,/UI\.victoryRetry\.addEventListener\('click',\(\)=>\{reset\(\);requestPointerLock\(\)\}\)/);
+  assert.match(fs.readFileSync(path.join(root,'combat.html'),'utf8'),/id="victory"/);
  });
  test('Three.js is pinned and loaded from a supported import map',()=>{
   const html=fs.readFileSync(path.join(root,'combat.html'),'utf8');

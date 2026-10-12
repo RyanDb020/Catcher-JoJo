@@ -1,4 +1,10 @@
-// Shattered Universe 0.1 — engine-neutral rules; can be tested without WebGL.
+// Shattered Universe 1.0 mission rules; engine-neutral and testable without WebGL.
+export const MISSION_WAVES = 5;
+export const isBossWave = wave => wave === MISSION_WAVES;
+export function resolveDefeat(wave, boss) {
+  const completed = Boolean(boss && isBossWave(wave));
+  return { completed, nextWave: completed ? wave : Math.min(MISSION_WAVES, wave + 1) };
+}
 export const RULES = Object.freeze({
   maxHp: 100, enemyBaseHp: 100, enemyBaseDamage: 12,
   meleeRange: 3.3, meleeHalfAngle: Math.PI * 0.39,
@@ -22,11 +28,12 @@ export function enforceArena(position, radius = RULES.arenaRadius) {
   }
   return position;
 }
-export function createEnemy(level = 1) {
-  const hp = RULES.enemyBaseHp + Math.min(180, (level - 1) * 12);
+export function createEnemy(level = 1, boss = false) {
+  const hp = boss ? 420 : RULES.enemyBaseHp + Math.min(180, (level - 1) * 12);
   return {
-    hp, maxHp: hp, level, state: 'patrol', timer: 0, attackReady: 0,
-    speed: 2.15 + Math.min(1.2, (level - 1) * 0.07),
+    hp, maxHp: hp, level, boss, state: 'patrol', timer: 0, attackReady: 0,
+    damage: boss ? 23 : RULES.enemyBaseDamage + Math.floor(level * .75),
+    speed: boss ? 1.72 : 2.15 + Math.min(1.2, (level - 1) * 0.07),
     stagger: 0, attacked: false, dead: false
   };
 }
