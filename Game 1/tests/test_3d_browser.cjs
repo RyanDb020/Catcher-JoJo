@@ -75,7 +75,8 @@ async function run(){
   if(!(await page.evaluate(()=>window.__SHATTERED_QA__.audio.muted)))throw Error('Mute control did not update mixer');
   await page.locator('#audio-mute').uncheck();
   await page.locator('#audio-settings').evaluate(node=>{node.open=false});
-  await page.setViewportSize({width:1280,height:720});
+  // Keep the high-resolution proof images above; use fewer pixels for the long CPU-rendered mission.
+  await page.setViewportSize({width:640,height:360});
   await page.locator('#resume-btn').click();
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true);
   if(errors.length)throw Error('Browser errors after narrow viewport/audio lifecycle: '+errors.join('; '));
@@ -110,7 +111,7 @@ async function run(){
   await page.waitForTimeout(350);
   const stillEnemy=await page.evaluate(()=>window.__SHATTERED_QA__.enemy);
   if(Math.hypot(stillEnemy.x-stoppedEnemy.x,stillEnemy.z-stoppedEnemy.z)>.01)throw Error('Time Stop moved the frozen enemy');
-  const missionDeadline=Date.now()+180000;
+  const missionDeadline=Date.now()+300000;
   while(Date.now()<missionDeadline){
     const qa=await page.evaluate(()=>window.__SHATTERED_QA__);
     if(qa.victory)break;

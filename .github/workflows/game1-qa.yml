@@ -47,6 +47,7 @@ jobs:
         working-directory: 'Game 1'
         run: npm run qa:3d
       - name: Exercise Arcade cinematics and local audio
+        if: always()
         working-directory: 'Game 1'
         env:
           QA_OUTPUT_DIR: tests/artifacts

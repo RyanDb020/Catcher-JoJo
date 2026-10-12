@@ -488,6 +488,8 @@ function placeEnemy(){
 function reset(){
   audio.setActive(false);
   standSide=-1;
+  for(const effect of effects){scene.remove(effect.mesh);effect.mesh.geometry.dispose();effect.mesh.material.dispose();}
+  effects.length=0;
   if(audioEndTimer){clearTimeout(audioEndTimer);audioEndTimer=null;}
   footstepTimer=0;
   state.running=true;state.dead=false;state.victory=false;state.paused=false;state.started=true;
@@ -541,7 +543,7 @@ function completeMission(){
   UI.victoryStats.textContent='Chrono Shade verslagen · '+state.kills+' overwinningen · level '+state.level+'. Je hebt de Ruined Clock District bevrijd.';
   UI.victory.hidden=false;
   if(document.pointerLockElement===renderer.domElement)document.exitPointerLock?.();
-  audio.play('time-resume',.72);setTimeout(()=>audio.play('stand-summon',.28),280);audioEndTimer=setTimeout(()=>audio.setActive(false),1900);
+  audio.play('time-resume',.72);setTimeout(()=>{if(state.victory)audio.play('stand-summon',.28)},280);audioEndTimer=setTimeout(()=>audio.setActive(false),1900);
 }
 UI.start.addEventListener('click',start);
 UI.resume.addEventListener('click',resume);
@@ -1006,7 +1008,7 @@ let fpsTime=0,fpsCount=0;
 function loop(now){
   requestAnimationFrame(loop);
   // Delta is clamped to prevent teleporting and damage spikes after tab switching.
-  const dt=clamp((now-lastTime)/1000,0,.045);lastTime=now;
+  const elapsed=Math.max(0,(now-lastTime)/1000),dt=clamp(elapsed,0,.045);lastTime=now;
   if(state.running&&!state.dead&&!state.paused){
     state.arenaTime+=dt;
     const stopWasActive=state.stopRemaining>0;
@@ -1033,7 +1035,7 @@ function loop(now){
   if(!state.paused&&state.hitstop<=0)animateStand(dt);
   updateCamera(dt);
   renderer.render(scene,camera);
-  fpsTime+=dt;fpsCount++;
+  fpsTime+=elapsed;fpsCount++;
   if(fpsTime>=.75){
     UI.fps.textContent='FPS '+Math.round(fpsCount/fpsTime);
     fpsTime=0;fpsCount=0;
