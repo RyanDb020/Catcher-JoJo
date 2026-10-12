@@ -21,4 +21,4 @@ Input: `20261012-1931-12.2789377.mp4` (19.7 s), supplied with the task. At appro
 
 This is a visible code-level rebuild, but final 3D rendering, exact attack timing, audio quality on speakers, and the entire mission from start through boss defeat still require a browser with WebGL and working audio.
 
-The published HTML briefly served a stale module with the former URL. Combat imports now carry build `1.2.0` cache keys so the current renderer, fallback and audio files load as a unit.
+The published HTML briefly served a stale module with the former URL. Combat imports now carry build `1.3.0` cache keys so the current renderer, fallback and audio files load as a unit. The Canvas2D backup now draws distinct segmented Jotaro, Star Platinum and Chrono Shade silhouettes plus a clock face, broken arch, district facade and lantern.

@@ -113,6 +113,10 @@ const root=path.join(__dirname,'..');
   for(const marker of ['Paved clock plaza','Clock tower landmark','Three time anchors','TIME WAVE · STOP TIME OR DODGE THROUGH','pillars.push(building)','obstaclesRay.intersectObjects(pillars,true)'])assert(js.includes(marker),marker);
   assert.match(fs.readFileSync(path.join(root,'combat.html'),'utf8'),/id="anchor-status"/);
  });
+ test('Canvas2D fallback keeps distinct character silhouettes and district landmarks',()=>{
+  const fallback=fs.readFileSync(path.join(root,'src/3d/fallback.mjs'),'utf8');
+  for(const marker of ['function drawFigure','Articulated arms','Split legs','clock=world(0,-16.6)','const arch=world(-15,1)','const facade=world(15,-1)',"'#b784e2',.82,'stand'"])assert(fallback.includes(marker),marker);
+ });
  test('combat audio is local, preference-controlled and backed by credited Ogg files',()=>{
   const js=fs.readFileSync(path.join(root,'src/3d/audio.mjs'),'utf8');
   for(const marker of ['district-ambience.ogg','combat-music.ogg','time-resume.ogg','localStorage','audio-mute',"new URL('../../assets/combat-audio/"])assert(js.includes(marker),marker);
