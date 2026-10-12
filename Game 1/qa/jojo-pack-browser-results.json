@@ -1,0 +1,164 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "clip": "cmoon",
+      "previewPlayed": true
+    },
+    {
+      "clip": "wryyy",
+      "previewPlayed": true
+    },
+    {
+      "clip": "dio",
+      "previewPlayed": true
+    },
+    {
+      "clip": "run",
+      "previewPlayed": true
+    },
+    {
+      "clip": "giorno",
+      "previewPlayed": true
+    },
+    {
+      "clip": "crimson",
+      "previewPlayed": true
+    },
+    {
+      "clip": "muda",
+      "previewPlayed": true
+    },
+    {
+      "clip": "starstop",
+      "previewPlayed": true
+    },
+    {
+      "clip": "kira",
+      "previewPlayed": true
+    },
+    {
+      "clip": "hand",
+      "previewPlayed": true
+    },
+    {
+      "clip": "freezefx",
+      "previewPlayed": true
+    },
+    {
+      "clip": "teleport",
+      "previewPlayed": true
+    },
+    {
+      "clip": "tusk",
+      "previewPlayed": true
+    },
+    {
+      "clip": "yes",
+      "previewPlayed": true
+    },
+    {
+      "clip": "kiratheme",
+      "previewPlayed": true
+    },
+    {
+      "clip": "overheaven",
+      "previewPlayed": true
+    },
+    {
+      "clip": "resume",
+      "previewPlayed": true
+    },
+    {
+      "move": "hand",
+      "completed": true
+    },
+    {
+      "move": "tusk",
+      "completed": true
+    },
+    {
+      "move": "cmoon",
+      "completed": true
+    },
+    {
+      "trigger": "queued blue Time Stop pickup",
+      "completed": true
+    },
+    {
+      "move": "muda",
+      "completed": true
+    },
+    {
+      "move": "giorno",
+      "completed": true
+    },
+    {
+      "trigger": "King Crimson",
+      "played": true
+    },
+    {
+      "trigger": "kira",
+      "played": true
+    },
+    {
+      "trigger": "yes",
+      "played": true
+    },
+    {
+      "trigger": "run",
+      "played": true
+    },
+    {
+      "trigger": "wryyy",
+      "played": true
+    },
+    {
+      "trigger": "teleport",
+      "played": true
+    }
+  ],
+  "errors": [],
+  "playback": [
+    "http://127.0.0.1:39425/assets/jojo/cmoon.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/wryyy.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/dio.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/run.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/giorno.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/crimson.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/muda.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/starstop.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/kira.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/hand.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/freezefx.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/teleport.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/tusk.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/yes.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/kiratheme.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/overheaven.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/resume.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/kiratheme.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/starstop.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/freezefx.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/resume.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/hand.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/tusk.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/cmoon.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/starstop.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/freezefx.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/resume.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/muda.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/giorno.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/giorno.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/giorno.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/kiratheme.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/crimson.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/kira.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/yes.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/run.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/wryyy.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/teleport.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/jojo/cmoon.mp3?v=pack-1",
+    "http://127.0.0.1:39425/assets/made-in-heaven.mp3?v=personal-jojo-1"
+  ]
+}
