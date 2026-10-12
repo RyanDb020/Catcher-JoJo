@@ -15,6 +15,7 @@ const UI={
 };
 const audio=createCombatAudio();
 let audioEndTimer=null,footstepTimer=0;
+let lastMouseLook=0,standSide=-1;
 const V=new THREE.Vector3();
 const UP=new THREE.Vector3(0,1,0);
 const v=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -46,7 +47,7 @@ const G={
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x111326);
 scene.fog=new THREE.FogExp2(0x19172b,.012);
-const camera=new THREE.PerspectiveCamera(64,1,.07,155);
+const camera=new THREE.PerspectiveCamera(window.innerWidth/window.innerHeight<.8?78:64,window.innerWidth/window.innerHeight,.07,155);
 let renderer;
 try{
   renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
@@ -486,6 +487,7 @@ function placeEnemy(){
 }
 function reset(){
   audio.setActive(false);
+  standSide=-1;
   if(audioEndTimer){clearTimeout(audioEndTimer);audioEndTimer=null;}
   footstepTimer=0;
   state.running=true;state.dead=false;state.victory=false;state.paused=false;state.started=true;
@@ -563,6 +565,7 @@ window.addEventListener('keydown',event=>{
 window.addEventListener('keyup',event=>keys.delete(event.code));
 window.addEventListener('blur',()=>{keys.clear();if(state.running)pause()});
 document.addEventListener('mousemove',event=>{
+  if(event.movementX||event.movementY)lastMouseLook=performance.now();
   if(state.pointerLocked){
     state.yaw-=event.movementX*.0025;state.pitch=clamp(state.pitch+event.movementY*.002,.02,.65);
   }else if(dragging&&state.running){
@@ -580,7 +583,7 @@ window.addEventListener('mouseup',()=>{dragging=false});
 renderer.domElement.addEventListener('contextmenu',event=>event.preventDefault());
 window.addEventListener('resize',()=>{
   const w=window.innerWidth,h=window.innerHeight;
-  camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h);
+  camera.aspect=w/h;camera.fov=w/h<.8?78:64;camera.updateProjectionMatrix();renderer.setSize(w,h);
 });
 function banner(message,seconds=1.3){
   UI.toast.textContent=message;UI.toast.classList.add('visible');state.toastUntil=state.arenaTime+seconds;
@@ -752,7 +755,10 @@ function animateStand(dt){
     a&&a.stage%2!==1?-1.9*swing:u?-1.35*Math.sin(time*41+Math.PI):.08-gait*.12*moving,15,dt);
   stand.root.position.y=Math.sin(time*2.4)*.055+(u?.10:0)+(a?.08*swing:0);
   // Stage the Stand on the open side of the camera instead of hiding it behind a turning hero.
-  const standPosition=state.playerPos.clone().add(v(Math.cos(state.yaw),0,-Math.sin(state.yaw)).multiplyScalar(-1.65))
+  const screenRight=v(Math.cos(state.yaw),0,-Math.sin(state.yaw));
+  const opponentSide=state.enemyPosition.clone().sub(state.playerPos).dot(screenRight);
+  if(opponentSide>.6)standSide=-1;else if(opponentSide<-.6)standSide=1;
+  const standPosition=state.playerPos.clone().add(screenRight.multiplyScalar(standSide*1.55))
     .addScaledVector(state.facing,(a||u)?.55:.12);
   enforceArena(standPosition,RULES.arenaRadius-.65);
   const localStand=standPosition.clone().sub(state.playerPos).applyAxisAngle(UP,-hero.rotation.y);
@@ -943,11 +949,15 @@ function updateCamera(dt){
   const playerFocus=state.playerPos.clone().add(v(0,1.65,0));
   const delta=state.enemyPosition.clone().sub(state.playerPos);delta.y=0;
   const separation=delta.length();
-  const focusLead=state.running&&!state.enemy.dead&&separation>.001?Math.min(1.15,Math.max(0,separation-3.5)*.13):0;
+  const focusLead=state.running&&!state.enemy.dead&&separation>.001?Math.min(1.15,separation*.20):0;
   const target=playerFocus.addScaledVector(delta.normalize(),focusLead);
   camera.userData.combatFocus=target.clone();
+  if(state.running&&(state.attack||state.ultimate)&&!state.enemy.dead&&separation<7&&performance.now()-lastMouseLook>350){
+    const desiredYaw=Math.atan2(-delta.x,-delta.z);
+    state.yaw+=Math.atan2(Math.sin(desiredYaw-state.yaw),Math.cos(desiredYaw-state.yaw))*Math.min(1,dt*2.2);
+  }
   const yaw=state.yaw,pitch=state.pitch;
-  const distance=7.9+(state.running&&!state.enemy.dead?clamp((separation-5)*.14,0,1.9):0);
+  const distance=(7.9+(state.running&&!state.enemy.dead?clamp((separation-5)*.14,0,1.9):0))*(camera.aspect<.8?1.22:1);
   const offset=v(Math.sin(yaw)*Math.cos(pitch)*distance,2.1+Math.sin(pitch)*6.5,Math.cos(yaw)*Math.cos(pitch)*distance);
   const desire=target.clone().add(offset);
   // Camera collision against arena columns and props, preserving the combat focus.
@@ -1040,7 +1050,7 @@ Object.defineProperty(window,'__SHATTERED_QA__',{get:()=>Object.freeze({
   player:{x:state.playerPos.x,z:state.playerPos.z},
   enemy:{x:state.enemyPosition.x,z:state.enemyPosition.z,type:state.enemy.type},
   rig:{heroElbows:hero.userData.rig.elbows.map(joint=>joint.rotation.x),heroKnees:hero.userData.rig.knees.map(joint=>joint.rotation.x)},
-  camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,yaw:state.yaw,
+  camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,yaw:state.yaw,aspect:camera.aspect,
     focus:{x:camera.userData.combatFocus?.x??0,y:camera.userData.combatFocus?.y??0,z:camera.userData.combatFocus?.z??0}}
 })});
 updateCamera(.1);

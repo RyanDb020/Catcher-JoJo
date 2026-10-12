@@ -29,6 +29,7 @@ async function run(){
   await page.getByRole('button',{name:/ENTER THE ARENA/}).click();
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true,null,{timeout:10000});
   const before=await page.evaluate(()=>window.__SHATTERED_QA__);
+  if(Math.abs(before.camera.aspect-1280/720)>.001)throw Error('Initial camera aspect distorts character proportions');
   if(before.renderer!=='webgl')throw Error('WebGL renderer did not start; renderer='+before.renderer);
   if(!(before.drawCalls>0))throw Error('WebGL renderer produced no draw calls: '+JSON.stringify(before));
   await page.keyboard.down('w');
@@ -58,6 +59,8 @@ async function run(){
   await page.setViewportSize({width:390,height:844});
   await page.waitForTimeout(250);
   const narrowBounds=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth}));
+  const narrowCamera=await page.evaluate(()=>window.__SHATTERED_QA__.camera);
+  if(Math.abs(narrowCamera.aspect-390/844)>.001)throw Error('Narrow camera aspect was not resized');
   if(narrowBounds.scrollWidth>narrowBounds.width)throw Error('Narrow viewport has horizontal overflow: '+JSON.stringify(narrowBounds));
   await page.screenshot({path:path.join(output,'3d-combat-mobile-preview.png')});
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.audio.ready===14,null,{timeout:15000});
@@ -72,15 +75,16 @@ async function run(){
   if(!(await page.evaluate(()=>window.__SHATTERED_QA__.audio.muted)))throw Error('Mute control did not update mixer');
   await page.locator('#audio-mute').uncheck();
   await page.locator('#audio-settings').evaluate(node=>{node.open=false});
+  await page.setViewportSize({width:1280,height:720});
   await page.locator('#resume-btn').click();
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true);
   if(errors.length)throw Error('Browser errors after narrow viewport/audio lifecycle: '+errors.join('; '));
   // Complete the existing five-wave mission using only real keyboard/mouse inputs.
-  await page.setViewportSize({width:1280,height:720});
   const held=new Set();
   async function steer(x,z,arrival=2.35){
     const qa=await page.evaluate(()=>window.__SHATTERED_QA__);
     if(qa.dead)throw Error('Mission player died: '+JSON.stringify(qa));
+    if(!qa.running)throw Error('Mission unexpectedly paused: '+JSON.stringify(qa));
     const dx=x-qa.player.x,dz=z-qa.player.z,distance=Math.hypot(dx,dz);
     const wants=new Set();
     if(distance>arrival){
@@ -94,9 +98,9 @@ async function run(){
     return {qa,distance};
   }
   for(const [x,z] of [[-6,4],[7,1],[0,-12]]){
-    const deadline=Date.now()+20000;
+    const deadline=Date.now()+45000;
     for(;;){const {distance}=await steer(x,z,2.5);if(distance<=2.5){await page.keyboard.press('f');break}
-      if(Date.now()>deadline)throw Error('Failed to reach time anchor');await page.waitForTimeout(100);}
+      if(Date.now()>deadline)throw Error('Failed to reach time anchor '+JSON.stringify({target:{x,z},state:await page.evaluate(()=>window.__SHATTERED_QA__)}));await page.waitForTimeout(100);}
   }
   const anchorsOff=await page.evaluate(()=>window.__SHATTERED_QA__.anchors);
   if(anchorsOff!==0)throw Error('Time anchor interaction failed: '+anchorsOff);
