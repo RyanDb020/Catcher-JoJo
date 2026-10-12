@@ -25,3 +25,12 @@ Input: `20261012-1931-12.2789377.mp4` (19.7 s), supplied with the task. At appro
 The WebGL render path and a short movement/enemy-chase smoke test now pass in software-rendered Chromium. The screenshot artifact still needs a close visual review; the full mission, attack/dodge/counter loop, reset, cinematics, small live viewport and audible speaker output were not covered by this smoke test. Hardware performance on the user’s RTX 4080 was not measured.
 
 The published HTML briefly served a stale module with the former URL. Combat imports now carry build `1.4.0` cache keys so the current renderer, fallback and audio files load as a unit. The Canvas2D backup now draws distinct segmented Jotaro, Star Platinum and Chrono Shade silhouettes plus a clock face, broken arch, district facade and lantern. Its fallback camera frames these landmarks and keeps fighter sprites large enough to read on standard desktop sizes.
+
+
+## Camera/HUD polish verification — 2026-10-12
+
+- Camera composition now eases the focus up to 1.15 world units toward a live enemy and expands its follow distance modestly when the fighters are far apart. Collision checks against arena structures remain active.
+- Hit and miss feedback is anchored in the lower-right safe area, below the fight and clear of the ability row. Small screens use narrower labels and a higher bottom offset.
+- On commit `ef3a555315376c79b008b80f7468f11105f5a6e0`, GitHub Actions run [38305744509](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38305744509) passed both the full Node regression job and Playwright WebGL smoke test.
+- Chromium with SwiftShader reported WebGL, about 270 draw calls and 86k triangles. The check confirmed WASD movement, enemy chase, camera focus following the player, no horizontal overflow at 1280×720 and 390×844, no page errors, and the Canvas2D fallback. It captured desktop, mobile-sized and fallback screenshots in the run artifact.
+- The local environment still blocks the test server with `listen EPERM 127.0.0.1`; the browser test therefore ran in GitHub Actions. This smoke test does not claim full-mission, cinematic, sound playback or hardware GPU verification.
