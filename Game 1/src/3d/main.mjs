@@ -834,11 +834,18 @@ function updateEnemy(dt){
   }
 }
 function updateCamera(dt){
-  const target=state.playerPos.clone().add(v(0,1.65,0));
+  const playerFocus=state.playerPos.clone().add(v(0,1.65,0));
+  const delta=state.enemyPosition.clone().sub(state.playerPos);delta.y=0;
+  const separation=delta.length();
+  // Keep the hero dominant while nudging the frame toward a live opponent.
+  const focusLead=state.running&&!state.enemy.dead&&separation>.001?Math.min(1.15,Math.max(0,separation-3.5)*.13):0;
+  const target=playerFocus.addScaledVector(delta.normalize(),focusLead);
+  camera.userData.combatFocus=target.clone();
   const yaw=state.yaw,pitch=state.pitch;
-  const offset=v(Math.sin(yaw)*Math.cos(pitch)*7.9,2.1+Math.sin(pitch)*6.5,Math.cos(yaw)*Math.cos(pitch)*7.9);
+  const distance=7.9+(state.running&&!state.enemy.dead?clamp((separation-5)*.14,0,1.9):0);
+  const offset=v(Math.sin(yaw)*Math.cos(pitch)*distance,2.1+Math.sin(pitch)*6.5,Math.cos(yaw)*Math.cos(pitch)*distance);
   const desire=target.clone().add(offset);
-  // Camera collision against arena columns and props, preserving focus on the player.
+  // Keep the combat focus and camera on the open side of arena structures.
   const ray=desire.clone().sub(target);const dist=ray.length();ray.normalize();
   obstaclesRay.set(target,ray);obstaclesRay.far=dist;
   const hits=obstaclesRay.intersectObjects(pillars,true);
@@ -925,7 +932,8 @@ Object.defineProperty(window,'__SHATTERED_QA__',{get:()=>Object.freeze({
   combo:state.combo,attackActive:!!state.attack,ultimateActive:!!state.ultimate,
   pointerLocked:state.pointerLocked,enemyVisible:enemyModel.root.visible,anchors:timeAnchors.filter(anchor=>anchor.active).length,audio:audio.snapshot(),
   player:{x:state.playerPos.x,z:state.playerPos.z},
-  camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z}
+  camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,
+    focus:{x:camera.userData.combatFocus?.x??0,y:camera.userData.combatFocus?.y??0,z:camera.userData.combatFocus?.z??0}}
 })});
 updateCamera(.1);
 updateHud();
