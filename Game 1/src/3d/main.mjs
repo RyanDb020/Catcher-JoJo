@@ -71,7 +71,11 @@ const sphere=(root,mat,pos,size)=>add(root,G.sphere,mat,pos,size);
 const cyl=(root,mat,pos,radius,height,rot)=>add(root,G.cyl,mat,pos,[radius,height,radius],rot);
 const cone=(root,mat,pos,radius,height,rot)=>add(root,G.cone,mat,pos,[radius,height,radius],rot);
 const ring=(root,mat,x,y,z,radius,rotX=Math.PI/2)=>{
-  const o=add(root,G.torus,mat,[x,y,z],[radius,radius,radius],[rotX,0,0]);return o;
+  // Torus radius must not scale tube thickness: large arena rings stay fine-line details.
+  const geo=new THREE.TorusGeometry(radius,radius>10?.035:.055,8,Math.max(48,Math.round(radius*9)));
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.position.set(x,y,z);mesh.rotation.x=rotX;root.add(mesh);
+  return mesh;
 };
 const pillars=[],colliders=[],effects=[];
 const animated=[];
@@ -375,8 +379,6 @@ function movePlayer(dt){
   if(state.moveVelocity.lengthSq()>.7&&!state.attack&&!state.ultimate){
     state.facing.copy(state.moveVelocity).normalize();
   }
-  hero.rotation.y=THREE.MathUtils.lerpAngle?THREE.MathUtils.lerpAngle(hero.rotation.y,Math.atan2(state.facing.x,state.facing.z),Math.min(1,dt*13)):
-    hero.rotation.y+THREE.MathUtils.euclideanModulo(Math.atan2(state.facing.x,state.facing.z)-hero.rotation.y+Math.PI,Math.PI*2)*Math.min(1,dt*13); // corrected below
   // Always choose shortest yaw path rather than rotating all the way round.
   const desired=Math.atan2(state.facing.x,state.facing.z);
   const angle=Math.atan2(Math.sin(desired-hero.rotation.y),Math.cos(desired-hero.rotation.y));
