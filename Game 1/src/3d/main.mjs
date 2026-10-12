@@ -1,6 +1,7 @@
+import {createUpgradeMenu} from './upgrades.mjs?v=1.6.0';
 import * as THREE from 'three';
 import {createCombatAudio} from './audio.mjs?v=1.5.1';
-import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone} from './rules.mjs?v=1.4.0';
+import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone, freshUpgrades} from './rules.mjs?v=1.6.0';
 
 // Shattered Universe 1.0: a complete five-wave mission, separate from the Arcade game.
 const $=id=>document.getElementById(id);
@@ -485,7 +486,13 @@ function placeEnemy(){
   enemyModel.root.position.copy(state.enemyPosition);
   UI.enemyFill.style.transform='scaleX(1)';
 }
+state.upgrades=freshUpgrades();
+const upgrades=createUpgradeMenu(state,{clearInput:()=>keys.clear(),onOpen:()=>{
+  state.attack=null;state.ultimate=null;state.chronoEcho=null;state.echoSlow=0;echoActor.visible=false;
+  audio.setActive(false);if(document.pointerLockElement===renderer.domElement)document.exitPointerLock?.();
+},onChoose:()=>{state.running=true;audio.start();requestPointerLock();banner('UPGRADE READY · WAVE '+state.wave,1.4)}});
 function reset(){
+  upgrades.reset();state.upgrades=freshUpgrades();bossLine.visible=false;bossSweep.visible=false;
   audio.setActive(false);
   standSide=-1;
   for(const effect of effects){scene.remove(effect.mesh);effect.mesh.geometry.dispose();effect.mesh.material.dispose();}
@@ -512,7 +519,7 @@ function reset(){
   updateHud();
 }
 function resume(){
-  if(state.dead)return;
+  if(state.dead||state.victory||state.upgradePending)return;
   state.paused=false;state.running=true;UI.pause.hidden=true;UI.intro.hidden=true;
   keys.clear();requestPointerLock();audio.start();
 }
@@ -528,7 +535,7 @@ function requestPointerLock(){
   }catch{ /* keyboard + drag camera fallback */ }
 }
 function pause(){
-  if(!state.started||state.dead||state.paused)return;
+  if(!state.started||state.dead||state.paused||state.upgradePending||state.victory)return;
   state.paused=true;state.running=false;keys.clear();UI.pause.hidden=false;
   audio.setActive(false);
   if(document.pointerLockElement===renderer.domElement)document.exitPointerLock?.();
@@ -557,6 +564,7 @@ document.addEventListener('pointerlockchange',()=>{
 });
 window.addEventListener('keydown',event=>{
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.code))event.preventDefault();
+  if(state.upgradePending)return;
   if(event.code==='Escape'){if(!state.pointerLocked){if(state.paused)resume();else pause();}return;}
   keys.add(event.code);
   if(event.repeat)return;
@@ -636,7 +644,7 @@ function dodge(){
   state.dodgeTime=.18;state.invuln=.34;state.dodgeCooldown=.85;
   state.shake=.05;
   const perfect=state.enemy.state==='windup'&&state.enemy.timer<=.26&&state.stopRemaining<=0&&
-    Math.hypot(state.enemyPosition.x-state.playerPos.x,state.enemyPosition.z-state.playerPos.z)<=2.65;
+    Math.hypot(state.enemyPosition.x-state.playerPos.x,state.enemyPosition.z-state.playerPos.z)<=(state.enemy.pattern==='timeline'?8:state.enemy.pattern==='sweep'?4.4:2.65);
   if(perfect){
     state.invuln=.60; // Covers the short Echo slow as well as the announced strike.
     state.stand=clamp(state.stand+18,0,100);state.echoSlow=.22;
@@ -675,7 +683,7 @@ function enemyHit(damage,heavy=false){
     state.stand=clamp(state.stand+2,0,100);impact('GUARD · RMB BREAKS',.30);banner('THE GUARD IS UP — BREAK IT WITH RMB',1.1);audio.play('guard',.48);return false;
   }
   state.lastStrike={damage,heavy};
-  let appliedDamage=damage;
+  let appliedDamage=damage*(1+.12*state.upgrades.power);
   if(state.enemy.boss){
     const anchorsOn=timeAnchors.some(anchor=>anchor.active);
     if(anchorsOn)appliedDamage*=.62;
@@ -697,7 +705,7 @@ function enemyHit(damage,heavy=false){
     enemyModel.deathAt=state.arenaTime;enemyShadow.visible=false;
     const mission=resolveDefeat(state.wave,defeatedBoss);
     if(mission.completed){completeMission();}
-    else {state.wave=mission.nextWave;state.enemyRespawn=2.1;}
+    else {state.wave=mission.nextWave;state.enemyRespawn=1;upgrades.open();}
   }
   return true;
 }
@@ -847,7 +855,7 @@ function timeStop(){
     if(state.running&&state.stand<RULES.timeStopCost)banner('ZA WARUDO NEEDS 40 ENERGY');
     return;
   }
-  state.stand-=RULES.timeStopCost;state.stopRemaining=RULES.timeStopSeconds;
+  state.stand-=RULES.timeStopCost;state.stopRemaining=RULES.timeStopSeconds+.4*state.upgrades.time;
   banner('ZA WARUDO — TOKI YO TOMARE!',2.0);
   state.shake=.18;audio.play('time-stop',.86);
 }
@@ -906,7 +914,12 @@ function updateChronoEcho(dt){
   }
   if(echo.age>=.82){state.chronoEcho=null;echoActor.visible=false;}
 }
+const bossLine=new THREE.Mesh(new THREE.PlaneGeometry(1.7,8),new THREE.MeshBasicMaterial({color:0xff6688,transparent:true,opacity:.42,side:THREE.DoubleSide,depthWrite:false}));
+bossLine.rotation.x=-Math.PI/2;bossLine.visible=false;scene.add(bossLine);
+const bossSweep=new THREE.Mesh(new THREE.TorusGeometry(4.4,.09,8,72),new THREE.MeshBasicMaterial({color:0xffb478,transparent:true,opacity:.8,depthWrite:false}));
+bossSweep.rotation.x=-Math.PI/2;bossSweep.visible=false;scene.add(bossSweep);
 function updateEnemy(dt){
+  bossLine.visible=false;bossSweep.visible=false;
   if(state.enemy.dead){
     if(state.enemyRespawn>0){
       state.enemyRespawn-=dt;
@@ -923,6 +936,7 @@ function updateEnemy(dt){
   const wasWindup=state.enemy.state==='windup';
   const frozen=state.stopRemaining>0||state.echoSlow>0;
   const result=stepEnemy(state.enemy,state.enemyPosition,state.playerPos,dt,frozen);
+  if(result.telegraph&&!wasWindup&&state.enemy.boss)banner(state.enemy.pattern==='timeline'?'TIME LANCE · STEP SIDEWAYS':state.enemy.pattern==='sweep'?'WIDE SWEEP · DODGE OR RETREAT':'SHADE STRIKE · DODGE THEN COUNTER',1.1);
   if(result.telegraph&&!wasWindup)audio.play('enemy-telegraph',.65,Math.max(-.7,Math.min(.7,(state.enemyPosition.x-state.playerPos.x)*.06)));
   state.enemyPosition.x+=result.x;state.enemyPosition.z+=result.z;
   // Keep body volumes apart even if the player runs directly into a stationary opponent.
@@ -940,6 +954,10 @@ function updateEnemy(dt){
   enemyModel.root.position.x=state.enemyPosition.x;enemyModel.root.position.z=state.enemyPosition.z;
   const dx=state.playerPos.x-state.enemyPosition.x,dz=state.playerPos.z-state.enemyPosition.z;
   enemyModel.root.rotation.y=Math.atan2(dx,dz);
+  if(state.enemy.state==='windup'&&state.enemy.boss){
+    if(state.enemy.pattern==='timeline'){bossLine.visible=true;bossLine.position.set(state.enemyPosition.x+state.enemy.aim.x*4,.12,state.enemyPosition.z+state.enemy.aim.z*4);bossLine.rotation.z=Math.atan2(state.enemy.aim.x,state.enemy.aim.z);}
+    if(state.enemy.pattern==='sweep'){bossSweep.visible=true;bossSweep.position.set(state.enemyPosition.x,.12,state.enemyPosition.z);}
+  }
   enemyModel.warn.visible=result.telegraph||state.enemy.state==='windup';
   enemyModel.warn.scale.setScalar(.95+Math.sin(state.arenaTime*23)*.12);
   if(result.attack&&state.invuln<=0){
@@ -1027,8 +1045,8 @@ function loop(now){
     updateChronoEcho(actionDt);
     updateAttack(actionDt);
     updateOra(actionDt);
-    if(state.hitstop<=0)updateEnemy(dt);
-    updateAnchors(dt);
+    if(state.running&&state.hitstop<=0)updateEnemy(dt);
+    if(state.running)updateAnchors(dt);
     updateEffects(dt);
     animated.forEach(f=>f(dt,state.arenaTime));
     updateHud();
@@ -1045,8 +1063,9 @@ function loop(now){
 // A read-only snapshot helps browser QA without adding cheat controls.
 Object.defineProperty(window,'__SHATTERED_QA__',{get:()=>Object.freeze({
   renderer:'webgl',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
+  upgradePending:!!state.upgradePending,upgrades:{...state.upgrades},bossPattern:state.enemy.pattern,bossPhase:state.enemy.phase,enemyTimer:state.enemy.timer,
   started:state.started,running:state.running,paused:state.paused,dead:state.dead,victory:state.victory,
-  hp:state.hp,stand:state.stand,enemyHp:state.enemy.hp,enemyState:state.enemy.state,
+  hp:state.hp,maxHp:state.maxHp,stand:state.stand,enemyHp:state.enemy.hp,enemyState:state.enemy.state,
   kills:state.kills,wave:state.wave,missionWaves:MISSION_WAVES,boss:state.enemy.boss,level:state.level,stop:state.stopRemaining,
   combo:state.combo,attackActive:!!state.attack,ultimateActive:!!state.ultimate,
   pointerLocked:state.pointerLocked,enemyVisible:enemyModel.root.visible,anchors:timeAnchors.filter(anchor=>anchor.active).length,audio:audio.snapshot(),

@@ -5,7 +5,7 @@ const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const root=path.join(__dirname,'..');
 (async()=>{
- const {RULES,MISSION_WAVES,isBossWave,resolveDefeat,withinAttackCone,enforceArena,createEnemy,damageEnemy,stepEnemy,grantXP,xpRequired}=await import(pathToFileURL(path.join(root,'src/3d/rules.mjs')).href);
+ const {RULES,MISSION_WAVES,isBossWave,resolveDefeat,withinAttackCone,enforceArena,createEnemy,damageEnemy,stepEnemy,grantXP,xpRequired,applyUpgrade,freshUpgrades}=await import(pathToFileURL(path.join(root,'src/3d/rules.mjs')).href);
  let checks=0;
  const test=(title,fn)=>{fn();console.log('PASS: '+title);checks++};
  test('3D launch files exist without overwriting Arcade index',()=>{
@@ -129,6 +129,34 @@ const root=path.join(__dirname,'..');
   const credits=fs.readFileSync(path.join(root,'AUDIO_CREDITS.md'),'utf8');
   assert.match(credits,/original, locally generated synthesis/);
   for(const f of ['dash-whoosh.ogg','punch-light.ogg','punch-heavy.ogg','stone-steps.ogg','enemy-telegraph.ogg','enemy-hit.ogg','time-stop.ogg','time-resume.ogg','stand-summon.ogg','chrono-echo.ogg','district-ambience.ogg','combat-music.ogg'])assert(fs.existsSync(path.join(root,'assets/combat-audio',f)),f);
+ });
+ test('upgrades stack, heal within limits and reset independently',()=>{
+  const profile={hp:70,maxHp:100,stand:95,upgrades:freshUpgrades()};
+  assert(applyUpgrade(profile,'power'));assert(applyUpgrade(profile,'power'));assert.equal(profile.upgrades.power,2);
+  assert(applyUpgrade(profile,'vitality'));assert.equal(profile.maxHp,115);assert.equal(profile.hp,100);
+  assert(applyUpgrade(profile,'time'));assert.equal(profile.stand,100);assert.equal(profile.upgrades.time,1);
+  assert.equal(applyUpgrade(profile,'unknown'),false);assert.deepEqual(freshUpgrades(),{power:0,vitality:0,time:0});
+ });
+ test('boss armour preserves windup and recovery under repeated heavy strikes',()=>{
+  const boss=createEnemy(5,true);stepEnemy(boss,{x:0,z:0},{x:0,z:2},.02);
+  const before=boss.timer;damageEnemy(boss,34,.55);assert.equal(boss.state,'windup');assert.equal(boss.timer,before);
+  boss.state='recover';boss.timer=.9;damageEnemy(boss,34,.55);assert.equal(boss.state,'recover');assert.equal(boss.timer,.9);
+ });
+ test('timeline attack locks aim, misses sideways dodge, respects freeze',()=>{
+  const boss=createEnemy(5,true);boss.phase=2;boss.attackIndex=1;
+  const origin={x:0,z:0};stepEnemy(boss,origin,{x:0,z:6},.01);assert.equal(boss.pattern,'timeline');
+  const timer=boss.timer;stepEnemy(boss,origin,{x:3,z:6},.05,true);assert.equal(boss.timer,timer);
+  let hits=0;for(let i=0;i<22;i++)if(stepEnemy(boss,origin,{x:3,z:6},.05).attack)hits++;
+  assert.equal(hits,0);assert.equal(boss.state,'recover');
+  const direct=createEnemy(5,true);direct.phase=2;direct.attackIndex=1;stepEnemy(direct,origin,{x:0,z:6},.01);
+  for(let i=0;i<22;i++)if(stepEnemy(direct,origin,{x:0,z:6},.05).attack)hits++;
+  assert.equal(hits,1);
+ });
+ test('last boss phase has a readable wide sweep with a counter window',()=>{
+  const boss=createEnemy(5,true);boss.phase=3;stepEnemy(boss,{x:0,z:0},{x:0,z:2},.01);
+  assert.equal(boss.pattern,'sweep');assert(boss.timer>=.9);
+  let hits=0;for(let i=0;i<20;i++)if(stepEnemy(boss,{x:0,z:0},{x:0,z:4},.05).attack)hits++;
+  assert.equal(hits,1);assert.equal(boss.state,'recover');assert(boss.timer>1);
  });
  console.log('PASS:',checks,'3D combat regression checks');
 })().catch(error=>{console.error(error);process.exitCode=1});

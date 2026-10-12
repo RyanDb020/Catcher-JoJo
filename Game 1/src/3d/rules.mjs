@@ -35,7 +35,7 @@ export function createEnemy(level = 1, boss = false) {
     hp, maxHp: hp, level, boss, type, phase: 1, state: 'patrol', timer: 0, attackReady: 0,
     damage: boss ? 23 : RULES.enemyBaseDamage + Math.floor(level * .9),
     damageScale: 1, speed: boss ? 1.72 : type === 'rift-stalker' ? 3.45 : type === 'iron-guard' ? 1.65 : 2.2 + Math.min(1.0, (level - 1) * 0.12),
-    stagger: 0, attacked: false, dead: false
+    stagger: 0, attacked: false, dead: false, attackIndex: 0, pattern: 'strike', aim: {x:0,z:1}
   };
 }
 export function damageEnemy(enemy, damage, stagger = 0.22) {
@@ -43,7 +43,7 @@ export function damageEnemy(enemy, damage, stagger = 0.22) {
   const dealt = Math.min(enemy.hp, damage);
   enemy.hp = Math.max(0, enemy.hp - damage);
   if (!enemy.hp) { enemy.dead = true; enemy.state = 'dead'; enemy.timer = 0; }
-  else { enemy.state = 'stagger'; enemy.timer = stagger; }
+  else if (!enemy.boss) { enemy.state = 'stagger'; enemy.timer = stagger; } // Boss windups have armour: use dodge or Time Stop, then punish recovery.
   return { dealt, killed: enemy.dead };
 }
 // Returns movement and a single explicit attack event; never damages the player internally.
@@ -61,15 +61,17 @@ export function stepEnemy(enemy, enemyPos, playerPos, delta, frozen = false) {
     out.telegraph = true;
     if (enemy.timer <= 0) {
       enemy.state = 'recover';
-      enemy.timer = 0.7;
+      enemy.timer = enemy.boss ? 1.15 : 0.7;
       enemy.attackReady = 0.5;
-      out.attack = dist < 2.65;
+      const along = dx * enemy.aim.x + dz * enemy.aim.z;
+      const across = Math.abs(dx * enemy.aim.z - dz * enemy.aim.x);
+      out.attack = enemy.pattern === 'timeline' ? along >= 0 && along <= 8 && across <= .85 : dist < (enemy.pattern === 'sweep' ? 4.4 : 2.65);
     }
   } else if (enemy.state === 'recover') {
     if (enemy.timer <= 0) enemy.state = 'chase';
   } else if (dist > 16) {
     enemy.state = 'patrol';
-  } else if (dist > 2.35 || enemy.attackReady > 0) {
+  } else if (dist > (enemy.boss && enemy.phase >= 2 && enemy.attackIndex % 2 === 1 ? 7 : 2.35) || enemy.attackReady > 0) {
     enemy.state = 'chase';
     if (dist > 1.5) {
       const flank = enemy.type === 'rift-stalker' ? .38 : 0;
@@ -78,7 +80,10 @@ export function stepEnemy(enemy, enemyPos, playerPos, delta, frozen = false) {
     }
   } else {
     enemy.state = 'windup';
-    enemy.timer = 0.8; // readable warning before damage
+    enemy.pattern = !enemy.boss ? 'strike' : enemy.phase >= 2 && enemy.attackIndex % 2 === 1 ? 'timeline' : enemy.phase >= 3 ? 'sweep' : 'strike';
+    enemy.attackIndex++;
+    enemy.aim = {x: dx / Math.max(.001,dist), z: dz / Math.max(.001,dist)};
+    enemy.timer = enemy.pattern === 'timeline' ? 1.05 : enemy.pattern === 'sweep' ? .95 : .8; // locked, readable warning before damage
     out.telegraph = true;
   }
   out.state = enemy.state;
@@ -99,3 +104,18 @@ export function grantXP(profile, amount) {
 }
 export const xpRequired = level => Math.round(80 + (level - 1) * 42 + (level - 1) ** 1.4 * 12);
 
+
+// Mission upgrades are shared by WebGL and the Canvas2D fallback.
+export const UPGRADES = Object.freeze([
+  {id:'power',title:'STAR FORCE',description:'+12% schade per keuze. Geldt voor combo, heavy en ORA.'},
+  {id:'vitality',title:'SECOND WIND',description:'+15 maximale HP en herstel 30 HP.'},
+  {id:'time',title:'TIME MASTERY',description:'+0,4 seconde Time Stop en direct 15 Stand Energy.'}
+]);
+export const freshUpgrades = () => ({power:0,vitality:0,time:0});
+export function applyUpgrade(profile,id) {
+  if (!UPGRADES.some(item=>item.id===id)) return false;
+  profile.upgrades[id]++;
+  if(id==='vitality'){profile.maxHp+=15;profile.hp=Math.min(profile.maxHp,profile.hp+30);}
+  if(id==='time')profile.stand=Math.min(RULES.standMax,profile.stand+15);
+  return true;
+}

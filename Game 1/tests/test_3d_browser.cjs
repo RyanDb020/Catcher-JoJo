@@ -112,10 +112,33 @@ async function run(){
   await page.waitForTimeout(350);
   const stillEnemy=await page.evaluate(()=>window.__SHATTERED_QA__.enemy);
   if(Math.hypot(stillEnemy.x-stoppedEnemy.x,stillEnemy.z-stoppedEnemy.z)>.01)throw Error('Time Stop moved the frozen enemy');
-  const missionDeadline=Date.now()+300000;
+  const missionDeadline=Date.now()+420000;
   while(Date.now()<missionDeadline){
     const qa=await page.evaluate(()=>window.__SHATTERED_QA__);
     if(qa.victory)break;
+    if(qa.upgradePending){
+      for(const key of held)await page.keyboard.up(key);held.clear();
+      const frozen=qa;
+      await page.waitForTimeout(300);
+      const menu=await page.evaluate(()=>window.__SHATTERED_QA__);
+      if(menu.running||menu.hp!==frozen.hp||menu.enemyTimer!==frozen.enemyTimer)throw Error('Upgrade selection did not freeze combat');
+      if(qa.wave===2){
+        await page.setViewportSize({width:390,height:844});
+        await page.screenshot({path:path.join(output,'3d-upgrade-portrait.png')});
+        const buttons=await page.locator('#upgrade-choices button').count();if(buttons!==3)throw Error('Missing upgrade choices');
+        await page.setViewportSize({width:640,height:360});
+      }
+      const choice=qa.wave===2?'power':qa.wave===3?'time':'vitality';
+      await page.locator('[data-upgrade="'+choice+'"]').click();
+      await page.waitForFunction(()=>window.__SHATTERED_QA__.running===true);
+      const selected=await page.evaluate(()=>window.__SHATTERED_QA__);
+      if(selected.upgrades[choice]!==qa.upgrades[choice]+1)throw Error('Upgrade effect missing');
+      continue;
+    }
+    if(qa.boss&&qa.enemyState==='windup'&&qa.enemyTimer<=.30){
+      await page.keyboard.press('Shift');
+      if(qa.stand>=40)await page.keyboard.press('t');
+    }
     const {distance}=await steer(qa.enemy.x,qa.enemy.z,2.35);
     if(distance<3.2&&qa.enemyHp>0&&!qa.attackActive){await page.mouse.down({button:'right'});await page.mouse.up({button:'right'})}
     await page.waitForTimeout(110);
@@ -127,7 +150,7 @@ async function run(){
   await page.locator('#victory-retry-btn').click();
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true&&window.__SHATTERED_QA__.wave===1);
   const replay=await page.evaluate(()=>window.__SHATTERED_QA__);
-  if(replay.hp!==100||replay.kills!==0||replay.anchors!==3||replay.stop!==0)throw Error('Victory reset left stale mission state: '+JSON.stringify(replay));
+  if(replay.hp!==100||replay.kills!==0||replay.anchors!==3||replay.stop!==0||replay.upgradePending||Object.values(replay.upgrades).some(Boolean))throw Error('Victory reset left stale mission state: '+JSON.stringify(replay));
   if(errors.length)throw Error('Mission browser errors: '+errors.join('; '));
   console.log('PASS time anchors, Time Stop, all five waves, victory and replay',JSON.stringify({victory,replay}));
   }

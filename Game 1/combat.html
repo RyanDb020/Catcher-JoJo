@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#090718">
   <title>Shattered Universe — 3D Combat Mission 1.0</title>
-  <link rel="stylesheet" href="combat.css?v=1.5.2">
+  <link rel="stylesheet" href="combat.css?v=1.6.0">
   <script type="importmap">
     {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
   </script>
   <script type="module">
     // Keep the 3D build when possible; load playable Canvas2D combat when WebGL/CDN fails.
-    const build = '1.5.5';
+    const build = '1.6.0';
     import('./src/3d/main.mjs?v=' + build).catch(async error => {
       console.warn('3D renderer unavailable; loading Canvas2D fallback.', error);
       try {
@@ -92,6 +92,13 @@
       <p>Klik op hervatten om de arena opnieuw te betreden. Je voortgang blijft behouden zolang deze pagina openstaat.</p>
       <button id="resume-btn" type="button">HERVAT GEVECHT <span>→</span></button>
       <a class="sub-link" href="./index.html">Terug naar Arcade Mode</a>
+    </div>
+  </div>
+  <div id="upgrade" class="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="upgrade-title">
+    <div class="intro-panel upgrade-panel"><div id="upgrade-wave" class="chapter">WAVE COMPLETE</div>
+      <h2 id="upgrade-title">EVOLVE YOUR<br><em>STAND.</em></h2>
+      <p>Kies één upgrade voor de rest van deze missie. Herhaalde keuzes stapelen. Toetsen 1, 2 of 3 werken ook.</p>
+      <div id="upgrade-choices"></div>
     </div>
   </div>
   <div id="gameover" class="overlay" hidden>
