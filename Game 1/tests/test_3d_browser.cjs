@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Browser smoke test for 3D Combat Mode and its no-WebGL fallback.
+// Browser smoke test for 3D Combat Mode, keyboard input and no-WebGL fallback.
 // Run: npm run qa:3d
 // Requires: npm install; npx playwright install chromium; internet for pinned Three.js CDN.
 const {chromium}=require('playwright');
