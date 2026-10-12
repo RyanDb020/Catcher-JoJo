@@ -1,5 +1,16 @@
 # Patch notes — JoJo Catcher: Celestial Edition
 
+## Shattered Universe — Combat Prototype 0.1 (12 October 2026)
+
+- New **`combat.html`** with independently loaded Three.js 0.180.0 and a custom responsive HUD.
+- Added **`combat.css`**, **`src/3d/main.mjs`** and **`src/3d/rules.mjs`**. The new arena includes a shattered clock tower, boundary columns, celestial props and a third-person camera.
+- Added a controllable player, provisional articulated 3D Star Platinum, 3-hit punch combo, heavy attack, a basic ORA ORA ultimate, Time Stop, dodge, generated impact SFX and hit feedback.
+- One active enemy type: pursuit, warning before attack, recovery, stagger, HP, defeat and a new enemy in the next wave. Basic XP/levels included.
+- Arcade Mode remains at `index.html`; a new in-game link opens `combat.html`. The old `sketch.js`, Rewind, audio and existing p5.js game were **not rewritten**.
+- New `tests/test_3d.cjs` checks 3D rules. `npm run qa:3d` invokes the separate Playwright browser test. The browser test is authored but has **not** been run in this environment.
+- Validation performed: V8 syntax evaluation, 15 source/rules checks, simulated scene initialization and 150 engine-update frames using a mocked Three.js environment. **Actual WebGL visuals, CDN availability and GitHub Pages deployment were not verified.**
+- Next: validated browser screenshot and performance measurements; replace temporary procedural characters with properly rigged models; add multi-enemy combat, boss AI and true Universe Rebirth 3.0.
+
 ## Cinematic Rebuild 3.0 — 9 October 2026
 
 - **Universe Collapse completely re-staged:** breaking remembered gameplay panels, moving foreground shards, perspective cracks, accretion structure and singularity contraction. New original Canvas2D `src/cosmic-director.js`.
