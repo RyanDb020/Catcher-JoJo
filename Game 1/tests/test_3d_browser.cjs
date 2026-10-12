@@ -80,6 +80,17 @@ async function run(){
   await page.locator('#resume-btn').click();
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true);
   if(errors.length)throw Error('Browser errors after narrow viewport/audio lifecycle: '+errors.join('; '));
+  // Isolated overlay layout checks: reveal the panels without declaring gameplay victory.
+  await page.evaluate(()=>document.getElementById('victory').hidden=false);
+  const shortOverlay=await page.locator('#victory .intro-panel').evaluate(panel=>{
+    const rect=panel.getBoundingClientRect();panel.scrollTop=panel.scrollHeight;
+    const button=panel.querySelector('button').getBoundingClientRect();
+    return {top:rect.top,bottom:rect.bottom,buttonTop:button.top,buttonBottom:button.bottom,height:innerHeight};
+  });
+  if(shortOverlay.top<60||shortOverlay.bottom>shortOverlay.height||shortOverlay.buttonTop<shortOverlay.top||shortOverlay.buttonBottom>shortOverlay.bottom)throw Error('Short victory panel is clipped: '+JSON.stringify(shortOverlay));
+  await page.screenshot({path:path.join(output,'3d-victory-short-layout.png')});
+  await page.evaluate(()=>document.getElementById('victory').hidden=true);
+  console.log('PASS isolated victory layout at 640x360',JSON.stringify(shortOverlay));
   // Complete the existing five-wave mission using only real keyboard/mouse inputs.
   if(!process.argv.includes('--smoke-only')){
   const held=new Set();

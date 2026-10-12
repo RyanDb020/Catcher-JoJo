@@ -52,3 +52,8 @@
 @media(max-width:600px){#upgrade-choices{grid-template-columns:1fr;gap:8px;margin-top:12px}#upgrade-choices button{min-height:0;padding:14px;gap:6px}.upgrade-panel h2{font-size:32px}.upgrade-panel p{font-size:14px}}
 
 #upgrade{overflow-y:auto}#upgrade .upgrade-panel{max-height:calc(100dvh - 44px);overflow-y:auto}#upgrade .upgrade-panel h2{font-size:clamp(30px,5vw,54px);margin:16px 0}#upgrade-choices{grid-auto-rows:1fr}
+
+/* Keep every overlay below the header and reachable in short browser windows. */
+.overlay{padding-top:64px;padding-bottom:22px;overflow-y:auto}
+.overlay .intro-panel{max-height:calc(100dvh - 86px);overflow-y:auto}
+#upgrade .upgrade-panel{max-height:calc(100dvh - 86px)}
