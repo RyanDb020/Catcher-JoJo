@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createCombatAudio} from './audio.mjs';
-import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone} from './rules.mjs';
+import {createCombatAudio} from './audio.mjs?v=1.2.0';
+import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone} from './rules.mjs?v=1.2.0';
 
 // Shattered Universe 1.0: a complete five-wave mission, separate from the Arcade game.
 const $=id=>document.getElementById(id);

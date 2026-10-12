@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#090718">
   <title>Shattered Universe — 3D Combat Mission 1.0</title>
-  <link rel="stylesheet" href="combat.css?v=1.1.0">
+  <link rel="stylesheet" href="combat.css?v=1.2.0">
   <script type="importmap">
     {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
   </script>
   <script type="module">
     // Keep the 3D build when possible; load playable Canvas2D combat when WebGL/CDN fails.
-    const build = '1.1.0';
+    const build = '1.2.0';
     import('./src/3d/main.mjs?v=' + build).catch(async error => {
       console.warn('3D renderer unavailable; loading Canvas2D fallback.', error);
       try {

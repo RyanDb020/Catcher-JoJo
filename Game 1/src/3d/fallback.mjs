@@ -1,5 +1,5 @@
-import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone} from './rules.mjs';
-import {createCombatAudio} from './audio.mjs';
+import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone} from './rules.mjs?v=1.2.0';
+import {createCombatAudio} from './audio.mjs?v=1.2.0';
 const audio=createCombatAudio();
 
 // Playable Canvas2D backup for browsers without a working WebGL context.

@@ -20,3 +20,5 @@ Input: `20261012-1931-12.2789377.mp4` (19.7 s), supplied with the task. At appro
 - The uploaded baseline video is the before reference; a post-change browser screenshot and live Pages check will be recorded after the commit is deployed.
 
 This is a visible code-level rebuild, but final 3D rendering, exact attack timing, audio quality on speakers, and the entire mission from start through boss defeat still require a browser with WebGL and working audio.
+
+The published HTML briefly served a stale module with the former URL. Combat imports now carry build `1.2.0` cache keys so the current renderer, fallback and audio files load as a unit.
