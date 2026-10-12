@@ -145,3 +145,38 @@ De vier bestanden zitten in het meegeleverde `JoJo_Cinematic_Audio_Assets.zip`-p
 De echte Rewind begint op het `ended`-event van Made in Heaven; de volgende fase op het `ended`-event van Time Accelerate. Tussenfasen worden getekend vanuit gameplayhistorie (circa 9 seconden bij 60 Hz). ORA duurt zolang als het bijbehorende MP3-fragment plus afloopfase; de gameplay stopt tijdens universe reset. 
 
 Nog vereist voor volledige acceptatie: nieuwe regressietests voor de gewijzigde timing, een echte browser-run, audioluistertest en beoordeling van opname-/publicatierechten.
+
+
+---
+
+## Shattered Universe — 3D Combat Prototype 0.1
+
+**New preview:** Open [3D Combat Mode](./combat.html) or click the new **3D COMBAT MODE** button in the existing Arcade game.
+
+The current \`index.html\` still runs the original p5.js Catcher; it has **not** been replaced.
+\`combat.html\` is an independent browser prototype using pinned Three.js 0.180.0 ES modules from jsDelivr. Internet is required for this CDN dependency.
+
+### Play
+
+Click **ENTER THE ARENA** on a desktop browser with WebGL support. Mouse look uses pointer lock where available; if blocked, hold the mouse button and drag the view. The level can still be played using the keyboard.
+
+| Control | Action |
+| --- | --- |
+| WASD / arrow keys | Move |
+| Mouse | Third-person camera |
+| Left mouse | Three-hit light combo |
+| Right mouse | Heavy stagger punch |
+| Shift | Dodge with temporary invulnerability |
+| Q | Star Platinum ORA ORA, costs 55 Stand Energy |
+| T | ZA WARUDO: freeze enemies for 3.2 s, costs 40 energy |
+| Esc | Pause / mouse unlock |
+
+**Included:** 3D arena with clock tower, follow camera and obstacle avoidance, stylized player and articulated procedural Star Platinum, visible enemy with HP, chase/telegraph/attack/stagger states, knockback effects, sound synthesized in browser, Stand Energy, XP and waves, Time Stop, game-over/retry.
+
+**Not yet included:** imported detailed Blender models, full Universe Rebirth 3.0, permanent saves, multiple AI types, advanced boss and open world. These are future milestones; do not present this as the finished 3D RPG. No copyrighted audio was added to 3D Combat Mode.
+
+### Test & QA
+
+Run \`npm test\` from \`Game 1\` to execute existing Arcade tests and \`tests/test_3d.cjs\`. The new Node suite covers attack direction/range, movement boundaries, enemy telegraph/freeze/death, XP and required page files. Test real 3D graphics separately in a browser: Node tests are not proof of WebGL rendering.
+
+**Release strategy:** Keep \`index.html\` unchanged as the Arcade entry, build 3D Combat separately under \`Game 1\`, and only switch the main menu to the 3D version after complete gameplay/browser testing. This avoids replacing the student's original game with an unfinished prototype.
