@@ -5,19 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#090718">
   <title>Shattered Universe — 3D Combat Mission 1.0</title>
-  <link rel="stylesheet" href="combat.css?v=1.0.0">
+  <link rel="stylesheet" href="combat.css?v=1.0.1">
   <script type="importmap">
     {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
   </script>
   <script type="module">
-    // Catch CDN/module failures as well as WebGL failures, with a return path.
-    import('./src/3d/main.mjs?v=1.0.0').catch(error => {
-      document.getElementById('intro').hidden = true;
-      document.getElementById('fatal').hidden = false;
-      document.getElementById('fatal-text').textContent =
-        'De 3D-engine kon niet worden gestart: ' + (error?.message || String(error)) +
-        '. Controleer je internetverbinding en WebGL-ondersteuning.';
-      console.error('3D Combat Mode failed to load', error);
+    // Keep the 3D build when possible; load playable Canvas2D combat when WebGL/CDN fails.
+    const build = '1.0.1';
+    import('./src/3d/main.mjs?v=' + build).catch(async error => {
+      console.warn('3D renderer unavailable; loading Canvas2D fallback.', error);
+      try {
+        await import('./src/3d/fallback.mjs?v=' + build);
+      } catch (fallbackError) {
+        document.getElementById('intro').hidden = true;
+        document.getElementById('fatal').hidden = false;
+        document.getElementById('fatal-text').textContent =
+          'De 3D- en Canvas2D-modus konden niet starten: ' +
+          (fallbackError?.message || String(fallbackError));
+        console.error('Combat Mode failed to load', fallbackError);
+      }
     });
   </script>
 </head>
