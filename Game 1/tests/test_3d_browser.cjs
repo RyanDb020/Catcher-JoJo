@@ -19,7 +19,7 @@ async function run(){
  const address='http://127.0.0.1:'+server.address().port;
  let browser;
  try{
-  browser=await chromium.launch({headless:true,args:['--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--no-sandbox']});
+  browser=await chromium.launch({headless:true,args:['--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--no-sandbox']});
   const page=await browser.newPage({viewport:{width:1280,height:720},deviceScaleFactor:1});
   const errors=[];
   page.on('pageerror',e=>errors.push(e.message));
@@ -29,6 +29,8 @@ async function run(){
   await page.getByRole('button',{name:/ENTER THE ARENA/}).click();
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true,null,{timeout:10000});
   const before=await page.evaluate(()=>window.__SHATTERED_QA__);
+  if(before.renderer!=='webgl')throw Error('WebGL renderer did not start; renderer='+before.renderer);
+  if(!(before.drawCalls>0))throw Error('WebGL renderer produced no draw calls: '+JSON.stringify(before));
   await page.keyboard.down('w');
   await page.waitForTimeout(700);
   await page.keyboard.up('w');

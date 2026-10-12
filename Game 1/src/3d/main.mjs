@@ -918,6 +918,7 @@ function loop(now){
 }
 // A read-only snapshot helps browser QA without adding cheat controls.
 Object.defineProperty(window,'__SHATTERED_QA__',{get:()=>Object.freeze({
+  renderer:'webgl',drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
   started:state.started,running:state.running,paused:state.paused,dead:state.dead,victory:state.victory,
   hp:state.hp,stand:state.stand,enemyHp:state.enemy.hp,enemyState:state.enemy.state,
   kills:state.kills,wave:state.wave,missionWaves:MISSION_WAVES,boss:state.enemy.boss,level:state.level,stop:state.stopRemaining,
