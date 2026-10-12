@@ -25,9 +25,9 @@ async function run(){
   page.on('pageerror',e=>errors.push(e.message));
   const response=await page.goto(address+'/combat.html',{waitUntil:'domcontentloaded',timeout:45000});
   if(!response||response.status()!==200)throw Error('Combat page failed to load');
-  await page.waitForFunction(()=>window.__SHATTERED_QA__&&window.__SHATTERED_QA__.started===false,{timeout:45000});
+  await page.waitForFunction(()=>window.__SHATTERED_QA__&&window.__SHATTERED_QA__.started===false,null,{timeout:45000});
   await page.getByRole('button',{name:/ENTER THE ARENA/}).click();
-  await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true,{timeout:10000});
+  await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true,null,{timeout:10000});
   const before=await page.evaluate(()=>window.__SHATTERED_QA__);
   await page.keyboard.down('w');
   await page.waitForTimeout(700);
