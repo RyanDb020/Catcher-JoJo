@@ -1,3 +1,7 @@
+## Persoonlijke audio hersteld
+
+Op verzoek zijn de oorspronkelijke JoJo-stemmen (Pucci, tijdversnelling, ORA en ZA WARUDO), achtergrondmuziek, Giorno-theme en game-overgeluid weer de standaard. De gebruiker heeft aangegeven dat dit voor persoonlijk gebruik is. De gebruiksrechten van deze oorspronkelijke clips zijn niet geverifieerd; er wordt geen vrije licentie geclaimd. De nieuwe CC0-scène-effecten en verbeterde audio-cleanup blijven behouden. De bestaande hosting is hierdoor niet technisch afgeschermd.
+
 # Current release audio — cinematic rebuild, 13 October 2026
 
 The public cinematic defaults use recorded foley from **Kenney**, **Impact Sounds 1.0** and **RPG Audio**. Their bundled CC0 declarations were read and preserved in assets/foley/LICENSE-Kenney-Impact.txt and LICENSE-Kenney-RPG.txt. Official source URLs: https://kenney.nl/assets/impact-sounds and https://kenney.nl/assets/rpg-audio. The licence grants personal, educational and commercial use and redistribution. No online audio URL is streamed in the game.

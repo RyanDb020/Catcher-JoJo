@@ -226,5 +226,5 @@ test('reset cancels a retained director and missing clips never strand Rewind',(
 test('all cinematic defaults use substantial local recordings',()=>{
  const root=path.join(__dirname,'..');
  for(const name of ['reveal','rewind','ora-track','time-activate','time-freeze','time-resume','acceleration','collapse','genesis','finisher','defeat','district-bed'])assert(fs.statSync(path.join(root,'assets/cinematic',name+'.mp3')).size>1000,name);
- assert(!code.includes('assets/giorno-theme.mp3'));assert(!code.includes('assets/made-in-heaven.mp3'));assert(!code.includes('assets/ora-ora.mp3'));
+ for(const name of ['giorno-theme','made-in-heaven','ora-ora','time-accelerate','za-warudo-toki-wo-tomare_WJVdsYt'])assert(code.includes('assets/'+name+'.mp3')); 
 });

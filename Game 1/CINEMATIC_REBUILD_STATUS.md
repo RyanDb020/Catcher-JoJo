@@ -1,3 +1,7 @@
+## Persoonlijke audio hersteld
+
+Op verzoek zijn de oorspronkelijke JoJo-stemmen (Pucci, tijdversnelling, ORA en ZA WARUDO), achtergrondmuziek, Giorno-theme en game-overgeluid weer de standaard. De gebruiker heeft aangegeven dat dit voor persoonlijk gebruik is. De gebruiksrechten van deze oorspronkelijke clips zijn niet geverifieerd; er wordt geen vrije licentie geclaimd. De nieuwe CC0-scène-effecten en verbeterde audio-cleanup blijven behouden. De bestaande hosting is hierdoor niet technisch afgeschermd.
+
 # Cinematic rebuild — 13 October 2026
 
 Continues the current normal Catcher game, not a separate demo. A baseline was reviewed from the two uploaded gameplay recordings and prior 1365×900 browser screenshots.

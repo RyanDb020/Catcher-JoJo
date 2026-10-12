@@ -250,14 +250,12 @@ let universeHistory = [];
 let universeReset = { active: false, started: 0, source: [], committed: false,
                       soundAccelerated: false, soundCollapse: false };
 
-// Optionele JoJo-voiceclips van Myinstants.
-// De originele ZA WARUDO staat lokaal. Deze links werken alleen met internet
-// én wanneer Myinstants rechtstreeks afspelen in de browser toestaat.
-// Als een link niet werkt, blijven de effecten en synthgeluiden werken.
+// Bestaande lokale JoJo-clips voor de persoonlijke versie.
+// De cinematic loopt ook door als audio ontbreekt.
 const JOJO_CLIP_URLS = {
-  pucci: 'assets/cinematic/reveal.mp3?v=rebuild-5',
-  accelerate: 'assets/cinematic/rewind.mp3?v=rebuild-5',
-  ora: 'assets/cinematic/ora-track.mp3?v=rebuild-5'
+  pucci: 'assets/made-in-heaven.mp3?v=personal-jojo-1',
+  accelerate: 'assets/time-accelerate.mp3?v=personal-jojo-1',
+  ora: 'assets/ora-ora.mp3?v=personal-jojo-1'
 };
 
 let jojoVoiceClips = {};
@@ -308,13 +306,13 @@ function preload() {}
 function prepareRecordedSounds() {
   // De game draait zonder geluid door wanneer alleen de p5.sound addon faalt.
   if (typeof loadSound !== 'function') return;
-  gameOverSound = loadSound("assets/cinematic/defeat.mp3?v=rebuild-5",
+  gameOverSound = loadSound("assets/jixaw-metal-pipe-falling-sound.mp3?v=personal-jojo-1",
     () => { gameOverSoundLoaded = true; },
     () => { gameOverSoundLoaded = false; });
-  backgroundMusic = loadSound("assets/cinematic/district-bed.mp3?v=rebuild-5",
+  backgroundMusic = loadSound("assets/background-music.mp3?v=personal-jojo-1",
     () => { backgroundMusicLoaded = true; },
     () => { backgroundMusicLoaded = false; });
-  timeStopSound = loadSound("assets/cinematic/time-activate.mp3?v=rebuild-5",
+  timeStopSound = loadSound("assets/za-warudo-toki-wo-tomare_WJVdsYt.mp3?v=personal-jojo-1",
     () => { timeStopSoundLoaded = true; },
     () => { timeStopSoundLoaded = false; });
   for (const key of ['catch', 'perfect', 'power', 'punch', 'impact', 'rewind', 'rebirth', 'roller', 'miss']) {
@@ -2511,7 +2509,7 @@ function stopTimeResumeAudio(){
 }
 function initializeCinematicAudio() {
   if (typeof Audio === 'undefined') return;
-  giornoTheme = new Audio('assets/cinematic/district-bed.mp3?v=rebuild-5');
+  giornoTheme = new Audio('assets/giorno-theme.mp3?v=personal-jojo-1');
   giornoTheme.loop = true;
   giornoTheme.preload = 'auto';
   giornoTheme.volume = 0;
