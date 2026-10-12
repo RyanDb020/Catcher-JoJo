@@ -36,6 +36,16 @@
       max-width:540px;width:calc(100% - 36px);border:2px solid #f1c06a;border-radius:14px;
       padding:24px;background:#1b102c;color:#fbe8cb;text-align:center;line-height:1.5; }
     small { color: #c1afcf; display: block; margin-top: 12px; }
+  
+    /* Keep the original Arcade Mode intact; switch modes with an ordinary link. */
+    .combat-entry{position:fixed;bottom:16px;left:16px;z-index:15;display:flex;gap:9px;align-items:center;
+      padding:10px 14px;background:linear-gradient(110deg,#432267e8,#241333e8);color:#ffe6ff;
+      border:1px solid #d9a6fa;border-radius:8px;text-decoration:none;font:800 13px Arial,sans-serif;
+      box-shadow:0 8px 28px #05020d9e;letter-spacing:.03em;backdrop-filter:blur(6px)}
+    .combat-entry:hover{background:#694185;color:white}
+    .combat-entry:focus-visible{outline:2px solid white;outline-offset:3px}
+    .combat-entry small{display:inline;color:#ffdc9f;font-size:10px;margin:0}
+    @media(max-width:600px){.combat-entry{font-size:11px;padding:8px 10px;bottom:42px}}
   </style>
   <script src="vendor/p5.min.js"></script>
   <script src="vendor/p5.sound.min.js"></script>
@@ -71,6 +81,9 @@
       <small>Instellingen en highscore worden lokaal opgeslagen in deze browser. De standaard audiobestanden worden lokaal uit assets/ geladen. Zelfgekozen alternatieven moet je na herladen opnieuw selecteren.</small>
     </section>
   </div>
+  <a class="combat-entry" href="./combat.html" aria-label="Speel de nieuwe 3D Combat Mode">
+    <span>⚔</span><span>3D COMBAT MODE <small>ALPHA 0.1 ↗</small></span>
+  </a>
   <script>
     window.addEventListener('load', () => {
       if (typeof window.p5 === 'undefined') document.getElementById('library-warning').hidden = false;
