@@ -204,3 +204,10 @@ test('visual quality remains bounded at 4K dimensions',()=>{
 });
 
 console.log('CELESTIAL_TESTS_PASS=',checks);
+
+// A ball deep beside the bucket cannot count as entering its top opening.
+test('catch collision matches the bucket rim rather than its full sidewall',()=>{
+ run('resetGame();gameStarted=true');
+ assert.equal(run('isCaught(catcherX+catcherWidth/2,catcherY+catcherHeight-5)'),false);
+ assert.equal(run('isCaught(catcherX+catcherWidth/2,catcherY+1)'),true);
+});

@@ -18,3 +18,7 @@ All twelve Ogg/Opus files in `assets/combat-audio/` are original, locally genera
 | `chrono-echo.ogg` | Perfect dodge / Chrono Echo |
 
 The 3D audio manager loads these local files only after the start click, offers master/music/ambience/effects levels and mute, and persists the settings in local storage. Audio timing, perceived quality and speaker output still need live-browser listening checks; this environment's local Playwright server cannot bind its port (`EPERM`). No Mixkit or MyInstants download was added. The repository's pre-existing Arcade MP3s are unchanged and retain their existing licensing status described in `THIRD_PARTY_NOTICES.md`.
+
+## Foley update — 12 October 2026
+
+Core footsteps, light/heavy hits, enemy damage, dodge cloth, swing, guard and preparation now use Kenney CC0 recordings. Six Arcade baselines are also replaced. See ASSET_CREDITS.md for exact sources and edits. The original, locally generated synthesis files remain for ambient/music/time cues and as archived existing assets; their presence does not mean all active events use them.

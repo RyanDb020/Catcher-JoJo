@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createCombatAudio} from './audio.mjs?v=1.4.0';
+import {createCombatAudio} from './audio.mjs?v=1.5.0';
 import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone} from './rules.mjs?v=1.4.0';
 
 // Shattered Universe 1.0: a complete five-wave mission, separate from the Arcade game.
@@ -19,22 +19,23 @@ const V=new THREE.Vector3();
 const UP=new THREE.Vector3(0,1,0);
 const v=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const M={
-  black:new THREE.MeshStandardMaterial({color:0x171325,roughness:.78,metalness:.25}),
-  night:new THREE.MeshStandardMaterial({color:0x252039,roughness:.67,metalness:.25}),
+  black:new THREE.MeshStandardMaterial({color:0x242138,roughness:.78,metalness:.25}),
+  night:new THREE.MeshStandardMaterial({color:0x343750,roughness:.67,metalness:.25}),
   purple:new THREE.MeshStandardMaterial({color:0x6b3d9a,roughness:.52,metalness:.34}),
   lavender:new THREE.MeshStandardMaterial({color:0xb587ef,roughness:.4,metalness:.24}),
   gold:new THREE.MeshStandardMaterial({color:0xe4b967,roughness:.34,metalness:.58}),
   brightGold:new THREE.MeshBasicMaterial({color:0xffd78d}),
   steel:new THREE.MeshStandardMaterial({color:0x6f88b2,metalness:.65,roughness:.32}),
   aqua:new THREE.MeshBasicMaterial({color:0x7eeeff}),
-  crimson:new THREE.MeshStandardMaterial({color:0x6b274b,roughness:.57,metalness:.37}),
+  crimson:new THREE.MeshStandardMaterial({color:0x8a365a,roughness:.57,metalness:.37}),
   enemyGlow:new THREE.MeshBasicMaterial({color:0xff7caa}),
-  floor:new THREE.MeshStandardMaterial({color:0x292b40,roughness:.91,metalness:.07}),
-  stone:new THREE.MeshStandardMaterial({color:0x38364b,roughness:.88,metalness:.06}),
-  paleStone:new THREE.MeshStandardMaterial({color:0x49445a,roughness:.82,metalness:.10}),
+  floor:new THREE.MeshStandardMaterial({color:0x3d4056,roughness:.91,metalness:.07}),
+  stone:new THREE.MeshStandardMaterial({color:0x4b475b,roughness:.88,metalness:.06}),
+  paleStone:new THREE.MeshStandardMaterial({color:0x625b6b,roughness:.82,metalness:.10}),
   teal:new THREE.MeshStandardMaterial({color:0x347d8c,roughness:.5,metalness:.32}),
   detail:new THREE.MeshStandardMaterial({color:0x3b3352,roughness:.72,metalness:.21})
 };
+M.skin=new THREE.MeshStandardMaterial({color:0xd5a181,roughness:.85,metalness:0});
 const G={
   sphere:new THREE.SphereGeometry(1,24,16),
   box:new THREE.BoxGeometry(1,1,1),
@@ -43,8 +44,8 @@ const G={
   torus:new THREE.TorusGeometry(1,.055,8,64)
 };
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x080719);
-scene.fog=new THREE.FogExp2(0x14102a,.017);
+scene.background=new THREE.Color(0x111326);
+scene.fog=new THREE.FogExp2(0x19172b,.012);
 const camera=new THREE.PerspectiveCamera(64,1,.07,155);
 let renderer;
 try{
@@ -59,11 +60,14 @@ try{
   // Let combat.html start the Canvas2D fallback when WebGL is unavailable.
   throw error;
 }
-scene.add(new THREE.HemisphereLight(0x9fc9ff,0x180e24,2.6));
-const sunlight=new THREE.DirectionalLight(0xf6d8ff,2.4);
+scene.add(new THREE.HemisphereLight(0xb6d8ff,0x261a32,3.1));
+const sunlight=new THREE.DirectionalLight(0xffe5d0,2.8);
 sunlight.position.set(-12,22,14);scene.add(sunlight);
 const violetLight=new THREE.PointLight(0x9f61ff,75,23,2);violetLight.position.set(5,6,-8);scene.add(violetLight);
 const goldLight=new THREE.PointLight(0xffb969,65,19,2);goldLight.position.set(-9,4,7);scene.add(goldLight);
+// Soft, moving fill lights keep the costumes readable even when a fighter turns away from the set lights.
+const playerFill=new THREE.PointLight(0x9ec8ff,19,8.5,2);scene.add(playerFill);
+const enemyFill=new THREE.PointLight(0xffa0bd,21,9,2);scene.add(enemyFill);
 const add=(root,geometry,material,pos,scale,rotation)=>{
   const mesh=new THREE.Mesh(geometry,material);
   if(pos)mesh.position.set(...pos);
@@ -101,7 +105,7 @@ function createArena(){
     dummy.position.set(x,y,z);dummy.rotation.y=(i%6)*Math.PI/3;
     dummy.scale.set(1+(i%4)*.025,1,1+(i%3)*.025);dummy.updateMatrix();
     stones.setMatrixAt(i,dummy.matrix);
-    stones.setColorAt(i,new THREE.Color().setHSL(.68,.11,.21+t*.055));
+    stones.setColorAt(i,new THREE.Color().setHSL(.66,.13,.30+t*.075));
   });
   stones.instanceMatrix.needsUpdate=true;stones.instanceColor.needsUpdate=true;scene.add(stones);
   // Brass tracks and engraved clock numerals make the ground a designed place.
@@ -224,6 +228,22 @@ function makeFace(head,skin,eye,mark){
   box(head,M.black,[0,-.16,.263],[.115,.018,.025]);
   cyl(head,M.gold,[0,-.245,.02],.22,.055,[Math.PI/2,0,0]);
 }
+// Reparent distal meshes without changing their rest pose. Each limb now has two joints.
+function articulate(limbs){
+  return limbs.map(limb=>{
+    const joint=new THREE.Group();joint.position.y=-.50;
+    const distal=limb.children.filter(mesh=>mesh.position.y<-.54);
+    limb.add(joint);
+    for(const mesh of distal){mesh.position.y+=.50;joint.add(mesh);}
+    return joint;
+  });
+}
+function fistDetails(arms,material){
+  for(const arm of arms){
+    for(let i=0;i<4;i++)capsule(arm,material,[(i-1.5)*.061,-1.03,.25],.034,.05,[Math.PI/2,0,0]);
+    smooth(arm,material,[.13,-1.015,.17],[.055,.075,.055]);
+  }
+}
 function createHero(){
   const root=new THREE.Group();scene.add(root);
   const rig=new THREE.Group();root.add(rig);
@@ -240,14 +260,12 @@ function createHero(){
   box(rig,M.black,[0,.89,0],[.62,.25,.46]);
   for(const side of [-1,1]){
     box(rig,M.gold,[side*.18,.91,.245],[.08,.16,.035]);
-    const shoulder=plate(rig,M.steel,[side*.49,1.79,0],[.32,.22,.30],[0,0,side*.13]);
-    plate(rig,M.gold,[side*.49,1.81,.245],[.17,.045,.055]);
-    // Articulated shoulders -> elbows -> wrists, each with visible joint breaks.
+    // Articulated shoulders -> elbows -> wrists are built from the pivot groups below.
   }
   const arms=[],legs=[],shoulders=[];
   for(const side of [-1,1]){
     const shoulder=new THREE.Group();shoulder.position.set(side*.48,1.78,0);rig.add(shoulder);
-    plate(shoulder,M.steel,[0,0,0],[.29,.24,.30]);
+    plate(shoulder,M.night,[0,0,0],[.23,.19,.25]);
     capsule(shoulder,M.black,[0,-.29,0],.145,.27);
     smooth(shoulder,M.gold,[0,-.50,.02],[.17,.16,.17]);
     capsule(shoulder,M.steel,[0,-.75,.035],.125,.25,[.08,0,0]);
@@ -273,17 +291,30 @@ function createHero(){
     box(rig,M.gold,[side*.32,1.24,.15],[.12,.09,.07],[0,0,side*.3]);
   }
   const head=new THREE.Group();head.position.set(0,2.03,0);rig.add(head);
-  makeFace(head,M.steel,M.aqua,M.night);
+  makeFace(head,M.skin,M.aqua,M.skin);
   // Distinctive wide-brim cap silhouette, with layered band and small star crest.
   cyl(head,M.black,[0,.29,-.01],.29,.29);
   cyl(head,M.steel,[0,.18,.01],.37,.075);
-  const brim=add(head,G.torus,M.black,[0,.17,0],[.48,.48,.48],[Math.PI/2,0,0]);
+  smooth(head,M.black,[0,.17,.26],[.32,.045,.25]);
   box(head,M.gold,[0,.29,.34],[.30,.075,.045]);
   const star=add(head,new THREE.OctahedronGeometry(.11,0),M.brightGold,[0,.31,.38],[1,.7,.36],[0,0,Math.PI/4]);
-  return Object.assign(root,{userData:{rig:{root:rig,head,arms,legs,coatTails,star}}});
+  // Collar, chain, seams and back yoke are attached to the coat rather than floating ornaments.
+  for(const side of [-1,1]){
+    box(rig,M.black,[side*.13,1.82,.25],[.17,.27,.08],[0,0,side*-.27]);
+    for(let i=0;i<3;i++)box(rig,M.gold,[side*.27,1.35-i*.12,.30],[.025,.045,.022]);
+    box(rig,M.steel,[side*.18,1.4,-.28],[.028,.61,.035],[0,0,side*.07]);
+  }
+  for(let i=0;i<6;i++)ring(rig,M.gold,.30+i*.021,1.80-i*.052,.30,.036,0);
+  box(rig,M.black,[0,1.68,-.30],[.64,.09,.04]);
+  fistDetails(arms,M.skin);
+  const elbows=articulate(arms),knees=articulate(legs);
+  // Boot soles previously intersected the floor; raise the articulated body as a unit.
+  rig.position.y=.25;
+  rig.scale.set(.90,1.14,.92);
+  return Object.assign(root,{userData:{rig:{root:rig,head,arms,legs,elbows,knees,coatTails,star}}});
 }
 function makeStand(){
-  const root=new THREE.Group();root.position.set(1.52,0,-.05);hero.add(root);
+  const root=new THREE.Group();root.position.set(1.82,0,-.05);hero.add(root);
   const rig=new THREE.Group();root.add(rig);
   const torso=new THREE.LatheGeometry([
     new THREE.Vector2(.20,0),new THREE.Vector2(.28,.13),new THREE.Vector2(.34,.42),
@@ -330,8 +361,18 @@ function makeStand(){
   }
   // Short gold-linked belt and segmented greaves.
   for(let i=-2;i<=2;i++)smooth(rig,M.gold,[i*.12,.70,.27],[.04,.05,.035]);
-  root.scale.setScalar(.87);
-  return {root,rig,torso:rig,arms,legs,head,hair,headgem};
+  for(const side of [-1,1]){
+    for(let i=0;i<3;i++)plate(rig,M.lavender,[side*.14,1.12-i*.105,.255],[.12,.05,.06]);
+    box(rig,M.gold,[side*.24,1.59,-.26],[.025,.30,.035],[0,0,side*.18]);
+    // Hair sweeps back from the crown, visible from the third-person camera.
+    for(let i=0;i<3;i++)capsule(head,M.purple,[side*(.16+i*.025),.24-i*.09,-.22-i*.04],.055,.25,[.90,0,side*.18]);
+  }
+  fistDetails(arms,M.lavender);
+  const elbows=articulate(arms),knees=articulate(legs);
+  rig.position.y=.31;
+  rig.scale.set(.96,1.18,.96);
+  root.scale.setScalar(.92);
+  return {root,rig,torso:rig,arms,legs,elbows,knees,head,hair,headgem};
 }
 function makeEnemy(){
   const root=new THREE.Group();scene.add(root);
@@ -365,7 +406,7 @@ function makeEnemy(){
   const head=new THREE.Group();head.position.set(0,1.95,0);rig.add(head);
   makeFace(head,M.black,M.enemyGlow,M.crimson);
   // Pale split mask with a brow ridge; crimson crown horns break the human silhouette.
-  plate(head,M.steel,[0,-.02,.24],[.21,.19,.08]);
+  plate(head,M.steel,[0,-.14,.24],[.21,.105,.08]);
   for(let i=0;i<5;i++){
     const x=(i-2)*.14;
     const horn=cone(head,i%2?M.crimson:M.gold,[x,.36,-.04],.11,.46,[0,0,(2-i)*.10]);
@@ -374,10 +415,33 @@ function makeEnemy(){
   for(const side of [-1,1]){
     plate(rig,M.black,[side*.34,.64,-.06],[.11,.26,.17],[0,0,side*.30]);
   }
+  // Silhouette kits make the four enemy roles readable before their health bar is read.
+  const variants={};
+  const stalker=new THREE.Group();rig.add(stalker);variants['rift-stalker']=stalker;
+  for(let i=0;i<3;i++){
+    const fin=cone(stalker,i===1?M.lavender:M.crimson,[(i-1)*.28,1.63,-.28],.19,.76,[0,0,(i-1)*-.18]);
+    fin.rotation.x=-.34;
+  }
+  const guard=new THREE.Group();rig.add(guard);variants['iron-guard']=guard;
+  plate(guard,M.gold,[-.51,1.72,-.02],[.42,.28,.38]);
+  plate(guard,M.steel,[.51,1.72,-.02],[.42,.28,.38]);
+  const shield=add(guard,new THREE.OctahedronGeometry(.62,1),M.steel,[-.78,1.00,.43],[.72,1.16,.30],[0,0,-.12]);
+  ring(guard,M.gold,-.78,1.0,.48,.38,0);
+  const adept=new THREE.Group();rig.add(adept);variants['clock-adept']=adept;
+  const dial=ring(adept,M.brightGold,.72,1.34,-.04,.45,0);dial.rotation.y=-.23;
+  ring(adept,M.lavender,-.72,1.16,-.08,.33,0);
+  cone(adept,M.aqua,[.72,1.34,.03],.16,.48,[Math.PI/2,0,0]);
+  const bossKit=new THREE.Group();rig.add(bossKit);variants['chrono-shade']=bossKit;
+  ring(bossKit,M.enemyGlow,0,2.77,0,.88,0);
+  for(let i=0;i<7;i++)cone(bossKit,i%2?M.crimson:M.gold,[(i-3)*.22,2.72,-.02],.085,.29,[0,0,(i-3)*.08]);
   const warn=ring(root,M.enemyGlow,0,.12,0,1.18);
   warn.visible=false;
   const aura=ring(root,M.crimson,0,.10,0,1.02);
-  return {root,rig,arms,legs,head,horns,warn,aura,deathAt:-1};
+  fistDetails(arms,M.crimson);
+  const elbows=articulate(arms),knees=articulate(legs);
+  rig.position.y=.26;
+  rig.scale.set(1.02,1.12,1);
+  return {root,rig,arms,legs,elbows,knees,head,horns,warn,aura,variants,deathAt:-1};
 }
 const obstaclesRay=new THREE.Raycaster();
 createArena();
@@ -414,6 +478,7 @@ function placeEnemy(){
   enemyModel.root.position.y=0;enemyModel.rig.rotation.set(0,0,0);enemyModel.deathAt=-1;enemyModel.deathFall=0;
   enemyModel.aura.material=state.enemy.boss?M.enemyGlow:M.purple;
   enemyModel.aura.scale.setScalar(state.enemy.boss?1.6:1);
+  for(const [type,kit] of Object.entries(enemyModel.variants))kit.visible=type===state.enemy.type;
   enemyShadow.visible=true;
   enemyModel.warn.visible=false;
   enemyModel.root.position.copy(state.enemyPosition);
@@ -591,14 +656,14 @@ function startAttack(heavy){
   state.attack={...spec,stage,heavy,elapsed:0,applied:false};
   state.combo=heavy?0:state.combo+1;
   state.comboExpiresAt=heavy?0:state.arenaTime+1.3;
-  audio.play(heavy?'punch-heavy':'dash-whoosh',heavy?.32:.20);
+  audio.play('attack-whoosh',heavy?.45:.30);
 }
 function enemyHit(damage,heavy=false){
   if(state.enemy.dead)return false;
   const landed=withinAttackCone(state.playerPos,state.facing,state.enemyPosition,heavy?3.55:RULES.meleeRange);
   if(!landed){impact('MISS',.23);return false;}
   if(state.enemy.type==='iron-guard'&&!heavy&&state.enemy.state!=='windup'&&state.enemy.state!=='stagger'){
-    state.stand=clamp(state.stand+2,0,100);impact('GUARD · RMB BREAKS',.30);banner('THE GUARD IS UP — BREAK IT WITH RMB',1.1);audio.play('punch-heavy',.32);return false;
+    state.stand=clamp(state.stand+2,0,100);impact('GUARD · RMB BREAKS',.30);banner('THE GUARD IS UP — BREAK IT WITH RMB',1.1);audio.play('guard',.48);return false;
   }
   state.lastStrike={damage,heavy};
   let appliedDamage=damage;
@@ -655,6 +720,8 @@ function animateStand(dt){
   const moving=clamp(state.moveVelocity.length()/6.5,0,1);
   const gait=Math.sin(time*(moving>.72?13:9));
   const heroRig=hero.userData.rig;
+  playerFill.position.set(state.playerPos.x-1.2,3.1,state.playerPos.z+1.05);
+  enemyFill.position.set(state.enemyPosition.x+1.15,3.25,state.enemyPosition.z+.85);
   const dodge=state.dodgeTime>0;
   const hurt=state.hitFlash>0?state.hitFlash/.32:0;
   const aim=heroRig.arms;
@@ -683,7 +750,21 @@ function animateStand(dt){
   stand.root.position.y=Math.sin(time*2.4)*.055+(u?.10:0)+(a?.08*swing:0);
   stand.root.position.z=-.05-(a?.22*swing:0)-(u?.25:0);
   stand.root.rotation.z=Math.sin(time*1.9)*.035+(a?.07*swing:0);
-  stand.root.scale.setScalar(u?1.0:.87);
+  stand.root.scale.setScalar(u?1.02:.92);
+  // Guarded idle, planted windups, bending knees and a torso twist distinguish each strike.
+  const breathing=Math.sin(time*2.2)*.013;
+  heroRig.root.position.y=.25+breathing+(dodge?-.08:0);
+  heroRig.root.rotation.y=THREE.MathUtils.damp(heroRig.root.rotation.y,a?(a.stage%2?-.26:.26)*swing:0,12,dt);
+  stand.rig.rotation.y=THREE.MathUtils.damp(stand.rig.rotation.y,u?Math.sin(time*41)*.12:a?(a.stage%2?-.30:.30)*swing:0,14,dt);
+  for(let i=0;i<2;i++){
+    const activeArm=!!u||!!a&&(a.heavy||i===a.stage%2);
+    const fold=activeArm?-.85*(1-swing):moving>.1?-.20:-.58;
+    heroRig.elbows[i].rotation.x=THREE.MathUtils.damp(heroRig.elbows[i].rotation.x,dodge?-1.1:fold,16,dt);
+    heroRig.knees[i].rotation.x=THREE.MathUtils.damp(heroRig.knees[i].rotation.x,dodge?.85:Math.max(0,-gait*(i?1:-1))*.65*moving+.08,12,dt);
+    stand.elbows[i].rotation.x=THREE.MathUtils.damp(stand.elbows[i].rotation.x,u?-.65-.55*Math.sin(time*41+i*Math.PI):a?-.90*(1-swing):-.50,18,dt);
+    stand.knees[i].rotation.x=THREE.MathUtils.damp(stand.knees[i].rotation.x,.15+Math.max(0,-gait*(i?1:-1))*.30*moving,12,dt);
+  }
+  if(state.stopRemaining>0&&!state.enemy.dead)return;
   // Telegraph: the enemy visibly cocks its arms and leans before a strike.
   const windup=state.enemy.state==='windup'?clamp((.8-state.enemy.timer)/.8,0,1):0;
   const recover=state.enemy.state==='recover'?1:0;
@@ -697,6 +778,8 @@ function animateStand(dt){
     if(stagger)target=(i===0?.65:-.65)+Math.sin(time*35)*.08;
     enemyModel.arms[i].rotation.x=THREE.MathUtils.damp(enemyModel.arms[i].rotation.x,target,9,dt);
     enemyModel.legs[i].rotation.x=THREE.MathUtils.damp(enemyModel.legs[i].rotation.x,enemyWalk?Math.sin(time*10+i*Math.PI)*.3:0,8,dt);
+    enemyModel.elbows[i].rotation.x=THREE.MathUtils.damp(enemyModel.elbows[i].rotation.x,windup?-1.15:recover?-.12:stagger?-.7:-.45,12,dt);
+    enemyModel.knees[i].rotation.x=THREE.MathUtils.damp(enemyModel.knees[i].rotation.x,.12+(enemyWalk?Math.max(0,-Math.sin(time*10+i*Math.PI))*.5:0),10,dt);
   }
   enemyModel.rig.rotation.x=THREE.MathUtils.damp(enemyModel.rig.rotation.x,
     windup?-.10*windup:recover?.12:stagger?.18*Math.sin(time*34):0,8,dt);
@@ -821,6 +904,14 @@ function updateEnemy(dt){
   const result=stepEnemy(state.enemy,state.enemyPosition,state.playerPos,dt,frozen);
   if(result.telegraph&&!wasWindup)audio.play('enemy-telegraph',.65,Math.max(-.7,Math.min(.7,(state.enemyPosition.x-state.playerPos.x)*.06)));
   state.enemyPosition.x+=result.x;state.enemyPosition.z+=result.z;
+  // Keep body volumes apart even if the player runs directly into a stationary opponent.
+  const spacing=state.enemyPosition.clone().sub(state.playerPos);spacing.y=0;
+  const bodyGap=state.enemy.boss?1.65:1.25;
+  if(spacing.length()<bodyGap){
+    if(spacing.lengthSq()<.0001)spacing.copy(state.facing);
+    spacing.normalize().multiplyScalar(bodyGap);
+    state.enemyPosition.x=state.playerPos.x+spacing.x;state.enemyPosition.z=state.playerPos.z+spacing.z;
+  }
   enforceArena(state.enemyPosition,16.6);
   enemyModel.root.position.x=state.enemyPosition.x;enemyModel.root.position.z=state.enemyPosition.z;
   const dx=state.playerPos.x-state.enemyPosition.x,dz=state.playerPos.z-state.enemyPosition.z;
@@ -837,7 +928,6 @@ function updateCamera(dt){
   const playerFocus=state.playerPos.clone().add(v(0,1.65,0));
   const delta=state.enemyPosition.clone().sub(state.playerPos);delta.y=0;
   const separation=delta.length();
-  // Keep the hero dominant while nudging the frame toward a live opponent.
   const focusLead=state.running&&!state.enemy.dead&&separation>.001?Math.min(1.15,Math.max(0,separation-3.5)*.13):0;
   const target=playerFocus.addScaledVector(delta.normalize(),focusLead);
   camera.userData.combatFocus=target.clone();
@@ -845,7 +935,7 @@ function updateCamera(dt){
   const distance=7.9+(state.running&&!state.enemy.dead?clamp((separation-5)*.14,0,1.9):0);
   const offset=v(Math.sin(yaw)*Math.cos(pitch)*distance,2.1+Math.sin(pitch)*6.5,Math.cos(yaw)*Math.cos(pitch)*distance);
   const desire=target.clone().add(offset);
-  // Keep the combat focus and camera on the open side of arena structures.
+  // Camera collision against arena columns and props, preserving the combat focus.
   const ray=desire.clone().sub(target);const dist=ray.length();ray.normalize();
   obstaclesRay.set(target,ray);obstaclesRay.far=dist;
   const hits=obstaclesRay.intersectObjects(pillars,true);
@@ -904,17 +994,18 @@ function loop(now){
     if(state.impactTimer===0)UI.impact.classList.remove('show');
     if(state.arenaTime>=state.toastUntil)UI.toast.classList.remove('visible');
     if(state.combo&&state.arenaTime>=state.comboExpiresAt)state.combo=0;
-    movePlayer(dt);
-    updateChronoEcho(dt);
-    updateAttack(dt);
-    updateOra(dt);
+    const actionDt=state.hitstop>0?0:dt;
+    movePlayer(actionDt);
+    updateChronoEcho(actionDt);
+    updateAttack(actionDt);
+    updateOra(actionDt);
     if(state.hitstop<=0)updateEnemy(dt);
     updateAnchors(dt);
     updateEffects(dt);
     animated.forEach(f=>f(dt,state.arenaTime));
     updateHud();
   }
-  animateStand(dt);
+  if(!state.paused&&state.hitstop<=0)animateStand(dt);
   updateCamera(dt);
   renderer.render(scene,camera);
   fpsTime+=dt;fpsCount++;
@@ -932,6 +1023,8 @@ Object.defineProperty(window,'__SHATTERED_QA__',{get:()=>Object.freeze({
   combo:state.combo,attackActive:!!state.attack,ultimateActive:!!state.ultimate,
   pointerLocked:state.pointerLocked,enemyVisible:enemyModel.root.visible,anchors:timeAnchors.filter(anchor=>anchor.active).length,audio:audio.snapshot(),
   player:{x:state.playerPos.x,z:state.playerPos.z},
+  enemy:{x:state.enemyPosition.x,z:state.enemyPosition.z,type:state.enemy.type},
+  rig:{heroElbows:hero.userData.rig.elbows.map(joint=>joint.rotation.x),heroKnees:hero.userData.rig.knees.map(joint=>joint.rotation.x)},
   camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,
     focus:{x:camera.userData.combatFocus?.x??0,y:camera.userData.combatFocus?.y??0,z:camera.userData.combatFocus?.z??0}}
 })});

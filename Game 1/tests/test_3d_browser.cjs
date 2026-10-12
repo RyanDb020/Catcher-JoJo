@@ -35,6 +35,9 @@ async function run(){
   await page.waitForTimeout(700);
   await page.keyboard.up('w');
   const after=await page.evaluate(()=>window.__SHATTERED_QA__);
+  if(!after.rig.heroKnees.some(angle=>angle>.10))throw Error('Walking did not animate articulated knees');
+  const bodyDistance=Math.hypot(after.player.x-after.enemy.x,after.player.z-after.enemy.z);
+  if(bodyDistance<1.24)throw Error('Fighter body volumes overlap: '+bodyDistance);
   if(!(after.player.z<before.player.z-.20))throw Error('WASD movement failed: '+JSON.stringify({before:before.player,after:after.player}));
   const followOffset=Math.hypot(after.camera.focus.x-after.player.x,after.camera.focus.z-after.player.z);
   if(!(followOffset<=1.2))throw Error('Combat camera lost the player while moving: '+JSON.stringify(after.camera));
@@ -54,8 +57,23 @@ async function run(){
   const narrowBounds=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth}));
   if(narrowBounds.scrollWidth>narrowBounds.width)throw Error('Narrow viewport has horizontal overflow: '+JSON.stringify(narrowBounds));
   await page.screenshot({path:path.join(output,'3d-combat-mobile-preview.png')});
+  await page.waitForFunction(()=>window.__SHATTERED_QA__?.audio.ready===14,null,{timeout:15000});
+  const decodedAudio=await page.evaluate(()=>window.__SHATTERED_QA__.audio);
+  // Release pointer lock through the browser API; it must pause combat and clear one-shots.
+  await page.evaluate(()=>{if(document.pointerLockElement)document.exitPointerLock();else document.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape'}));});
+  await page.waitForFunction(()=>window.__SHATTERED_QA__?.paused===true);
+  const pausedAudio=await page.evaluate(()=>window.__SHATTERED_QA__.audio);
+  if(pausedAudio.active||pausedAudio.voices)throw Error('Pause left combat audio active: '+JSON.stringify(pausedAudio));
+  await page.locator('#audio-settings').evaluate(node=>{node.open=true});
+  await page.locator('#audio-mute').check();
+  if(!(await page.evaluate(()=>window.__SHATTERED_QA__.audio.muted)))throw Error('Mute control did not update mixer');
+  await page.locator('#audio-mute').uncheck();
+  await page.locator('#audio-settings').evaluate(node=>{node.open=false});
+  await page.locator('#resume-btn').click();
+  await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true);
+  if(errors.length)throw Error('Browser errors after narrow viewport/audio lifecycle: '+errors.join('; '));
   console.log('PASS 3D browser smoke test (wide + narrow viewports)');
-  console.log(JSON.stringify({start:before,after,focusOffset,wideBounds,narrowBounds,screenshots:['tests/artifacts/3d-combat-preview.png','tests/artifacts/3d-combat-mobile-preview.png']},null,2));
+  console.log(JSON.stringify({start:before,after,bodyDistance,decodedAudio,pausedAudio,focusOffset,wideBounds,narrowBounds,screenshots:['tests/artifacts/3d-combat-preview.png','tests/artifacts/3d-combat-mobile-preview.png']},null,2));
 
   // Repeat the launch with WebGL deliberately disabled to verify the playable fallback.
   await browser.close();browser=null;
@@ -83,4 +101,5 @@ async function run(){
  }
 }
 run().catch(e=>{console.error('FAIL 3D browser smoke test:',e);process.exitCode=1});
+
 

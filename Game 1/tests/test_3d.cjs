@@ -104,9 +104,13 @@ const root=path.join(__dirname,'..');
  });
  test('player, Stand and enemy have distinct articulated designs',()=>{
   const js=fs.readFileSync(path.join(root,'src/3d/main.mjs'),'utf8');
-  for(const marker of ['function createHero()','function makeStand()','function makeEnemy()','new THREE.LatheGeometry','new THREE.CapsuleGeometry','coatTails','horns','makeFace(head','root.position.set(1.52,0,-.05)'])assert(js.includes(marker),marker);
+  for(const marker of ['function createHero()','function makeStand()','function makeEnemy()','new THREE.LatheGeometry','new THREE.CapsuleGeometry','coatTails','horns','makeFace(head','root.position.set(1.82,0,-.05)','variants[\'rift-stalker\']','variants[\'iron-guard\']','variants[\'clock-adept\']','variants[\'chrono-shade\']'])assert(js.includes(marker),marker);
   assert.match(js,/function animateStand\(dt\)/);
   assert.match(js,/enemyModel\.deathFall/);
+ });
+ test('combat framing and arena lighting preserve readable fighters',()=>{
+  const js=fs.readFileSync(path.join(root,'src/3d/main.mjs'),'utf8');
+  for(const marker of ['playerFill=new THREE.PointLight','enemyFill=new THREE.PointLight','combatFocus=target.clone()','Math.min(1.15','color:0x3d4056'])assert(js.includes(marker),marker);
  });
  test('district includes time anchors, a landmark clock tower and camera obstruction checks',()=>{
   const js=fs.readFileSync(path.join(root,'src/3d/main.mjs'),'utf8');
@@ -119,7 +123,9 @@ const root=path.join(__dirname,'..');
  });
  test('combat audio is local, preference-controlled and backed by credited Ogg files',()=>{
   const js=fs.readFileSync(path.join(root,'src/3d/audio.mjs'),'utf8');
-  for(const marker of ['district-ambience.ogg','combat-music.ogg','time-resume.ogg','localStorage','audio-mute',"new URL('../../assets/combat-audio/"])assert(js.includes(marker),marker);
+  for(const marker of ['district-ambience.ogg','combat-music.ogg','time-resume.ogg','localStorage','audio-mute','../../assets/combat-audio/','../../assets/foley/'])assert(js.includes(marker),marker);
+  const banks=require('node:vm').runInNewContext(js.split('const defaults=')[0]+';FILES');
+  for(const files of Object.values(banks))for(const file of (Array.isArray(files)?files.map(name=>'assets/foley/'+name+'.ogg'):['assets/combat-audio/'+files]))assert(fs.existsSync(path.join(root,file)),file);
   const credits=fs.readFileSync(path.join(root,'AUDIO_CREDITS.md'),'utf8');
   assert.match(credits,/original, locally generated synthesis/);
   for(const f of ['dash-whoosh.ogg','punch-light.ogg','punch-heavy.ogg','stone-steps.ogg','enemy-telegraph.ogg','enemy-hit.ogg','time-stop.ogg','time-resume.ogg','stand-summon.ogg','chrono-echo.ogg','district-ambience.ogg','combat-music.ogg'])assert(fs.existsSync(path.join(root,'assets/combat-audio',f)),f);

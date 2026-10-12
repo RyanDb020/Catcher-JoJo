@@ -46,6 +46,11 @@ jobs:
       - name: Exercise playable 3D Combat Mode
         working-directory: 'Game 1'
         run: npm run qa:3d
+      - name: Exercise Arcade cinematics and local audio
+        working-directory: 'Game 1'
+        env:
+          QA_OUTPUT_DIR: tests/artifacts
+        run: node tests/live_qa.cjs --duration-ms=10000 --label=foley
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -53,3 +58,4 @@ jobs:
           name: shattered-universe-3d-qa
           path: Game 1/tests/artifacts/
           if-no-files-found: ignore
+

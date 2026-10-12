@@ -290,7 +290,7 @@ function preload() {
     () => { timeStopSoundLoaded = false; });
   for (const key of ['catch', 'perfect', 'power', 'punch', 'impact', 'rewind', 'rebirth', 'roller', 'miss']) {
     soundEffects[key] = { sound: null, ready: false };
-    soundEffects[key].sound = loadSound('assets/sfx-' + key + '.mp3',
+    soundEffects[key].sound = loadSound('assets/sfx-' + key + '.mp3?v=foley-1.5',
       () => { soundEffects[key].ready = true; },
       () => { soundEffects[key].ready = false; });
   }
@@ -514,7 +514,7 @@ function isCaught(ballX, ballY) {
     ballX + BALL_SIZE / 2 > catcherX &&
     ballX - BALL_SIZE / 2 < catcherX + catcherWidth &&
     ballY + BALL_SIZE / 2 > catcherY &&
-    ballY - BALL_SIZE / 2 < catcherY + catcherHeight
+    ballY - BALL_SIZE / 2 < catcherY + 6
   );
 }
 
