@@ -183,4 +183,13 @@ Run `npm test` from \`Game 1\` to execute existing Arcade tests and \`tests/test
 
 ### Optional real-browser smoke test
 
-Run `npm install`, `npx playwright install chromium`, then `npm run qa:3d`. This opens the new page in a headless Chromium instance, verifies WASD movement and enemy pursuit, and saves one local screenshot to `tests/artifacts/3d-combat-preview.png`. The CDN must be accessible. This test is provided but **has not been run from this chat environment**.
+Run `npm install`, `npx playwright install chromium`, then `npm run qa:3d`. This opens the new page in a headless Chromium instance, verifies WASD movement and enemy pursuit, and saves one local screenshot to `tests/artifacts/3d-combat-preview.png`. The CDN must be accessible. This test **passed on GitHub Actions on 12 October 2026**: [Playwright run](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38294270710). The real Chromium smoke test confirmed startup, WASD movement, camera state and enemy pursuit without page JavaScript errors. A screenshot was uploaded as a workflow artifact. Full combat, long-session performance, boss fights and audio synchronization remain untested.
+
+### Interrupted-session recovery (12 October 2026)
+
+- Continued from saved `Game 1/src/3d/main.mjs` and `rules.mjs` without resetting the Arcade Mode.
+- Fixed pointer lock not starting on first launch, combo expiry, the enemy shadow persisting after a kill, and enemy AI updates during hitstop.
+- Fixed older Arcade test mocks and stale cinematic timing assumptions.
+- GitHub Actions runs 35 Arcade, 156 cinematic rendering, and 10 3D rules tests automatically.
+- [Browser smoke test passed](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38294270710).
+- Remaining QA: full player attack/hit/death/retry, ORA and Time Stop interactions, GPU performance, long-run stability and full Universe Rebirth.
