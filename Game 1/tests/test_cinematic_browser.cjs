@@ -13,7 +13,9 @@ async function launch(browser,address,missing=false){
  const page=await browser.newPage({viewport:{width:1365,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{window.__JOJO_QA_AUTOMATION__=true});
  if(missing)await page.route('**/assets/cinematic/*.mp3*',r=>r.abort());
- await page.goto(address+'/index.html?test=1');await wait(page,x=>x.gameStarted===false,'boot');await page.keyboard.press('Enter');await wait(page,x=>x.gameStarted,'start');
+ await page.goto(address+'/index.html?test=1');
+ try{await wait(page,x=>x.gameStarted===false,'boot '+(missing?'missing audio':'normal'));}
+ catch(error){await page.screenshot({path:path.join(output,missing?'missing-audio-boot-failure.png':'normal-boot-failure.png')});throw Error(error.message+' JS errors '+JSON.stringify(errors)+' document '+JSON.stringify(await page.evaluate(()=>({ready:document.readyState,canvas:document.querySelectorAll('canvas').length,p5:typeof p5,setup:typeof setup}))));}await page.keyboard.press('Enter');await wait(page,x=>x.gameStarted,'start');
  return {page,errors};
 }
 async function missingRoute(browser,address){

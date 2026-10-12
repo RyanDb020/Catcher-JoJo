@@ -302,7 +302,10 @@ let timeStop = {
 };
 
 // Geluiden laden
-function preload() {
+function preload() {}
+
+// Recorded audio loads asynchronously; missing files must never block p5 setup.
+function prepareRecordedSounds() {
   // De game draait zonder geluid door wanneer alleen de p5.sound addon faalt.
   if (typeof loadSound !== 'function') return;
   gameOverSound = loadSound("assets/cinematic/defeat.mp3?v=rebuild-5",
@@ -327,6 +330,7 @@ function preload() {
 }
 
 function setup() {
+  prepareRecordedSounds();
   readSettings();
   createCanvas(max(windowWidth, 640), max(windowHeight, 480));
   if (typeof pixelDensity === 'function' && typeof displayDensity === 'function') pixelDensity(renderDensity());
@@ -1264,7 +1268,7 @@ function draw() {
     }
   }
   if (!gameOver) drawPowerUps(speedFactor);
-  if (standRush.active) drawStandAura();
+  if (standRush.active&&!window.JoJoCharacterDirector) drawStandAura();
   if (awakening.active) drawAwakeningAura();
   drawCatcherGhostTrail();
   drawBucket(catcherX, catcherY);
@@ -1276,7 +1280,7 @@ function draw() {
   drawKingCrimsonEffects();
   drawJoJoParticles();
   drawRoadRoller();
-  drawJoJoPopups();
+  if(!standRush.active)drawJoJoPopups();
   drawMenacingGlyphs();
   drawHUD(); // HUD is altijd leesbaar, ook tijdens aanvallen
   recordUniverseFrame();

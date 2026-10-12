@@ -206,6 +206,12 @@
     polygon(c,[[44,-119],[85,-95],[82,82],[29,42]],'#412b6b',ink,3);
     armor(c,[[-91,112],[87,112],[86,146],[-90,143]],'#e7b85e','#ffedaa');
     for(let i=0;i<8;i++)oval(c,-64+i*18,127,6,9,'#fff0c0',ink,1);
+    for(let i=0;i<4;i++){
+      const yy=34+i*18;
+      polygon(c,[[-34,yy],[-5,yy-4],[-5,yy+12],[-30,yy+16]],i%2?'#745791':'#9d80b7',ink,1);
+      polygon(c,[[4,yy-4],[35,yy],[29,yy+16],[4,yy+12]],i%2?'#45315f':'#665080',ink,1);
+    }
+    line(c,[[-96,-92],[-46,-76],[-12,-55]],'#e0c5ee',2);line(c,[[18,-56],[52,-87],[86,-100]],'#cba9df',2);
     // Back shoulder / arm remains attached, front punches follow phase.
     limb(c,[[88,-94],[158,-17],[153+24*p,73]],66,'#60438a','#b49cd8','#352450');
     oval(c,152,-24,46,43,'#aa8bd5',ink,4);
@@ -223,6 +229,8 @@
     polygon(c,[[10,-150],[40,-148],[34,-135],[14,-140]],'#f9f9ff',ink,2);
     oval(c,-20,-140,4,4,'#cceeff',null);oval(c,22,-141,4,4,'#cceeff',null);
     line(c,[[-10,-109],[4,-105],[18,-109]],'#32264b',3);
+    line(c,[[-38,-152],[-14,-157],[-5,-151]],'#2a2338',2);line(c,[[10,-155],[34,-154],[42,-149]],'#2a2338',2);
+    line(c,[[-2,-148],[2,-127],[-5,-121]],'#4b355f',2);line(c,[[-29,-121],[-18,-111]],'#c1a1dc',2);line(c,[[21,-118],[32,-126]],'#aa88cb',2);
     // Leading giant arm, segmented gauntlet and foreshortened punch.
     limb(c,[[-93,-97],[-177,-35],[-160-55*strike,64-25*strike]],
       76,'#725097','#d1abef','#392b5f');
@@ -698,7 +706,7 @@
       // A visible impact contour expands around the fist; it does not wash out the scene.
       for(let i=0;i<18;i++){const a=i*TAU/18,d=Math.min(w,h)*(.12+q*.25);line(c,[[w*.57+Math.cos(a)*d*.7,h*.49+Math.sin(a)*d*.7],[w*.57+Math.cos(a)*d,h*.49+Math.sin(a)*d]],'rgba(248,228,186,'+(.7*(1-q))+')',i%3===0?3:1);}
     }
-    border(c,w,h,['REVEAL / STAR PLATINUM','FIRST STRIKES / FIND THE RHYTHM','ORA ORA / BARRAGE','OVERDRIVE / BREAK THE LIMIT','ORA! / FINAL IMPACT','RECOVERY / STAND DOWN'][phase],'STAR PLATINUM','#c4a3ed');
+    topBanner(c,w,h,['STAR PLATINUM / REVEAL','ORA / FIRST STRIKES','ORA ORA / BARRAGE','STAR PLATINUM / OVERDRIVE','ORA! / FINAL IMPACT','STAND / RECOVERY'][phase],'#c4a3ed');
     c.restore();
   }
 
