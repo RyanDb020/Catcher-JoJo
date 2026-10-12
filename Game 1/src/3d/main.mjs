@@ -91,21 +91,21 @@ const animated=[];
 function createArena(){
   add(scene,new THREE.CylinderGeometry(20,20,1.4,96),M.floor,[0,-.8,0]);
   // Paved clock plaza: separate stone tiles and an inlaid bronze time-dial.
-  const tileGeo=new THREE.CylinderGeometry(.77,.80,.13,6);
+  const tileGeo=new THREE.BoxGeometry(1.42,.06,1.42);
   const tileMat=new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.9,metalness:.04});
   const pavers=[];
   for(let x=-17.5;x<=17.5;x+=1.48)for(let z=-17.5;z<=17.5;z+=1.48){
-    const xx=x+((Math.round(z*10)%2)*.36),r=Math.hypot(xx,z);
+    const xx=x,r=Math.hypot(xx,z);
     if(r>18.3||r<2.8)continue;
     pavers.push([xx,-.045,z,Math.sin(xx*7+z*3)*.5+.5]);
   }
   const stones=new THREE.InstancedMesh(tileGeo,tileMat,pavers.length);
   const dummy=new THREE.Object3D();
   pavers.forEach(([x,y,z,t],i)=>{
-    dummy.position.set(x,y,z);dummy.rotation.y=(i%6)*Math.PI/3;
-    dummy.scale.set(1+(i%4)*.025,1,1+(i%3)*.025);dummy.updateMatrix();
+    dummy.position.set(x,y+.055,z);dummy.rotation.y=(i%17===0?.035:0);
+    dummy.scale.set(1,1,1);dummy.updateMatrix();
     stones.setMatrixAt(i,dummy.matrix);
-    stones.setColorAt(i,new THREE.Color().setHSL(.66,.13,.30+t*.075));
+    stones.setColorAt(i,new THREE.Color().setHSL(.62,.11,.34+t*.055));
   });
   stones.instanceMatrix.needsUpdate=true;stones.instanceColor.needsUpdate=true;scene.add(stones);
   // Brass tracks and engraved clock numerals make the ground a designed place.
@@ -175,7 +175,7 @@ function createArena(){
   box(arch,M.detail,[1.9,6.15,.25],[1.1,.28,.26],[0,0,.22]);
   for(let i=0;i<8;i++){
     const a=i*Math.PI/4+.1,r=27+(i%3)*2.4,x=Math.sin(a)*r,z=Math.cos(a)*r;
-    const building=new THREE.Group();building.position.set(x,0,z);building.rotation.y=a;scene.add(building);pillars.push(building);
+    const building=new THREE.Group();building.position.set(x,0,z);building.rotation.y=a+Math.PI;scene.add(building);pillars.push(building);
     const h=[8,11,7,13,9,6,12,8][i],w=[7,9,6,8,10,6,8,7][i];
     box(building,i%2?M.night:M.steel,[0,h/2,0],[w,h,1.6]);
     box(building,M.detail,[0,h+.35,0],[w+1,.7,2.0]);
@@ -309,7 +309,7 @@ function createHero(){
   fistDetails(arms,M.skin);
   const elbows=articulate(arms),knees=articulate(legs);
   // Boot soles previously intersected the floor; raise the articulated body as a unit.
-  rig.position.y=.25;
+  rig.position.y=.32;
   rig.scale.set(.90,1.14,.92);
   return Object.assign(root,{userData:{rig:{root:rig,head,arms,legs,elbows,knees,coatTails,star}}});
 }
@@ -369,7 +369,7 @@ function makeStand(){
   }
   fistDetails(arms,M.lavender);
   const elbows=articulate(arms),knees=articulate(legs);
-  rig.position.y=.31;
+  rig.position.y=.40;
   rig.scale.set(.96,1.18,.96);
   root.scale.setScalar(.92);
   return {root,rig,torso:rig,arms,legs,elbows,knees,head,hair,headgem};
@@ -439,7 +439,7 @@ function makeEnemy(){
   const aura=ring(root,M.crimson,0,.10,0,1.02);
   fistDetails(arms,M.crimson);
   const elbows=articulate(arms),knees=articulate(legs);
-  rig.position.y=.26;
+  rig.position.y=.38;
   rig.scale.set(1.02,1.12,1);
   return {root,rig,arms,legs,elbows,knees,head,horns,warn,aura,variants,deathAt:-1};
 }
@@ -748,12 +748,21 @@ function animateStand(dt){
   stand.arms[1].rotation.x=THREE.MathUtils.damp(stand.arms[1].rotation.x,
     a&&a.stage%2!==1?-1.9*swing:u?-1.35*Math.sin(time*41+Math.PI):.08-gait*.12*moving,15,dt);
   stand.root.position.y=Math.sin(time*2.4)*.055+(u?.10:0)+(a?.08*swing:0);
-  stand.root.position.z=-.05-(a?.22*swing:0)-(u?.25:0);
+  // Stage the Stand on the open side of the camera instead of hiding it behind a turning hero.
+  const standPosition=state.playerPos.clone().add(v(Math.cos(state.yaw),0,-Math.sin(state.yaw)).multiplyScalar(-1.65))
+    .addScaledVector(state.facing,(a||u)?.55:.12);
+  enforceArena(standPosition,RULES.arenaRadius-.65);
+  const localStand=standPosition.clone().sub(state.playerPos).applyAxisAngle(UP,-hero.rotation.y);
+  stand.root.position.x=THREE.MathUtils.damp(stand.root.position.x,localStand.x,12,dt);
+  stand.root.position.z=THREE.MathUtils.damp(stand.root.position.z,localStand.z,12,dt);
+  const look=state.enemyPosition.clone().sub(standPosition);
+  const standYaw=Math.atan2(look.x,look.z)-hero.rotation.y;
+  stand.root.rotation.y+=Math.atan2(Math.sin(standYaw-stand.root.rotation.y),Math.cos(standYaw-stand.root.rotation.y))*Math.min(1,dt*12);
   stand.root.rotation.z=Math.sin(time*1.9)*.035+(a?.07*swing:0);
   stand.root.scale.setScalar(u?1.02:.92);
   // Guarded idle, planted windups, bending knees and a torso twist distinguish each strike.
   const breathing=Math.sin(time*2.2)*.013;
-  heroRig.root.position.y=.25+breathing+(dodge?-.08:0);
+  heroRig.root.position.y=.32+breathing+(dodge?-.08:0);
   heroRig.root.rotation.y=THREE.MathUtils.damp(heroRig.root.rotation.y,a?(a.stage%2?-.26:.26)*swing:0,12,dt);
   stand.rig.rotation.y=THREE.MathUtils.damp(stand.rig.rotation.y,u?Math.sin(time*41)*.12:a?(a.stage%2?-.30:.30)*swing:0,14,dt);
   for(let i=0;i<2;i++){
@@ -910,7 +919,10 @@ function updateEnemy(dt){
   if(spacing.length()<bodyGap){
     if(spacing.lengthSq()<.0001)spacing.copy(state.facing);
     spacing.normalize().multiplyScalar(bodyGap);
-    state.enemyPosition.x=state.playerPos.x+spacing.x;state.enemyPosition.z=state.playerPos.z+spacing.z;
+    if(frozen){
+      state.playerPos.x=state.enemyPosition.x-spacing.x;state.playerPos.z=state.enemyPosition.z-spacing.z;
+      collide(state.playerPos);hero.position.x=state.playerPos.x;hero.position.z=state.playerPos.z;
+    }else{state.enemyPosition.x=state.playerPos.x+spacing.x;state.enemyPosition.z=state.playerPos.z+spacing.z;}
   }
   enforceArena(state.enemyPosition,16.6);
   enemyModel.root.position.x=state.enemyPosition.x;enemyModel.root.position.z=state.enemyPosition.z;

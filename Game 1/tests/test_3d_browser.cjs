@@ -60,7 +60,7 @@ async function run(){
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.audio.ready===14,null,{timeout:15000});
   const decodedAudio=await page.evaluate(()=>window.__SHATTERED_QA__.audio);
   // Release pointer lock through the browser API; it must pause combat and clear one-shots.
-  await page.evaluate(()=>{if(document.pointerLockElement)document.exitPointerLock();else document.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape'}));});
+  await page.evaluate(()=>{if(window.__SHATTERED_QA__.paused)return;if(document.pointerLockElement)document.exitPointerLock();else document.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape'}));});
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.paused===true);
   const pausedAudio=await page.evaluate(()=>window.__SHATTERED_QA__.audio);
   if(pausedAudio.active||pausedAudio.voices)throw Error('Pause left combat audio active: '+JSON.stringify(pausedAudio));
