@@ -42,7 +42,7 @@ function publishQaState() {
       universeReset: universeReset.active,
       universePhase: universeReset.active ? universeReset.phase : 'idle', gameMillis: gameClock,
       oraProgress:standRush.active?oraProgress():0,oraDuration:oraDuration(),paused:optionsVisible,
-      universeProgress:universeReset.active?constrain((gameMillis()-universeReset.phaseStart)/(universeReset.phase==='reveal'?HEAVEN_REVEAL_MS:universeReset.phase==='rewind'?REWIND_MS:universeReset.phase==='accelerate'?ACCELERATE_MS:universeReset.phase==='collapse'?SINGULARITY_MS:REBIRTH_MS),0,1):0,
+      universeProgress:universeReset.active?constrain((gameMillis()-universeReset.phaseStart)/universePhaseDuration(universeReset.phase),0,1):0,
       clips:Object.fromEntries(Object.entries(jojoVoiceClips).map(([name,a])=>[name,{duration:Number.isFinite(a.duration)?a.duration:0,paused:a.paused,currentTime:a.currentTime||0}])),
       director:directorVoice?{name:directorVoice.name,playing:!!directorVoice.audio&&!directorVoice.audio.paused,currentTime:directorVoice.audio?.currentTime||0,duration:directorVoice.duration}:null
     };
@@ -276,6 +276,9 @@ function stopCinematicEffects(){for(const name of CINEMATIC_CUES){const a=soundE
 function cinematicDuration(name,base){const a=jojoVoiceClips[name];return a&&Number.isFinite(a.duration)&&a.duration>0?Math.max(base,Math.min(60000,a.duration*1000)):base;}
 function stopIntroDuration(){return timeStop.introDuration||TIME_STOP_INTRO_MS;}
 function stopReleaseDuration(){return timeStop.releaseDuration||TIME_STOP_RELEASE_MS;}
+function universePhaseDuration(phase){
+ return phase==='reveal'?cinematicDuration('pucci',HEAVEN_REVEAL_MS):phase==='rewind'?cinematicDuration('accelerate',REWIND_MS):phase==='accelerate'?ACCELERATE_MS:phase==='collapse'?SINGULARITY_MS:REBIRTH_MS;
+}
 function oraDuration(){return Math.max(ORA_RUSH_DURATION_MS,standRush.duration||0);}
 function oraProgress(){return directorVoice&&directorVoice.name==='ora'?directorAudioProgress(oraDuration()):constrain((gameMillis()-standRush.start)/oraDuration(),0,1);}
 
@@ -428,6 +431,8 @@ function keyPressed() {
 }
 
 function resetGame() {
+  for(const item of Object.values(soundEffects))if(item?.sound&&item.ready)try{item.sound.stop();}catch(_){}
+  if(gameOverSoundLoaded)gameOverSound.stop();
   cancelDirectorVoice();stopJoJoVoices();stopCinematicEffects();pausedHtmlAudio=[];
   score = 0;
   lives = START_LIVES;
@@ -713,6 +718,8 @@ function startTimeStop(x, y) {
 function updateTimeStop() {
   if (timeStop.phase === "idle") return;
   const elapsed = gameMillis() - timeStop.phaseStart;
+  if(timeStop.phase==='intro'&&jojoVoiceObjectUrls.stop)timeStop.introDuration=Math.max(stopIntroDuration(),cinematicDuration('stop',TIME_STOP_INTRO_MS));
+  if(timeStop.phase==='release'&&resumeAudio&&Number.isFinite(resumeAudio.duration))timeStop.releaseDuration=Math.max(stopReleaseDuration(),resumeAudio.duration*1000);
 
   if (timeStop.phase === "intro") {
     if (!timeStop.impactPlayed && elapsed >= stopIntroDuration()*.21) {
@@ -1796,6 +1803,7 @@ function recordUniverseFrame() {
 function startUniverseReset() {
  if(universeReset.active)return;
  if(standRush.active || timeStop.phase!=='idle' || roadRoller.active){queuedReset=true;return;}
+ if(gameOverSoundLoaded)gameOverSound.stop();stopCinematicEffects();
  gameStarted=true;
  if(!universeHistory.length)recordUniverseFrame();
  universeReset={
@@ -1823,8 +1831,7 @@ function commitNewUniverse() {
 
 function drawUniverseReset() {
  const u=universeReset,phase=u.phase,age=gameMillis()-u.phaseStart;
- const d=phase==='reveal'?HEAVEN_REVEAL_MS:phase==='rewind'?REWIND_MS:
-   phase==='accelerate'?ACCELERATE_MS:phase==='collapse'?SINGULARITY_MS:REBIRTH_MS;
+ const d=universePhaseDuration(phase);
  const t=constrain(age/d,0,1);
  if(phase==='reveal'){
   drawUniverseSnapshot(u.source[u.source.length-1]||null,1,t);
@@ -1858,7 +1865,7 @@ function drawUniverseReset() {
  }
  if(phase==='reveal'){
   // A default 6-second legacy clip does not shorten the new 8.664-second intro.
-  if(age>=HEAVEN_REVEAL_MS && (u.introVoiceDone || age>=HEAVEN_REVEAL_MS+1800)){
+  if(age>=d && (u.introVoiceDone || age>=d+1800)){
    cancelDirectorVoice();
    u.phase='rewind';u.phaseStart=gameMillis();
    beginDirectorVoice('accelerate',()=>{
@@ -1868,7 +1875,7 @@ function drawUniverseReset() {
   return;
  }
  if(phase==='rewind'){
-  if(age>=REWIND_MS && (u.rewindVoiceDone || age>=REWIND_MS+1800)){
+  if(age>=d && (u.rewindVoiceDone || age>=d+1800)){
    cancelDirectorVoice();u.phase='accelerate';u.phaseStart=gameMillis();
    playUniverseSound('speed');
   }

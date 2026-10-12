@@ -190,3 +190,7 @@ Run `npm install`, `npx playwright install chromium`, then `npm run qa:3d`. This
 The earlier full mission and Arcade cinematic route passed in [run 38312201430](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38312201430); recorded audio updates passed in [run 38313253786](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38313253786). Current results, screenshots and remaining release work are recorded in [the polish checkpoint](POLISH_STATUS_2026_10_12.md).
 
 Browser downloads in the local workspace are truncated, so actual Chromium/SwiftShader verification runs through GitHub Actions. Node tests alone do not establish WebGL graphics, GPU performance or subjective combat/audio quality.
+
+## Arcade cinematic rebuild — 13 October 2026
+
+Time Stop now stages DIO and The World, ORA has six compositions with a finishing fist, and Made in Heaven uses an equine silhouette beside Pucci. Rewind reverses a geared clock and reconstructs recorded gameplay states; collapse/rebirth return to the actual reset arena. Public defaults use recorded Kenney CC0 scores. Custom clips stay in browser-local file inputs. See [implementation and verification](CINEMATIC_REBUILD_STATUS.md) and [audio sources](ASSET_CREDITS.md).
