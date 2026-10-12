@@ -39,7 +39,8 @@ function publishQaState() {
     window.__JOJO_QA_STATE__ = {
       gameStarted, gameOver, score, lives, timeStop: timeStop.phase,
       roadRoller: roadRoller.active, ora: standRush.active,
-      universeReset: universeReset.active, gameMillis: gameClock
+      universeReset: universeReset.active,
+      universePhase: universeReset.active ? universeReset.phase : 'idle', gameMillis: gameClock
     };
   } catch (_) {}
 }

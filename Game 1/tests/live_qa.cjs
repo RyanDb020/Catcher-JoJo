@@ -129,21 +129,27 @@ async function waitState(page, predicate, label, timeout = 12000) {
     await waitState(page, state => !state.roadRoller, 'Road Roller completion', 9000);
 
     // ORA ORA: opening, middle barrage, and final punch/recovery.
+    await waitState(page, state => state.timeStop === 'idle', 'Time Stop cleanup before ORA', 18000);
     await page.keyboard.press('g'); await page.keyboard.press('q');
     await waitState(page, state => state.ora, 'ORA start');
     await delay(220); screenshots.push(await shot(page,'ora-start'));
-    await delay(1150); screenshots.push(await shot(page,'ora-middle'));
-    await delay(1450); screenshots.push(await shot(page,'ora-finish'));
+    await delay(3100); screenshots.push(await shot(page,'ora-middle'));
+    await delay(4250); screenshots.push(await shot(page,'ora-finish'));
     await waitState(page, state => !state.ora, 'ORA completion', 8000);
 
     // Made in Heaven: rewind, acceleration/collapse, rebirth and completed run.
     await page.keyboard.press('r');
     await waitState(page, state => state.universeReset, 'Made in Heaven start');
     await delay(220); screenshots.push(await shot(page,'rewind-start'));
-    await delay(2850); screenshots.push(await shot(page,'rewind-acceleration'));
-    await delay(1550); screenshots.push(await shot(page,'rewind-collapse'));
-    await delay(1300); screenshots.push(await shot(page,'rewind-rebirth'));
-    await waitState(page, state => !state.universeReset, 'Made in Heaven completion', 10000);
+    await waitState(page, state => state.universePhase === 'rewind', 'history playback', 30000);
+    await delay(1800); screenshots.push(await shot(page,'rewind-history'));
+    await waitState(page, state => state.universePhase === 'accelerate', 'time acceleration', 30000);
+    await delay(1100); screenshots.push(await shot(page,'rewind-acceleration'));
+    await waitState(page, state => state.universePhase === 'collapse', 'universe collapse', 12000);
+    await delay(800); screenshots.push(await shot(page,'rewind-collapse'));
+    await waitState(page, state => state.universePhase === 'rebirth', 'universe rebirth', 12000);
+    await delay(800); screenshots.push(await shot(page,'rewind-rebirth'));
+    await waitState(page, state => !state.universeReset, 'Made in Heaven completion', 12000);
     screenshots.push(await shot(page,'rewind-end'));
 
     // Ten-minute sustained play test with life loss suppression enabled only on

@@ -57,7 +57,7 @@ async function run(){
   await page.screenshot({path:path.join(output,'3d-combat-preview.png')});
   // Check the same HUD and WebGL scene at a narrow mobile-sized viewport.
   await page.setViewportSize({width:390,height:844});
-  await page.waitForTimeout(250);
+  await page.waitForFunction(()=>Math.abs(window.__SHATTERED_QA__.camera.aspect-390/844)<.001,null,{timeout:15000});
   const narrowBounds=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth}));
   const narrowCamera=await page.evaluate(()=>window.__SHATTERED_QA__.camera);
   if(Math.abs(narrowCamera.aspect-390/844)>.001)throw Error('Narrow camera aspect was not resized');
