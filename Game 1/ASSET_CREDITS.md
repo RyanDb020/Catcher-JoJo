@@ -32,3 +32,7 @@ Technical decoding/playback checks do not establish perceived sound quality. A l
 ## Recorded time-resume cue
 
 `assets/combat-audio/time-resume.ogg` and `assets/sfx-rebirth.mp3` now contain a mix of Kenney's `impactBell_heavy_000.ogg` (gain 0.45), `impactMetal_medium_000.ogg` (gain 0.65) and reversed `cloth2.ogg` (gain 0.25). All source clips are CC0 from the packs credited above. FFmpeg combines them without oscillator synthesis, limits the peak to 0.8 and fades the final 0.4 seconds. The stereo 48 kHz source is encoded as Opus/Ogg and MP3. This is used for arena Time Resume / anchor release / victory and the Arcade resume/rebirth event. It adds no anime voice.
+
+## Referenced source not imported
+
+The supplied MyInstants JoJo search page and its terms were inspected. The individual Time Stop, ORA and Made in Heaven pages returned HTTP 403, and no per-recording redistribution permission was established. No new MyInstants clip was downloaded or published. The licensed Kenney recordings above were used for new effects.
