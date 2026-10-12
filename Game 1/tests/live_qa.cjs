@@ -116,7 +116,8 @@ async function waitState(page, predicate, label, timeout = 12000) {
     await page.keyboard.press('t');
     await delay(1050); screenshots.push(await shot(page,'time-stop-start'));
     await delay(1250); screenshots.push(await shot(page,'time-stop-climax'));
-    await delay(2100); screenshots.push(await shot(page,'time-stop-freeze'));
+    await waitState(page, state => state.timeStop === 'freeze', 'Time Stop frozen composition');
+    screenshots.push(await shot(page,'time-stop-freeze'));
     await waitState(page, state => state.timeStop === 'slow', 'Time Stop slow phase');
 
     // Road Roller: visible descent, the 1.39 s contact frame, and the sustained

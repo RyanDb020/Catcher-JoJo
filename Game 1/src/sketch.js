@@ -744,6 +744,7 @@ function getCameraShake() {
 
 // Visuele laag over het speelveld: kleurfilter, klok, scherven en tekst
 function drawTimeStopEffects() {
+  if(window.JoJoCharacterDirector)return; // The dedicated director owns the complete visual composition.
   if (timeStop.phase === "idle") return;
   const phase = timeStop.phase;
   if (phase === "slow") return; // Speelveld blijft volledig vrij.
@@ -1918,6 +1919,11 @@ function rewindStreakY(index, t, canvasHeight = height) {
   return ((index * 61 - t * 760 + canvasHeight) % (canvasHeight + 61)) - 30;
 }
 function drawRewindOverlay(t) {
+  if(window.JoJoCosmicDirector?.rewind){
+    window.JoJoCosmicDirector.rewind(drawingContext,width,height,t,universeReset.source,Number(OVERHAUL_AUDIO.quality)||0);
+    drawUniverseHeader('REWIND','PUCCI · DE TIJDLIJN SPOELT TERUG','#dbc0ff');
+    return;
+  }
   push();
   noStroke();
   fill(94, 38, 187, 58 + t * 24);

@@ -120,7 +120,7 @@
   }
   // GOLD / THE WORLD: crouched athletic figure, angular helm and joint armor.
   function worldFigure(c,time,freeze=false) {
-    const p=Math.sin(time*12),lunge=freeze?1:smooth((time-.22)/.54);
+    const p=freeze?0:Math.sin(time*12),lunge=freeze?1:smooth((time-.22)/.54);
     c.save();
     // Plated greaves and bent knees give the iconic predatory silhouette.
     limb(c,[[-64,129],[-164,212],[-142,304]],71,'#c49a35','#ffeb91','#a87426');
@@ -155,6 +155,17 @@
     oval(c,-173,12,43,42,'#f6d475',ink,5);
     armor(c,[[-176,65],[-100,71],[-89,108],[-165,119]],'#dbad37','#fff4a6');
     fist(c,-116+78*lunge,130+12*p,1.22+lunge*.14,'#dcb13c','#fff3a2');
+    // Layered abdomen plates, engraved seams and small fasteners catch the light.
+    for(let i=0;i<4;i++){
+      const y=42+i*17,half=38-i*3;
+      polygon(c,[[-half,y],[0,y+6],[half,y],[half-4,y+13],[0,y+17],[-half+4,y+13]],i%2?'#b8872e':'#d3a43e',ink,1.6);
+      line(c,[[-half+5,y+2],[0,y+8],[half-5,y+2]],'#ffe8a0',1.4);
+    }
+    for(const [x,y] of [[-74,-62],[65,-63],[-143,78],[155,38],[-164,291],[189,295]]){
+      oval(c,x,y,4,4,'#805822','#fff0b1',1);line(c,[[x-2,y],[x+2,y]],'#2d2530',1);
+    }
+    line(c,[[-28,-116],[-8,-111],[2,-117]],'#ffeeb9',1.5);
+    line(c,[[-17,-93],[0,-91],[9,-99]],'#664627',1.7);
     // Signature segmented chest linework and glints.
     line(c,[[-93,-26],[-67,19],[-74,61]],'#8b6227',4);
     line(c,[[73,-65],[65,-2],[47,46]],'#8b6227',4);
@@ -398,10 +409,36 @@
     c.scale(size,size);drawing(c);
     c.restore();
   }
+  function timeDial(c,w,h,progress,frozen=false){
+    const r=Math.min(w,h)*.34,cx=w*.5,cy=h*.49;
+    c.save();c.translate(cx,cy);c.rotate(frozen?-.14:-.14-progress*1.2);
+    for(const factor of [1,1.08,1.19])oval(c,0,0,r*factor,r*factor,'rgba(0,0,0,0)','rgba(238,215,150,.28)',factor===1?2:1);
+    for(let i=0;i<60;i++){
+      const a=i*TAU/60,major=i%5===0;
+      line(c,[[Math.sin(a)*r*(major?.88:.95),Math.cos(a)*r*(major?.88:.95)],[Math.sin(a)*r,Math.cos(a)*r]],major?'rgba(255,231,167,.75)':'rgba(192,226,241,.36)',major?2:1);
+    }
+    c.font='600 '+Math.max(10,r*.065)+'px Georgia';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#ead9ac';
+    ['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'].forEach((n,i)=>c.fillText(n,Math.sin(i*TAU/12)*r*.78,-Math.cos(i*TAU/12)*r*.78));
+    c.rotate(frozen?-.8:-progress*9);line(c,[[0,r*.12],[0,-r*.66]],'#efda9a',3);line(c,[[0,0],[r*.42,0]],'#bceaf4',2);
+    oval(c,0,0,5,5,'#fff0bd',null);c.restore();
+  }
   function world(c,w,h,phase,t,settings={}) {
     if (!ctxReady(c)) return;
     c.save();
     const isSlow=phase==='slow',isRelease=phase==='release';
+    if(phase==='freeze'){
+      // Lock the pose, dial and dust in place; the actual paused arena stays visible.
+      c.fillStyle='rgba(9,30,49,.46)';c.fillRect(0,0,w,h);
+      timeDial(c,w,h,1,true);
+      for(let i=0;i<38;i++){
+        const x=(Math.sin(i*41.3)*.5+.5)*w,y=(Math.cos(i*17.7)*.5+.5)*h;
+        line(c,[[x-3,y],[x+3,y]],'rgba(218,248,255,.6)',1);
+        line(c,[[x,y-3],[x,y+3]],'rgba(218,248,255,.4)',1);
+      }
+      c.save();c.globalAlpha=.5;figure(c,w,h,cc=>worldFigure(cc,1,true),{zoom:.47,x:.80,y:.58});c.restore();
+      border(c,w,h,'ZA WARUDO  /  TIME STOPPED','ALLE BALLEN STAAN STIL','#a7e4ed');
+      c.restore();return;
+    }
     if(isSlow){ // Atmospheric remnants leave the gameplay clear.
       c.strokeStyle='rgba(229,202,95,.14)';c.lineWidth=2;
       for(let i=0;i<6;i++){
@@ -423,14 +460,15 @@
       topBanner(c,w,h,'THE WORLD  /  TIME RESUMES','#e9c458');
       c.restore();return;
     }
-    stage(c,w,h,'255,193,65',t,.98);
+    stage(c,w,h,'255,193,65',t,.85);
+    timeDial(c,w,h,smooth(Math.min(t/.82,1)),t>=.82);
     const entrance=ease(t/.28);
     const hero=smooth((t-.12)/.34);
     aura(c,[w*.51,h*.52,w*.19,h*.32],t*3,'246,185,63',hero);
     figure(c,w,h,cc=>worldFigure(cc,t*3,t>.81),
-      {zoom:.74+hero*.43, x:.55-(1-entrance)*.32,y:.55+(1-entrance)*.14});
+      {zoom:.66+hero*.28, x:.55-(1-entrance)*.32,y:.55+(1-entrance)*.14});
     if(t>.76){
-      motion(c,w*.51,h*.50,t,'#fff0be',24);
+      if(t<.88)motion(c,w*.51,h*.50,t,'#fff0be',16);
       tint(c,w*.53,h*.49,w*.30,'255,241,169',.10+.17*smooth((t-.76)/.24));
     }
     border(c,w,h,t<.34?'SUMMON  /  THE WORLD':t<.72?'THE WORLD  /  FULL REVEAL':'ZA WARUDO  /  FREEZE',
@@ -520,5 +558,6 @@
     const s=Math.min(w/960,h/740)*1.06;
     c.translate(w*.71,h*.59);c.scale(s,s);heavenFigure(c,t*16);c.restore();
   }
-  root.JoJoCharacterDirector=Object.freeze({heaven,heavenEcho,ora,world,version:'3.0-character-rebuild'});
+  root.JoJoCharacterDirector=Object.freeze({heaven,heavenEcho,ora,world,version:'4.1-time-polish'});
 })(typeof window!=='undefined'?window:globalThis);
+

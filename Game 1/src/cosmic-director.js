@@ -237,19 +237,53 @@ function planet(c,w,h,t){
 }
 function nebula(c,w,h,t){
  c.save();c.globalCompositeOperation='screen';
- for(let layer=0;layer<9;layer++){
-  const side=layer%2?1:-1,x=w*(.47+side*(.1+.06*(layer%3)))+
-    Math.sin(layer*1.7+t*5)*w*.055;
-  const y=h*(.30+.105*Math.sin(layer*1.7));
-  const r=w*(.19+.048*(layer%4));
-  const clr=layer%3===0?'58,161,234':layer%3===1?'169,92,229':'87,133,246';
-  mist(c,w,h,x,y,r,r*.43,clr,.15+.09*(layer%3));
-  c.save();c.translate(x,y);c.rotate((layer%2?-1:1)*.3+t*.12);
-  c.beginPath();c.moveTo(-r*.8,0);
-  c.bezierCurveTo(-r*.15,-r*.55,r*.23,r*.66,r*.9,-r*.10);
-  c.strokeStyle=layer%2?'rgba(193,225,255,.20)':'rgba(214,179,255,.15)';
-  c.lineWidth=r*.14;c.stroke();c.restore();
+ // Fine filaments and diffuse dust replace the broad, hard-edged tubes.
+ for(let i=0;i<24;i++){
+  const x=w*(.16+hash(i*7)*.68),y=h*(.18+hash(i*3)*.40),r=w*(.075+hash(i*13)*.15);
+  mist(c,w,h,x,y,r,r*.38,i%2?'83,150,236':'167,103,213',.10);
  }
+ for(let i=0;i<48;i++){
+  const x=w*(-.12+i*.026),y=h*(.31+.08*Math.sin(i*.21+t*.25));
+  c.beginPath();c.moveTo(x,y);
+  c.bezierCurveTo(x+w*.12,y-h*.16,x+w*.21,y+h*.17,x+w*.40,y-h*.08);
+  c.strokeStyle=i%3?'rgba(153,199,255,.055)':'rgba(232,191,255,.08)';c.lineWidth=1+hash(i)*2;c.stroke();
+ }
+ c.restore();
+}
+function rewind(c,w,h,t,history=[],quality=2){
+ c.save();fill(c,w,h,'rgba(18,8,45,.36)');
+ const count=history.length,progress=1-smooth(t),index=Math.floor(progress*Math.max(0,count-1));
+ const panelW=Math.min(w*.22,245),panelH=panelW*.65,y=h*.55;
+ // Three framed memories show actual score, catcher and balls from the saved round.
+ for(let i=0;i<3;i++){
+  const snap=history[Math.max(0,Math.min(count-1,index+(i-1)*Math.max(1,Math.floor(count*.16))))];
+  if(!snap)continue;
+  const x=w*.5+(i-1)*panelW*1.27,offset=Math.sin(t*PI)*h*.045*(i===1?-1:1);
+  c.save();c.translate(x,y+offset);c.rotate((i-1)*.045);
+  c.fillStyle='rgba(13,15,40,.9)';c.fillRect(-panelW/2,-panelH/2,panelW,panelH);
+  c.strokeStyle=i===1?'#e4c6ff':'#7e739c';c.lineWidth=i===1?2:1;c.strokeRect(-panelW/2,-panelH/2,panelW,panelH);
+  c.save();c.beginPath();c.rect(-panelW/2,-panelH/2,panelW,panelH);c.clip();
+  for(const ball of snap.balls||[]){
+    const bx=(ball.x/w-.5)*panelW,by=(ball.y/h-.5)*panelH;
+    path(c,[[bx,by+10],[bx,by]],'rgba(186,174,255,.36)',2);
+    ellipse(c,bx,by,3.5,3.5,ball.gold?'#ffe0a3':'#df98ed');
+  }
+  const bx=(snap.catcherX/w-.5)*panelW,bw=Math.max(12,snap.catcherWidth/w*panelW);
+  poly(c,[[bx,panelH*.31],[bx+bw,panelH*.31],[bx+bw*.82,panelH*.43],[bx+bw*.18,panelH*.43]],'#ae7fcf','#f1d6ff',1);
+  c.restore();c.font='600 '+Math.max(9,Math.min(13,w*.015))+'px Arial';c.textAlign='left';c.fillStyle='#d0bbec';
+  c.fillText('SCORE '+snap.score,-panelW*.44,-panelH*.31);c.restore();
+ }
+ // Reversed trails move toward the past; a single precise timeline anchors the composition.
+ for(let i=0;i<(quality?42:18);i++){
+  const x=((hash(i*7)-t*(.25+hash(i)*.3)+2)%1)*w,yy=h*(.12+hash(i*11)*.72);
+  path(c,[[x,yy],[x+10+hash(i*2)*45,yy]],'rgba(194,209,255,.19)',i%7===0?2:1);
+ }
+ const left=w*.16,right=w*.84,yy=h*.80;
+ path(c,[[left,yy],[right,yy]],'rgba(196,168,238,.35)',1);
+ for(let i=0;i<=40;i++){const x=mix(left,right,i/40);path(c,[[x,yy-3],[x,yy+(i%5?3:8)]],'rgba(213,190,243,.48)',1);}
+ const marker=mix(left,right,progress);ellipse(c,marker,yy,4,4,'#fbebff');
+ c.font='600 '+Math.max(11,Math.min(16,w*.018))+'px Arial';c.textAlign='center';c.fillStyle='#d9c6ef';
+ c.fillText('PAST',left,yy+28);c.fillText('NOW',right,yy+28);
  c.restore();
 }
 function birthHorizon(c,w,h,t){
@@ -361,8 +395,9 @@ function intro(c,w,h,t){
  }
  c.restore();
 }
-root.JoJoCosmicDirector=Object.freeze({intro,collapse,rebirth,sky,version:'3.0.0',diagnostics:{
+root.JoJoCosmicDirector=Object.freeze({intro,collapse,rebirth,rewind,sky,version:'3.1.0',diagnostics:{
   collapseStages:['reality-fracture','gravitational-collapse','everything-falls-apart','final-singularity'],
   rebirthStages:['first-light','cosmic-genesis','new-cosmos','gameplay-reveal']
 }});
 })(typeof window!=='undefined'?window:globalThis);
+
