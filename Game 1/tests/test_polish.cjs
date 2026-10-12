@@ -22,11 +22,12 @@ for(const op of ['push','pop','rectMode','strokeWeight','stroke','fill','noFill'
 const c=vm.createContext(context);vm.runInContext(code,c,{filename:'sketch.js'});
 function run(s){return vm.runInContext(s,c)};
 function tick(n=1){for(let i=0;i<n;i++){context.frameCount++;run('draw()')}};
+function finishUniverse(){let i=0;while(run('universeReset.active')&&i++<3000)tick();assert(!run('universeReset.active'),'Universe reset exceeded its bounded completion time');}
 let checks=0;function test(label,fn){fn();console.log('PASS:',label);checks++}
 test('setup, preload and render start screen',()=>{run('preload(); setup()');tick(8);assert.equal(run('balls.length'),6);assert.equal(run('stars.length'),100)});
 test('production scripts and every declared local audio file exist',()=>{
  const root=path.join(__dirname,'..'),html=fs.readFileSync(path.join(root,'index.html'),'utf8');
- for(const file of ['vendor/p5.min.js','vendor/p5.sound.min.js','src/character-director.js','src/cosmic-director.js','assets/background-music.mp3','assets/jixaw-metal-pipe-falling-sound.mp3','assets/za-warudo-toki-wo-tomare_WJVdsYt.mp3'])assert(fs.existsSync(path.join(root,file)),file);
+ for(const file of ['vendor/p5.min.js','vendor/p5.sound.min.js','src/character-director.js','src/cosmic-director.js','assets/cinematic/district-bed.mp3','assets/cinematic/defeat.mp3','assets/cinematic/time-activate.mp3'])assert(fs.existsSync(path.join(root,file)),file);
  for(const key of ['catch','perfect','power','punch','impact','rewind','rebirth','roller','miss'])assert(fs.existsSync(path.join(root,'assets',`sfx-${key}.mp3`)),`sfx-${key}.mp3`);
  assert(html.includes('src="vendor/p5.min.js"')&&html.includes('src="vendor/p5.sound.min.js"')&&html.includes('src/cosmic-director.js')&&html.includes('src/character-director.js')&&html.includes('src/sketch.js'));
 });
@@ -38,15 +39,15 @@ test('ORA delays score until the distance-based punch reaches its target',()=>{r
 test('Road Roller impact matches its visible landing and outlasts vehicle cleanup',()=>{run('standRush.active=false;standPunches=[];standEnergy=100; startRoadRoller()');assert.equal(run('roadRoller.active'),false);run('timeStop.phase="freeze";timeStop.phaseStart=gameMillis(); startRoadRoller()');assert.equal(run('roadRoller.active'),true);assert.equal(run('standEnergy'),0);tick(80);assert.equal(run('roadRoller.landed'),false);tick(4);assert.equal(run('roadRoller.landed'),true);tick(84);assert.equal(run('roadRoller.active'),true);assert.equal(run('roadRollerImpact.active'),true);tick(25);assert.equal(run('roadRoller.active'),false);assert.equal(run('roadRollerImpact.active'),true);tick(32);assert.equal(run('roadRollerImpact.active'),false)});
 test('King Crimson protects lives for a timed interval',()=>{run('timeStop.phase="idle";standEnergy=100;gameOver=false;startKingCrimson()');assert.equal(run('kingCrimson.active'),true);const lives=run('lives');run('balls[0].y=height + 10;balls[0].gold=false');tick();assert.equal(run('lives'),lives);tick(100);assert.equal(run('kingCrimson.active'),false)});
 test('bomb catch awards bonus and chain effects',()=>{run('balls[0].kind="bomb"; balls[0].gold=false; balls[0].x=catcherX+10; balls[0].y=catcherY+1;balls[1].x=catcherX+25;balls[1].y=catcherY-25;');const old=run('score');tick();assert(run('score')>old)});
-test('repeated reset R is ignored and game cleanly starts universe 2',()=>{run('startUniverseReset()');const a=run('universeReset.started');run('startUniverseReset()');assert.equal(run('universeReset.started'),a);tick(1780);assert.equal(run('universeReset.active'),false);assert.equal(run('universeNumber'),2);assert.equal(run('score'),0);assert.equal(run('lives'),3);assert.equal(run('standEnergy'),0);assert.equal(run('timeStop.phase'),'idle');assert.equal(run('gameOver'),false)});
-test('game over then reset works',()=>{run('gameOver=true; lives=0');tick();run('startUniverseReset()');tick(1780);assert.equal(run('gameOver'),false);assert.equal(run('universeNumber'),3)});
+test('repeated reset R is ignored and game cleanly starts universe 2',()=>{run('startUniverseReset()');const a=run('universeReset.started');run('startUniverseReset()');assert.equal(run('universeReset.started'),a);finishUniverse();assert.equal(run('universeReset.active'),false);assert.equal(run('universeNumber'),2);assert.equal(run('score'),0);assert.equal(run('lives'),3);assert.equal(run('standEnergy'),0);assert.equal(run('timeStop.phase'),'idle');assert.equal(run('gameOver'),false)});
+test('game over then reset works',()=>{run('gameOver=true; lives=0');tick();run('startUniverseReset()');finishUniverse();assert.equal(run('gameOver'),false);assert.equal(run('universeNumber'),3)});
 test('fatal catch lets ORA and punches finish without post-game scoring',()=>{
  run('resetGame();gameStarted=true;standEnergy=100;balls[0].x=width/2;balls[0].y=height/2;startStandRush();punchDangerousBall()');tick(1);
  const before=run('score');run('beginGameOver()');
  assert.equal(run('gameOver'),true);
  assert(run('gameOverRevealAt')>=run('standRush.start')+run('ORA_RUSH_DURATION_MS')+420);
  assert(run('gameOverRevealAt')>=run('standPunches[0].start')+run('standPunches[0].duration')+470);
- run('gameClock=Math.max(gameOverRevealAt+1,standRush.start+ORA_RUSH_DURATION_MS+1300);updateJoJoAttacks()');
+ run('gameClock=Math.max(gameOverRevealAt+1,standRush.start+oraDuration()+1800);updateJoJoAttacks()');
  assert.equal(run('score'),before);assert.equal(run('standRush.active'),false);
  assert.equal(run('standPunches.some(p=>p.target.targeted)'),false);
 });
@@ -82,7 +83,7 @@ test('global caps and single definitions',()=>{
  assert(run('jojoParticles.length')<=run('MAX_PARTICLES'));
 });
 test('highscore unaffected by universe reset',()=>{
- run('bestScore=130; bestCombo=25; standRush.active=false;roadRoller.active=false;timeStop.phase="idle";queuedReset=false;startUniverseReset()');tick(1780);assert.equal(run('universeReset.active'),false);
+ run('bestScore=130; bestCombo=25; standRush.active=false;roadRoller.active=false;timeStop.phase="idle";queuedReset=false;startUniverseReset()');finishUniverse();assert.equal(run('universeReset.active'),false);
  assert.equal(run('bestScore'),130);assert.equal(run('bestCombo'),25);
 });
 console.log('FINAL_TESTS_PASS=',checks);
@@ -210,4 +211,20 @@ test('catch collision matches the bucket rim rather than its full sidewall',()=>
  run('resetGame();gameStarted=true');
  assert.equal(run('isCaught(catcherX+catcherWidth/2,catcherY+catcherHeight-5)'),false);
  assert.equal(run('isCaught(catcherX+catcherWidth/2,catcherY+1)'),true);
+});
+
+test('long local ORA clip is not cut at the old fixed end time',()=>{
+ run("resetGame();gameStarted=true;var savedOra=jojoVoiceClips.ora;jojoVoiceClips.ora={duration:14.2,currentTime:0,paused:true,play(){this.paused=false;return Promise.resolve()},pause(){this.paused=true}};standEnergy=100;startStandRush();gameClock=standRush.start+9700;jojoVoiceClips.ora.currentTime=9.7;updateJoJoAttacks()");
+ assert(run('standRush.active'));assert(run('oraDuration()')>=14200);
+ run('gameClock=standRush.start+14210;finishDirectorVoice(directorVoice.token);updateJoJoAttacks()');assert(!run('standRush.active'));
+ run('jojoVoiceClips.ora=savedOra');
+});
+test('reset cancels a retained director and missing clips never strand Rewind',()=>{
+ run('resetGame();gameStarted=true;var savedClips=jojoVoiceClips;jojoVoiceClips={};startUniverseReset()');finishUniverse();assert.equal(run('directorVoice'),null);
+ run('jojoVoiceClips=savedClips;standEnergy=100;startStandRush();resetGame()');assert.equal(run('directorVoice'),null);assert(!run('standRush.active'));
+});
+test('all cinematic defaults use substantial local recordings',()=>{
+ const root=path.join(__dirname,'..');
+ for(const name of ['reveal','rewind','ora-track','time-activate','time-freeze','time-resume','acceleration','collapse','genesis','finisher','defeat','district-bed'])assert(fs.statSync(path.join(root,'assets/cinematic',name+'.mp3')).size>1000,name);
+ assert(!code.includes('assets/giorno-theme.mp3'));assert(!code.includes('assets/made-in-heaven.mp3'));assert(!code.includes('assets/ora-ora.mp3'));
 });

@@ -1,3 +1,34 @@
+# Current release audio — cinematic rebuild, 13 October 2026
+
+The public cinematic defaults use recorded foley from **Kenney**, **Impact Sounds 1.0** and **RPG Audio**. Their bundled CC0 declarations were read and preserved in assets/foley/LICENSE-Kenney-Impact.txt and LICENSE-Kenney-RPG.txt. Official source URLs: https://kenney.nl/assets/impact-sounds and https://kenney.nl/assets/rpg-audio. The licence grants personal, educational and commercial use and redistribution. No online audio URL is streamed in the game.
+
+All twelve assets/cinematic/*.mp3 files are original arrangements of those recordings, built with tools/build_cinematic_foley.py. Processing: time resampling/pitch change, reversal, equal-power stereo staging, layered percussion, short multi-tap recorded reverb, peak limiting and start/end fades. No oscillator, anime voice or third-party song is added.
+
+| Local file | Recorded sources | Event / score timing |
+|---|---|---|
+| reveal.mp3 | impactBell_heavy_000, cloth2, impactMetal_medium_000, knifeSlice | Pucci prayer, Stand manifestation and distortion; 8.664 s |
+| rewind.mp3 | metalLatch, cloth2, impactBell_heavy_000, impactMetal_medium_000 | Reversed resonance and progressively quicker mechanical ticks; 8.8816 s |
+| ora-track.mp3 | impactPunch_medium_000..002, knifeSlice, cloth2, impactBell_heavy_000, impactSoft_heavy_000, impactMetal_medium_000 | Six-phase ORA: initial reveal, strikes at 1.1 s, barrage at 3.1 s, overdrive at 5.85 s, finisher at 7.4 s, recovery |
+| time-activate.mp3 | cloth2, impactBell_heavy_000, impactMetal_medium_000, impactSoft_heavy_000 | Reverse inhale, manifestation, low impact at 3.65 s; 4.5 s |
+| time-freeze.mp3 | impactMetal_medium_000, impactBell_heavy_000 | Lock cue; 0.8 s |
+| time-resume.mp3 | cloth2, impactMetal_medium_000, impactBell_heavy_000 | Release / returning motion; 1.95 s |
+| acceleration.mp3 | metalLatch, knifeSlice | Time acceleration; 2 s |
+| collapse.mp3 | impactMetal_medium_000, cloth2, impactSoft_heavy_000 | Inward layers and closing impact; 3.6 s |
+| genesis.mp3 | impactBell_heavy_000, cloth2 | Seed, expansion, atmosphere; 4.6 s |
+| finisher.mp3 | impactSoft_heavy_000, impactMetal_medium_000, impactBell_heavy_000 | Landed ORA finishing hit; 1.3 s |
+| defeat.mp3 | impactMetal_medium_000, impactSoft_heavy_000 | Game Over metal/weight cue; 1.4 s |
+| district-bed.mp3 | cloth2, impactBell_heavy_000 | Restrained recorded atmospheric loop; 12 s |
+
+sfx-rewind.mp3 now contains acceleration.mp3; sfx-roller.mp3 contains finisher.mp3. Remaining core catch/punch effects retain the recorded CC0 sources below. The 14.2-second tests/fixtures/long-ora.mp3 is the licensed ORA track with a padded silent tail, solely for browser duration/pause tests; it is not a production cue.
+
+The seven uncertain anime/music/metal-pipe files previously shipped in assets were removed from the current release tree. Private file inputs remain available. UPLOADED_AUDIO_REVIEW.json records the 17 newly supplied clips' decoded durations and peaks; no redistribution grant accompanied them. None was copied into the public game. Candidate character associations are based on filenames, not confirmed listening. Historical Git commits are not rewritten.
+
+Technical decoding, peak measurement and browser playback/timing checks are distinct from a perceptual listening review. Speaker/headphone balance has not been established here.
+
+---
+
+## Historical foley checkpoint — 12 October 2026 (superseded for cinematic defaults)
+
 # Asset credits — Foley polish, 12 October 2026
 
 All files below were downloaded from the author's official asset packs. The included license text is preserved in `assets/foley/LICENSE-Kenney-Impact.txt` and `LICENSE-Kenney-RPG.txt`. Kenney distributes both packs under Creative Commons Zero (CC0 1.0), permitting use, modification and redistribution. No audio is streamed from an external website.

@@ -52,6 +52,10 @@ jobs:
         env:
           QA_OUTPUT_DIR: tests/artifacts
         run: node tests/live_qa.cjs --duration-ms=10000 --label=foley
+      - name: Verify cinematic audio faults and pause/recovery
+        if: always()
+        working-directory: 'Game 1'
+        run: node tests/test_cinematic_browser.cjs
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4

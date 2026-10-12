@@ -40,7 +40,11 @@ function publishQaState() {
       gameStarted, gameOver, score, lives, timeStop: timeStop.phase,
       roadRoller: roadRoller.active, ora: standRush.active,
       universeReset: universeReset.active,
-      universePhase: universeReset.active ? universeReset.phase : 'idle', gameMillis: gameClock
+      universePhase: universeReset.active ? universeReset.phase : 'idle', gameMillis: gameClock,
+      oraProgress:standRush.active?oraProgress():0,oraDuration:oraDuration(),paused:optionsVisible,
+      universeProgress:universeReset.active?constrain((gameMillis()-universeReset.phaseStart)/(universeReset.phase==='reveal'?HEAVEN_REVEAL_MS:universeReset.phase==='rewind'?REWIND_MS:universeReset.phase==='accelerate'?ACCELERATE_MS:universeReset.phase==='collapse'?SINGULARITY_MS:REBIRTH_MS),0,1):0,
+      clips:Object.fromEntries(Object.entries(jojoVoiceClips).map(([name,a])=>[name,{duration:Number.isFinite(a.duration)?a.duration:0,paused:a.paused,currentTime:a.currentTime||0}])),
+      director:directorVoice?{name:directorVoice.name,playing:!!directorVoice.audio&&!directorVoice.audio.paused,currentTime:directorVoice.audio?.currentTime||0,duration:directorVoice.duration}:null
     };
   } catch (_) {}
 }
@@ -106,18 +110,29 @@ function updateRecords() {
   }
 }
 function openOptions(value) {
-  if (value && (universeReset.active || standRush.active || timeStop.phase === 'intro')) return;
+
   optionsVisible = value;
   const panel = document.getElementById('options-panel');
   if (panel) panel.hidden = !value;
+  document.querySelectorAll('[data-voice]').forEach(input=>{input.disabled=!!(universeReset.active||standRush.active||timeStop.phase!=='idle');});
   if (value) {
-    stopJoJoVoices();
+    pausedHtmlAudio=[];
+    for(const audio of [...Object.values(jojoVoiceClips),resumeAudio,giornoTheme]){
+      if(audio&&!audio.paused){try{audio.pause();pausedHtmlAudio.push(audio);}catch(_){}}
+    }
+    stopCinematicEffects();
+    if(backgroundMusicLoaded&&backgroundMusic.isPlaying()&&typeof backgroundMusic.pause==='function')backgroundMusic.pause();
     pausedTimeStopVoice = timeStopSoundLoaded && timeStopSound && timeStopSound.isPlaying();
     if (pausedTimeStopVoice && typeof timeStopSound.pause === 'function') timeStopSound.pause();
-  } else if (pausedTimeStopVoice && timeStopSoundLoaded) {
+  } else {
+    for(const audio of pausedHtmlAudio){try{const play=audio.play();if(play&&play.catch)play.catch(()=>{});}catch(_){}}
+    pausedHtmlAudio=[];
+    if(pausedTimeStopVoice && timeStopSoundLoaded){
     pausedTimeStopVoice = false;
     timeStopSound.setVolume(0.85 * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.voices);
     timeStopSound.play();
+    }
+    if(gameStarted&&!gameOver)startGameMusic();
   }
 }
 function applySetting(name, value) {
@@ -225,8 +240,8 @@ let mangaPulse = 0;
 // versnelt de tijd en begint opnieuw in een nieuw universum.
 const REWIND_MS = 8882;
 const ACCELERATE_MS = 2750;
-const SINGULARITY_MS = 2200;
-const REBIRTH_MS = 2600;
+const SINGULARITY_MS = 3600;
+const REBIRTH_MS = 4600;
 const HEAVEN_REVEAL_MS = 8664; // new user-supplied 8.664 second opening
 const UNIVERSE_RESET_MS = HEAVEN_REVEAL_MS + REWIND_MS + ACCELERATE_MS + SINGULARITY_MS + REBIRTH_MS;
 const HISTORY_MAX_FRAMES = 550; // bounded ~9 seconds at 60 fps
@@ -240,9 +255,9 @@ let universeReset = { active: false, started: 0, source: [], committed: false,
 // én wanneer Myinstants rechtstreeks afspelen in de browser toestaat.
 // Als een link niet werkt, blijven de effecten en synthgeluiden werken.
 const JOJO_CLIP_URLS = {
-  pucci: 'assets/made-in-heaven.mp3',
-  accelerate: 'assets/time-accelerate.mp3',
-  ora: 'assets/ora-ora.mp3'
+  pucci: 'assets/cinematic/reveal.mp3?v=rebuild-5',
+  accelerate: 'assets/cinematic/rewind.mp3?v=rebuild-5',
+  ora: 'assets/cinematic/ora-track.mp3?v=rebuild-5'
 };
 
 let jojoVoiceClips = {};
@@ -255,7 +270,14 @@ let queuedReset = false;
 let queuedTimeStop = null;
 let resumeAudio = null;
 let resumeAudioObjectUrl = null;
-const RESUME_AUDIO_PATH = 'assets/star-platinum-za-warudo-star-platinum-the-world-time-resume.mp3';
+const CINEMATIC_CUES=['time-freeze','time-resume','acceleration','collapse','genesis','finisher'];
+let pausedHtmlAudio=[];
+function stopCinematicEffects(){for(const name of CINEMATIC_CUES){const a=soundEffects[name];if(a&&a.sound&&a.ready)try{a.sound.stop();}catch(_){}}}
+function cinematicDuration(name,base){const a=jojoVoiceClips[name];return a&&Number.isFinite(a.duration)&&a.duration>0?Math.max(base,Math.min(60000,a.duration*1000)):base;}
+function stopIntroDuration(){return timeStop.introDuration||TIME_STOP_INTRO_MS;}
+function stopReleaseDuration(){return timeStop.releaseDuration||TIME_STOP_RELEASE_MS;}
+function oraDuration(){return Math.max(ORA_RUSH_DURATION_MS,standRush.duration||0);}
+function oraProgress(){return directorVoice&&directorVoice.name==='ora'?directorAudioProgress(oraDuration()):constrain((gameMillis()-standRush.start)/oraDuration(),0,1);}
 
 
 // JOJO TIME STOP: instellingen
@@ -280,13 +302,13 @@ let timeStop = {
 function preload() {
   // De game draait zonder geluid door wanneer alleen de p5.sound addon faalt.
   if (typeof loadSound !== 'function') return;
-  gameOverSound = loadSound("assets/jixaw-metal-pipe-falling-sound.mp3",
+  gameOverSound = loadSound("assets/cinematic/defeat.mp3?v=rebuild-5",
     () => { gameOverSoundLoaded = true; },
     () => { gameOverSoundLoaded = false; });
-  backgroundMusic = loadSound("assets/background-music.mp3",
+  backgroundMusic = loadSound("assets/cinematic/district-bed.mp3?v=rebuild-5",
     () => { backgroundMusicLoaded = true; },
     () => { backgroundMusicLoaded = false; });
-  timeStopSound = loadSound("assets/za-warudo-toki-wo-tomare_WJVdsYt.mp3",
+  timeStopSound = loadSound("assets/cinematic/time-activate.mp3?v=rebuild-5",
     () => { timeStopSoundLoaded = true; },
     () => { timeStopSoundLoaded = false; });
   for (const key of ['catch', 'perfect', 'power', 'punch', 'impact', 'rewind', 'rebirth', 'roller', 'miss']) {
@@ -294,6 +316,10 @@ function preload() {
     soundEffects[key].sound = loadSound('assets/sfx-' + key + '.mp3?v=foley-1.5.1',
       () => { soundEffects[key].ready = true; },
       () => { soundEffects[key].ready = false; });
+  }
+  for(const key of CINEMATIC_CUES){
+    soundEffects[key]={sound:null,ready:false};
+    soundEffects[key].sound=loadSound('assets/cinematic/'+key+'.mp3?v=rebuild-5',()=>soundEffects[key].ready=true,()=>soundEffects[key].ready=false);
   }
 }
 
@@ -342,6 +368,7 @@ function setup() {
       const file = input.files && input.files[0];
       if (!file || !file.type.startsWith('audio/')) return;
       const name = input.dataset.voice;
+      if(name==='resume')return; // The resume slot has one dedicated listener.
       if (jojoVoiceClips[name]) jojoVoiceClips[name].pause();
       if (jojoVoiceObjectUrls[name]) URL.revokeObjectURL(jojoVoiceObjectUrls[name]);
       const url = URL.createObjectURL(file);
@@ -371,9 +398,10 @@ function keyPressed() {
     skipUniverseDirector();
     return false;
   }
-  if (keyCode === 32 && standRush.active) {cancelDirectorVoice();standRush.active=false;standPunches=[];return false;}
+  if (keyCode === 32 && standRush.active) {stopCinematicEffects();cancelDirectorVoice();standRush.active=false;standPunches=[];return false;}
   if (keyCode === 32 && timeStop.phase === 'intro') {
     if (timeStopSoundLoaded && timeStopSound.isPlaying()) timeStopSound.stop();
+    stopJoJoVoices();
     timeStop.phase = 'freeze';
     timeStop.phaseStart = gameMillis();
     playTimeSound('freeze');
@@ -400,6 +428,7 @@ function keyPressed() {
 }
 
 function resetGame() {
+  cancelDirectorVoice();stopJoJoVoices();stopCinematicEffects();pausedHtmlAudio=[];
   score = 0;
   lives = START_LIVES;
   combo = 0;
@@ -647,6 +676,8 @@ function startTimeStop(x, y) {
     return;
   }
   stopJoJoVoices();
+  timeStop.introDuration=jojoVoiceObjectUrls.stop?cinematicDuration('stop',TIME_STOP_INTRO_MS):TIME_STOP_INTRO_MS;
+  timeStop.releaseDuration=TIME_STOP_RELEASE_MS;
   timeStop.phase = "intro";
   timeStop.phaseStart = gameMillis();
   timeStop.x = x;
@@ -668,13 +699,14 @@ function startTimeStop(x, y) {
   }
 
   // Het originele meegestuurde spraakfragment start tegelijk met de animatie
-  if (timeStopSoundLoaded) {
+  if(jojoVoiceObjectUrls.stop){playJoJoVoice('stop');}
+  else if (timeStopSoundLoaded) {
     timeStopSound.stop();
     timeStopSound.setVolume(0.85 * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.voices);
     timeStopSound.play();
   }
   updateMusicVolume(true);
-  playTimeSound("charge");
+  // The recorded activation track supplies the charge; do not start a second copy.
 }
 
 // Verandert de fases: intro -> bevroren -> slowmotion -> release -> normaal
@@ -683,16 +715,17 @@ function updateTimeStop() {
   const elapsed = gameMillis() - timeStop.phaseStart;
 
   if (timeStop.phase === "intro") {
-    if (!timeStop.impactPlayed && elapsed >= 950) {
+    if (!timeStop.impactPlayed && elapsed >= stopIntroDuration()*.21) {
       timeStop.impactPlayed = true;
       playTimeSound("impact");
     }
-    if (!timeStop.freezePlayed && elapsed >= 3900) {
+    if (!timeStop.freezePlayed && elapsed >= stopIntroDuration()*.87) {
       timeStop.freezePlayed = true;
       playTimeSound("freeze");
     }
-    if (elapsed >= TIME_STOP_INTRO_MS) {
+    if (elapsed >= stopIntroDuration()) {
       timeStop.phase = "freeze";
+      stopJoJoVoices();if(timeStopSoundLoaded)timeStopSound.stop();
       timeStop.phaseStart = gameMillis();
     }
   } else if (timeStop.phase === "freeze" && elapsed >= TIME_STOP_FREEZE_MS) {
@@ -708,7 +741,7 @@ function updateTimeStop() {
     slowPowerUpEnd = 0;
     beginTimeResumeAudio();
     updateMusicVolume(true);
-  } else if (timeStop.phase === "release" && elapsed >= TIME_STOP_RELEASE_MS) {
+  } else if (timeStop.phase === "release" && elapsed >= stopReleaseDuration()) {
     timeStop.phase = "idle";
     timeStop.particles = [];
     stopTimeResumeAudio();
@@ -720,7 +753,7 @@ function getTimeSpeed() {
   if (timeStop.phase === "intro" || timeStop.phase === "freeze") return 0;
   if (timeStop.phase === "slow") return getSlowFactor();
   if (timeStop.phase === "release") {
-    const t = constrain((gameMillis() - timeStop.phaseStart) / TIME_STOP_RELEASE_MS, 0, 1);
+    const t = constrain((gameMillis() - timeStop.phaseStart) / stopReleaseDuration(), 0, 1);
     return lerp(getSlowFactor(), 1, t * t * (3 - 2 * t));
   }
   return 1;
@@ -728,7 +761,7 @@ function getTimeSpeed() {
 
 // Extra geluidseffecten zonder aparte mp3's: synthese via de browser
 function playTimeSound(kind) {
-  const sfx = {charge: 'rewind', impact: 'impact', freeze: 'perfect', resume: 'rebirth'};
+  const sfx = {charge: 'rewind', impact: 'impact', freeze: 'time-freeze', resume: 'time-resume'};
   playCue(sfx[kind] || 'power', 0.85);
 }
 
@@ -777,7 +810,7 @@ function drawTimeStopEffects() {
 
     // Twee korte flitsen, geen voortdurende stroboscoop
     let flashAlpha = 0;
-    if (elapsed >= 950 && elapsed < 1130) flashAlpha = 150 * (1 - (elapsed - 950) / 180);
+    if (elapsed >= stopIntroDuration()*.21 && elapsed < 1130) flashAlpha = 150 * (1 - (elapsed - 950) / 180);
     if (elapsed >= 3800 && elapsed < 3950) flashAlpha = max(flashAlpha, 105 * (1 - (elapsed - 3800) / 150));
     if (flashAlpha > 0 && OVERHAUL_AUDIO.flashes) {
       fill(215, 235, 255, flashAlpha);
@@ -1106,7 +1139,7 @@ function drawGameOver() {
   if (!gameOverSoundPlayed) {
     stopJoJoVoices();
     if(timeStopSoundLoaded&&timeStopSound&&timeStopSound.isPlaying())timeStopSound.stop();
-    timeStop.phase='idle';slowPowerUpEnd=0;
+    timeStop.phase='idle';slowPowerUpEnd=0;stopCinematicEffects();stopTimeResumeAudio();if(giornoTheme)giornoTheme.pause();
     if (backgroundMusicLoaded && backgroundMusic.isPlaying()) backgroundMusic.stop();
     if (gameOverSoundLoaded) {
       gameOverSound.setVolume(0.22*OVERHAUL_AUDIO.master*OVERHAUL_AUDIO.effects);
@@ -1192,7 +1225,7 @@ function draw() {
     if (kingCrimson.active) kingCrimson.start += hold;
   } else updateGameplayEvents();
   updateJoJoAttacks();
-  updateJoJoParticles();
+  if(getTimeSpeed()>0)updateJoJoParticles();
   const speedFactor = roadRoller.active || freezePhysics ? 0 : getTimeSpeed();
   const shake = OVERHAUL_AUDIO.shake ? min(15, getCameraShake() + jojoShake) : 0;
   push();
@@ -1318,7 +1351,7 @@ function notEnoughStandEnergy(cost) {
 function startStandRush() {
  if(!canUseJoJoAttack(ORA_RUSH_COST)||timeStop.phase!=='idle'){if(standEnergy<ORA_RUSH_COST)notEnoughStandEnergy(ORA_RUSH_COST);return;}
  standEnergy-=ORA_RUSH_COST;
- standRush={active:true,start:gameMillis(),lastPunch:gameMillis(),punches:0,finisher:false};
+ standRush={active:true,start:gameMillis(),lastPunch:gameMillis(),punches:0,finisher:false,duration:cinematicDuration('ora',ORA_RUSH_DURATION_MS)};
  mangaPulse=gameMillis()+450;
  beginDirectorVoice('ora',()=>{standRush.voiceFinished=true;});
 }
@@ -1412,11 +1445,12 @@ function updateJoJoAttacks() {
   if (!gameStarted) return;
   const now = gameMillis();
   if (standRush.active) {
-    const p=directorVoice&&directorVoice.name==='ora'?directorAudioProgress(ORA_RUSH_DURATION_MS):constrain((now-standRush.start)/ORA_RUSH_DURATION_MS,0,1);
+    standRush.duration=Math.max(oraDuration(),cinematicDuration('ora',ORA_RUSH_DURATION_MS));
+    const p=oraProgress();
     const interval=p<.12?100000:p<.38?250:p<.72?135:p<.88?80:100000;
     if(!gameOver&&now-standRush.lastPunch>=interval){standRush.lastPunch=now;punchDangerousBall();}
-    if(p>.88&&!standRush.finisher){standRush.finisher=true;punchDangerousBall();jojoShake=19;mangaPulse=now+620;}
-    if((standRush.voiceFinished&&now-standRush.start>ORA_RUSH_DURATION_MS)||now-standRush.start>ORA_RUSH_DURATION_MS+1200)standRush.active=false;
+    if(p>.88&&!standRush.finisher){standRush.finisher=true;punchDangerousBall();playCue('finisher',.88);jojoShake=19;mangaPulse=now+620;}
+    if((standRush.voiceFinished&&now-standRush.start>=oraDuration())||now-standRush.start>oraDuration()+1500){cancelDirectorVoice();standRush.active=false;}
   }
   if (roadRoller.active) {
     const elapsed = now - roadRoller.start;
@@ -1921,7 +1955,7 @@ function rewindStreakY(index, t, canvasHeight = height) {
 function drawRewindOverlay(t) {
   if(window.JoJoCosmicDirector?.rewind){
     window.JoJoCosmicDirector.rewind(drawingContext,width,height,t,universeReset.source,Number(OVERHAUL_AUDIO.quality)||0);
-    drawUniverseHeader('REWIND','PUCCI · DE TIJDLIJN SPOELT TERUG','#dbc0ff');
+    const c=drawingContext;c.save();c.font='bold '+min(26,width*.042)+'px Arial';c.textAlign='center';c.fillStyle='#eee2ff';c.fillText('REWIND · THE CLOCK RUNS BACKWARDS',width*.5,height*.085);c.restore();
     return;
   }
   push();
@@ -1944,6 +1978,7 @@ function drawRewindOverlay(t) {
 
 // Cirkels, snelheidstunnels en honderd bewegingsstrepen; snel maar geen zware assets.
 function drawAcceleratingUniverse(t) {
+  if(window.JoJoCosmicDirector?.accelerate){window.JoJoCosmicDirector.accelerate(drawingContext,width,height,t);return;}
   drawOrrery(t, false);
   push();
   const speed = pow(t, 2) * 16 + 1;
@@ -2029,6 +2064,7 @@ function drawUniverseRebirth(t) {
   if(window.JoJoCosmicDirector){
     window.JoJoCosmicDirector.rebirth(drawingContext,width,height,t,
       Number(OVERHAUL_AUDIO.quality)||0);
+    if(t>.44&&t<.70){const c=drawingContext;c.save();c.globalAlpha=easeInOutCubic((t-.44)/.26);drawBackdropDetails();c.restore();}
     // Reveal the REAL reset state under the new stars, rather than fading
     // from unrelated effect drawings to an abrupt game screen.
     if(t>.70){
@@ -2078,7 +2114,7 @@ function drawUniverseRebirth(t) {
 }
 
 function playUniverseSound(type) {
-  const cues = { charge: 'rewind', speed: 'roller', collapse: 'impact', reborn: 'rebirth' };
+  const cues = { charge: 'rewind', speed: 'acceleration', collapse: 'collapse', reborn: 'genesis' };
   playCue(cues[type] || 'rewind', 0.95);
 }
 
@@ -2222,7 +2258,7 @@ function playCue(name, intensity = 1) {
       return true;
     } catch (_) {}
   }
-  return synthFallback(name, intensity);
+  return false; // Missing recordings stay silent; no 8-bit replacement cue.
 }
 function synthFallback(name, intensity) {
   try {
@@ -2265,7 +2301,7 @@ function updateMusicVolume(force = false) {
 
 function getCinematicCameraScale() {
   if (timeStop.phase === 'intro') {
-    const t = constrain((gameMillis() - timeStop.phaseStart) / TIME_STOP_INTRO_MS, 0, 1);
+    const t = constrain((gameMillis() - timeStop.phaseStart) / stopIntroDuration(), 0, 1);
     return 1 + 0.072 * pow(sin(t * PI), 2);
   }
   if (roadRoller.active) {
@@ -2300,7 +2336,7 @@ function drawCinematicDirector() {
   }
   if (standRush.active) {
     if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.ora(drawingContext,width,height,
-      directorVoice&&directorVoice.name==='ora'?directorAudioProgress(ORA_RUSH_DURATION_MS):constrain((gameMillis()-standRush.start)/ORA_RUSH_DURATION_MS,0,1));
+      oraProgress());
     else drawOraRebuild();
     const t=constrain((gameMillis()-standRush.start)/ORA_RUSH_DURATION_MS,0,1);
     const alpha = 90*(1-t);
@@ -2449,6 +2485,7 @@ function initializeTimeResumeAudio() {
 }
 function beginTimeResumeAudio() {
  stopTimeResumeAudio();
+ timeStop.releaseDuration=resumeAudio&&Number.isFinite(resumeAudio.duration)?Math.max(TIME_STOP_RELEASE_MS,resumeAudio.duration*1000):TIME_STOP_RELEASE_MS;
  if(!resumeAudio){playTimeSound('resume');return;}
  try{
   resumeAudio.currentTime=0;
@@ -2463,7 +2500,7 @@ function stopTimeResumeAudio(){
 }
 function initializeCinematicAudio() {
   if (typeof Audio === 'undefined') return;
-  giornoTheme = new Audio('assets/giorno-theme.mp3');
+  giornoTheme = new Audio('assets/cinematic/district-bed.mp3?v=rebuild-5');
   giornoTheme.loop = true;
   giornoTheme.preload = 'auto';
   giornoTheme.volume = 0;
@@ -2474,7 +2511,7 @@ function initializeCinematicAudio() {
   giornoTheme.addEventListener('error', () => { giornoThemeReady = false; }, {once:true});
 }
 function startGameMusic() {
-  if (!audioUnlocked) return;
+  if (!audioUnlocked || optionsVisible) return;
   if (giornoTheme && giornoThemeReady) {
     if (backgroundMusicLoaded && backgroundMusic.isPlaying()) backgroundMusic.stop();
     if (giornoTheme.paused) {
@@ -2501,7 +2538,7 @@ function beginDirectorVoice(name, onEnd) {
   stopJoJoVoices();
   const token = ++directorVoiceToken;
   const audio = jojoVoiceClips[name] || null;
-  directorVoice = { name, token, audio, started:gameMillis(), duration:AUDIO_CLIP_MS[name] || 3000, done:false, onEnd };
+  directorVoice = { name, token, audio, started:gameMillis(), duration:cinematicDuration(name,AUDIO_CLIP_MS[name] || 3000), done:false, onEnd };
   if (audio) {
     audio.onended = () => finishDirectorVoice(token);
     audio.onerror = () => { if (directorVoice && directorVoice.token === token) directorVoice.audio = null; };
@@ -2519,7 +2556,7 @@ function finishDirectorVoice(token) {
   const state = directorVoice;
   if (!state || state.token !== token || state.done) return;
   state.done = true;
-  if (state.audio) { state.audio.onended = null; state.audio.onerror = null; }
+  if (state.audio) { state.audio.onended = null; state.audio.onerror = null;try{state.audio.pause();}catch(_){} }
   directorVoice = null;
   if (typeof state.onEnd === 'function') state.onEnd();
 }
@@ -2540,10 +2577,10 @@ function directorAudioProgress(fallback) {
   return constrain((gameMillis()-state.started) / (state.duration || fallback),0,1);
 }
 function skipUniverseDirector() {
-  if (!universeReset.active) return;
+  stopCinematicEffects();  if (!universeReset.active) return;
   cancelDirectorVoice();
   universeReset.phase = 'rebirth';
-  universeReset.phaseStart = gameMillis() - REBIRTH_MS*.50;
+  universeReset.phaseStart = gameMillis() - REBIRTH_MS + 900;
   universeReset.finished = false;
   if (!universeReset.committed) {commitNewUniverse();playUniverseSound('reborn');}
 }
@@ -2619,7 +2656,7 @@ function drawOraRebuild(){
 function drawTimeStopRebuild(){
  if(window.JoJoCharacterDirector && timeStop.phase!=='idle'){
   window.JoJoCharacterDirector.world(drawingContext,width,height,timeStop.phase,
-    constrain((gameMillis()-timeStop.phaseStart)/(timeStop.phase==='intro'?TIME_STOP_INTRO_MS:timeStop.phase==='freeze'?TIME_STOP_FREEZE_MS:timeStop.phase==='release'?TIME_STOP_RELEASE_MS:1000),0,1));
+    constrain((gameMillis()-timeStop.phaseStart)/(timeStop.phase==='intro'?stopIntroDuration():timeStop.phase==='freeze'?TIME_STOP_FREEZE_MS:timeStop.phase==='release'?stopReleaseDuration():1000),0,1),{remaining:timeStop.phase==='freeze'?max(0,(TIME_STOP_FREEZE_MS-(gameMillis()-timeStop.phaseStart))/1000):max(0,(slowPowerUpEnd-gameMillis())/1000)});
   return;
  }
  if(timeStop.phase==='idle'||timeStop.phase==='slow')return;

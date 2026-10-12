@@ -133,17 +133,17 @@ async function waitState(page, predicate, label, timeout = 12000) {
     await waitState(page, state => state.timeStop === 'idle', 'Time Stop cleanup before ORA', 18000);
     await page.keyboard.press('g'); await page.keyboard.press('q');
     await waitState(page, state => state.ora, 'ORA start');
-    await delay(220); screenshots.push(await shot(page,'ora-start'));
-    await delay(3100); screenshots.push(await shot(page,'ora-middle'));
-    await delay(4250); screenshots.push(await shot(page,'ora-finish'));
+    for(const [progress,name] of [[.07,'ora-reveal'],[.22,'ora-start'],[.52,'ora-middle'],[.77,'ora-overdrive'],[.915,'ora-finish'],[.975,'ora-recovery']]){await waitState(page,s=>s.ora&&s.oraProgress>=progress,'ORA '+name);screenshots.push(await shot(page,name));}
     await waitState(page, state => !state.ora, 'ORA completion', 8000);
 
     // Made in Heaven: rewind, acceleration/collapse, rebirth and completed run.
     await page.keyboard.press('r');
     await waitState(page, state => state.universeReset, 'Made in Heaven start');
     await delay(220); screenshots.push(await shot(page,'rewind-start'));
+    await waitState(page,s=>s.universePhase==='reveal'&&s.universeProgress>=.62,'Pucci full manifestation');screenshots.push(await shot(page,'rewind-manifestation'));
     await waitState(page, state => state.universePhase === 'rewind', 'history playback', 30000);
     await delay(1800); screenshots.push(await shot(page,'rewind-history'));
+    await waitState(page,s=>s.universePhase==='rewind'&&s.universeProgress>=.55,'reverse clock movement');screenshots.push(await shot(page,'rewind-clock-backwards'));
     await waitState(page, state => state.universePhase === 'accelerate', 'time acceleration', 30000);
     await delay(1100); screenshots.push(await shot(page,'rewind-acceleration'));
     await waitState(page, state => state.universePhase === 'collapse', 'universe collapse', 12000);

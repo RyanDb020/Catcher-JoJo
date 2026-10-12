@@ -190,7 +190,7 @@
   function starFigure(c,time,phase) {
     const rate=phase===3?36:phase===2?25:12;
     const p=Math.sin(time*rate),strike=phase===0?0:phase===5?.12:Math.max(0,p);
-    c.save();
+    c.save();c.rotate(phase>=1&&phase<=3?Math.sin(time*rate*.5)*.055:phase===4?-.12:0);
     // Behind body: violet cloak hair, boots and muscular torso.
     for(let i=0;i<9;i++){
       const angle=-2.9+i*.27;
@@ -422,7 +422,7 @@
     c.rotate(frozen?-.8:-progress*9);line(c,[[0,r*.12],[0,-r*.66]],'#efda9a',3);line(c,[[0,0],[r*.42,0]],'#bceaf4',2);
     oval(c,0,0,5,5,'#fff0bd',null);c.restore();
   }
-  function world(c,w,h,phase,t,settings={}) {
+  function worldLegacy(c,w,h,phase,t,settings={}) {
     if (!ctxReady(c)) return;
     c.save();
     const isSlow=phase==='slow',isRelease=phase==='release';
@@ -475,7 +475,7 @@
       t<.76?'CHRONOSTASIS':'TOKI YO TOMARE','#e1b43f');
     c.restore();
   }
-  function ora(c,w,h,t,settings={}) {
+  function oraLegacy(c,w,h,t,settings={}) {
     if (!ctxReady(c)) return;
     c.save(); const phase=t<.12?0:t<.37?1:t<.70?2:t<.88?3:t<.965?4:5;
     const age=t*8.359,first=ease(t/.12),power=[.25,.35,.65,.93,1,.12][phase];
@@ -522,7 +522,7 @@
       '#b76cf3');
     c.restore();
   }
-  function heaven(c,w,h,t,variant='reveal') {
+  function heavenLegacy(c,w,h,t,variant='reveal') {
     if (!ctxReady(c)) return;
     c.save();
     const full=variant==='reveal', power=full?ease((t-.055)/.27):.65;
@@ -552,12 +552,156 @@
     if(full)border(c,w,h,'ENRICO PUCCI  /  MADE IN HEAVEN','THE END IS THE BEGINNING','#d8b4ff');
     c.restore();
   }
-  function heavenEcho(c,w,h,t) {
+  function heavenEchoLegacy(c,w,h,t) {
     if (!ctxReady(c))return;
     c.save(); c.globalAlpha=.11+.13*Math.sin(t*PI);
     const s=Math.min(w/960,h/740)*1.06;
     c.translate(w*.71,h*.59);c.scale(s,s);heavenFigure(c,t*16);c.restore();
   }
-  root.JoJoCharacterDirector=Object.freeze({heaven,heavenEcho,ora,world,version:'4.1-time-polish'});
+  // CINEMATIC SCENES 5: deliberate compositions rather than one looping pose.
+  function dioFigure(c,t){
+    c.save();c.translate(0,-25);
+    limb(c,[[-37,106],[-54,218],[-49,304]],48,'#cb9c36','#ffdf7b','#635223');
+    limb(c,[[44,103],[71,209],[89,302]],50,'#d3a737','#ffdf7b','#635223');
+    polygon(c,[[-64,286],[-21,292],[-20,321],[-79,323]],'#304334');
+    polygon(c,[[65,287],[107,287],[128,321],[69,325]],'#304334');
+    armor(c,[[-74,-93],[59,-102],[81,68],[47,135],[-48,133],[-86,39]],'#b98a25','#f9cf61');
+    polygon(c,[[-28,-89],[25,-95],[38,73],[-30,72]],'#172b29',ink,3);
+    line(c,[[-68,-82],[-15,-34],[-27,77]],'#fff0a3',3);
+    line(c,[[58,-92],[23,-31],[30,77]],'#fff0a3',3);
+    // Upraised hand with individual fingers; the pose precedes the Stand's lock.
+    limb(c,[[-66,-66],[-121,-143],[-124,-232]],42,'#c7952f','#ffe087','#695224');
+    c.save();c.translate(-122,-239);c.rotate(-.17);oval(c,0,0,19,26,'#e1b799');
+    for(let i=0;i<4;i++)line(c,[[-15+i*9,-3],[-19+i*10,-42+(i%2)*8]],'#e6c4a2',6);
+    line(c,[[9,11],[34,-3]],'#e6c4a2',9);c.restore();
+    limb(c,[[64,-57],[107,14],[105,85]],40,'#c7952f','#ffe087','#695224');
+    fist(c,107,102,.55,'#ddb091','#f8dcc0');
+    oval(c,0,-139,38,48,'#d7a88c',ink,3);
+    polygon(c,[[-38,-151],[-50,-192],[-22,-194],[-16,-218],[0,-199],[18,-219],[28,-192],[48,-188],[34,-147]],'#e9c758',ink,3);
+    polygon(c,[[-37,-168],[34,-170],[37,-158],[-38,-155]],'#355842',ink,2);
+    line(c,[[-29,-147],[-11,-149],[-4,-143]],'#281f24',3);line(c,[[7,-144],[24,-148],[31,-145]],'#281f24',3);
+    line(c,[[-8,-121],[8,-120],[15,-125]],'#533336',2);line(c,[[0,-143],[3,-130],[-3,-127]],'#754e40',2);
+    oval(c,-50,210,13,13,'#38513e','#f6d374',2);oval(c,71,204,13,13,'#38513e','#f6d374',2);
+    c.restore();
+  }
+  function equineStand(c,t,run=0){
+    const stride=Math.sin(t*10)*run;
+    c.save();c.lineJoin='round';
+    // Four separated legs, hocks and hooves give a readable equine silhouette.
+    for(const [hip,knee,hoof,side] of [[[-72,88],[-107,185],[-103,271],-1],[[0,94],[-18,201],[30,265],1],[[166,93],[220,175],[190,268],-1],[[213,89],[262,166],[302,264],1]]){
+      const shift=stride*side*31;
+      limb(c,[hip,[knee[0]+shift,knee[1]],[hoof[0]-shift*.6,hoof[1]]],31,'#c8d8df','#f6ffff','#566376');
+      oval(c,knee[0]+shift,knee[1],19,18,'#d6e5ed','#27384b',2);
+      polygon(c,[[hoof[0]-shift*.6-22,hoof[1]-10],[hoof[0]-shift*.6+17,hoof[1]-9],[hoof[0]-shift*.6+26,hoof[1]+16],[hoof[0]-shift*.6-27,hoof[1]+18]],'#37404f','#15212c',2);
+    }
+    const body=c.createLinearGradient(-90,0,220,130);body.addColorStop(0,'#edf9fc');body.addColorStop(.42,'#becfdc');body.addColorStop(1,'#66798f');
+    oval(c,85,62,165,67,body,'#203043',4);
+    for(let i=0;i<6;i++)line(c,[[5+i*27,4],[18+i*26,107]],'rgba(43,64,88,.35)',2);
+    // Plated tail, not an extra leg.
+    line(c,[[231,45],[272,65],[300,43],[313,87]],'#c3d2df',16);line(c,[[232,44],[274,64],[300,42],[314,86]],'#596b80',3);
+    armor(c,[[-105,-101],[-10,-119],[40,-23],[12,93],[-88,96],[-128,10]],'#dce8ed','#ffffff');
+    for(let i=0;i<5;i++)line(c,[[-89,-59+i*24],[-15,-72+i*24]],'#8298aa',2);
+    limb(c,[[-109,-70],[-164,-9],[-149,53]],38,'#d0e1e9','#ffffff','#63768e');
+    limb(c,[[-4,-85],[66,-53],[44,11]],36,'#d0e1e9','#ffffff','#63768e');
+    fist(c,-146,65,.6,'#cadce9','#f6ffff');fist(c,39,22,.6,'#cadce9','#f6ffff');
+    // Long horse muzzle, ears, nostril and mane; clearly unlike a humanoid head.
+    polygon(c,[[-95,-96],[-114,-176],[-91,-233],[-55,-258],[-27,-226],[-35,-181],[-4,-143],[-45,-118]],'#d7e5ed','#213044',4);
+    polygon(c,[[-110,-180],[-153,-164],[-190,-132],[-183,-110],[-138,-105],[-71,-147]],'#ecf6f6','#243447',3);
+    polygon(c,[[-90,-226],[-97,-284],[-77,-267],[-61,-226]],'#e9f3f1','#243447',3);
+    polygon(c,[[-44,-238],[-30,-279],[-18,-259],[-22,-221]],'#d9e5ea','#243447',3);
+    for(let i=0;i<10;i++)polygon(c,[[-31,-239+i*10],[3+i*2,-221+i*11],[-34,-199+i*10]],i%2?'#71849c':'#b1c8d9','#25364a',1);
+    oval(c,-97,-192,12,6,'#192a3d',null,0,-.25);oval(c,-97,-192,4,4,'#f8d889',null);
+    oval(c,-171,-127,6,4,'#3d5264',null);line(c,[[-184,-115],[-151,-117],[-125,-131]],'#596d7f',2);
+    // Embedded clock on the sternum, with real hands and separate ring plating.
+    oval(c,-49,5,35,37,'#253348','#e4d4a5',4);oval(c,-49,5,28,30,'#cedbe0','#65798d',2);
+    for(let i=0;i<12;i++){const a=i*TAU/12;line(c,[[-49+Math.sin(a)*21,5+Math.cos(a)*21],[-49+Math.sin(a)*26,5+Math.cos(a)*26]],'#334a62',1.5);}
+    c.save();c.translate(-49,5);c.rotate(-t*1.6);line(c,[[0,0],[0,-24]],'#4c344e',2);line(c,[[0,0],[17,7]],'#4c344e',2);c.restore();
+    for(const [x,y] of [[-95,-40],[6,-25],[35,60],[90,57],[144,55],[202,51]])oval(c,x,y,3,3,'#f6deb7','#657789',1);
+    c.restore();
+  }
+  function heaven(c,w,h,t,variant='reveal'){
+    if(!ctxReady(c))return;t=clamp(t);c.save();
+    const manifest=smooth((t-.18)/.30),pull=smooth((t-.60)/.32),entry=ease(t/.20);
+    stage(c,w,h,'116,98,202',t,.38);
+    // Chapel-like arch and luminous floor establish an environment behind the pair.
+    c.save();c.strokeStyle='rgba(192,173,229,.20)';c.lineWidth=3;
+    for(let i=0;i<5;i++){const x=w*(.08+i*.21),r=w*.09;c.beginPath();c.moveTo(x-r,h*.84);c.lineTo(x-r,h*.32);c.bezierCurveTo(x-r,h*.06,x+r,h*.06,x+r,h*.32);c.lineTo(x+r,h*.84);c.stroke();}
+    c.restore();
+    tint(c,w*.61,h*.54,w*.25,'161,216,242',.15*manifest);
+    // Pucci remains distinct in front-left; Stand manifests in full side silhouette.
+    figure(c,w,h,cc=>pucci(cc,Math.min(t, .64)*3),{x:.31-(1-entry)*.12,y:.63,zoom:.83+pull*.05});
+    c.save();c.globalAlpha=manifest;
+    figure(c,w,h,cc=>equineStand(cc,t*3,pull*.3),{x:.57+pull*.02,y:.53,zoom:.75+manifest*.06});c.restore();
+    if(t>.52){
+      for(let i=0;i<10;i++){const yy=h*(.14+i*.065);line(c,[[w*.76,yy],[w*(.79+.16*pull),yy-.03*h]],'rgba(178,220,249,'+(.08+.18*pull)+')',1);}
+    }
+    border(c,w,h,t<.18?'PUCCI / THE FINAL PRAYER':t<.55?'MADE IN HEAVEN / MANIFESTATION':'TIME HAS NO LIMIT',t<.55?'THE STAND AWAKENS':'THE UNIVERSE WILL FOLLOW','#c6ddeb');
+    c.restore();
+  }
+  function heavenEcho(c,w,h,t){
+    if(!ctxReady(c))return;c.save();
+    figure(c,w,h,cc=>equineStand(cc,t*4,.9),{x:.81,y:.65,zoom:.30});c.restore();
+  }
+  function world(c,w,h,phase,t,settings={}){
+    if(!ctxReady(c))return;t=clamp(t);
+    if(phase==='slow'){worldLegacy(c,w,h,phase,t,settings);return;}
+    if(phase==='freeze'){
+      c.save();c.fillStyle='rgba(10,35,49,.23)';c.fillRect(0,0,w,h);
+      c.save();c.translate(w*.5,h*.28);c.scale(.30,.30);c.translate(-w*.5,-h*.49);timeDial(c,w,h,1,true);c.restore();
+      figure(c,w,h,cc=>worldFigure(cc,1,true),{x:.84,y:.58,zoom:.29});
+      border(c,w,h,'ZA WARUDO / TIME LOCK',Number.isFinite(settings.remaining)?settings.remaining.toFixed(1)+' s REMAINING':'REALITY IS FROZEN','#a9e3e5');c.restore();return;
+    }
+    c.save();
+    if(phase==='release'){
+      const release=ease(t);stage(c,w,h,'83,173,193',t,.12*(1-release));
+      for(let j=0;j<3;j++){const q=clamp((t-j*.09)/.65),r=ease(q)*Math.max(w,h);oval(c,w*.5,h*.48,r,r*.67,'rgba(0,0,0,0)','rgba(183,235,241,'+(.56*(1-q))+')',2+6*(1-q));}
+      // The broken rim peels outward; the arena is visible throughout.
+      for(let i=0;i<24;i++){const a=i*TAU/24,r=Math.min(w,h)*(.25+release*.6);c.save();c.translate(w*.5+Math.cos(a)*r,h*.48+Math.sin(a)*r*.7);c.rotate(a+t*2);line(c,[[-6,-13],[3,9],[10,14]],'rgba(246,222,158,'+(.6*(1-t))+')',2);c.restore();}
+      topBanner(c,w,h,'TIME RESUMES / THE WORLD MOVES AGAIN','#bce8e5');c.restore();return;
+    }
+    const p=smooth((t-.22)/.4),lock=smooth((t-.76)/.12);
+    stage(c,w,h,'211,162,74',t,.63);
+    timeDial(c,w,h,Math.min(t/.82,1),t>.82);
+    figure(c,w,h,cc=>dioFigure(cc,t),{x:.24,y:.59,zoom:.65});
+    // The Stand arrives from behind DIO, then locks into the final outstretched pose.
+    c.save();c.translate(w*.018*Math.sin(t*PI)*(1-lock),0);
+    figure(c,w,h,cc=>worldFigure(cc,t*2,t>.80),{x:.56+(1-p)*.13,y:.53,zoom:.57+.26*p});c.restore();
+    if(t>.72&&t<.97){const q=clamp((t-.72)/.25),r=ease(q)*Math.max(w,h);oval(c,w*.52,h*.46,r,r*.66,'rgba(0,0,0,0)','rgba(235,222,178,'+(.75*(1-q))+')',4+6*(1-q));}
+    border(c,w,h,t<.22?'DIO / THE WORLD':t<.76?'THE WORLD / CHRONOSTASIS':'ZA WARUDO / REALITY LOCK','SPACE TO SKIP THE REVEAL','#ead29a');
+    c.restore();
+  }
+  function ora(c,w,h,t,settings={}){
+    if(!ctxReady(c))return;t=clamp(t);
+    const phase=t<.12?0:t<.37?1:t<.70?2:t<.88?3:t<.965?4:5;
+    const age=t*8.359,power=[.15,.32,.55,.86,1,.14][phase];
+    c.save();stage(c,w,h,'146,96,205',t,.15+power*.12);
+    const rootX=phase===4?.53:.51,rootY=phase===4?.45:.46;
+    figure(c,w,h,cc=>jotaro(cc,age),{x:.25,y:.60,zoom:.47});
+    const zoom=[.50,.61,.68,.74,.93,.58][phase];
+    c.save();c.translate((phase>=1&&phase<=3?Math.sin(age*(phase===3?32:17))*w*.004:0),0);
+    figure(c,w,h,cc=>starFigure(cc,age,phase),{x:rootX,y:rootY,zoom});c.restore();
+    if(phase>=1&&phase<=3){
+      const count=[0,4,8,12][phase],rate=phase===1?7:phase===2?13:21;
+      for(let i=0;i<count;i++){
+        const v=(t*rate+i/count)%1,side=i%2?1:-1;
+        c.save();c.globalAlpha=.48*(1-v);c.translate(w*(.50+side*(.035+v*.13)),h*(.28+v*.32));c.rotate(side*(-.22+v*.28));
+        const s=Math.min(w,h)/740*(.10+v*.44);c.scale(s,s);
+        // Each ghost is a complete arm/fist, never a generic capsule particle.
+        limb(c,[[0,-82],[side*25,-25],[side*18,12]],32,'#8063a9','#e0c8ee','#302340');
+        fist(c,side*18,24,.68,'#8063a9','#ecd4fb');c.restore();
+      }
+    }
+    if(phase===4){
+      const q=smooth((t-.88)/.085);c.save();c.translate(w*.57,h*.49);c.rotate(-.18+.3*q);
+      const size=Math.min(w,h)/740*(.4+q*.75);c.scale(size,size);
+      limb(c,[[-120,-90],[-68,-31],[0,0]],79,'#69518a','#e1c2ec','#2d2542');fist(c,0,40,1.8,'#76539d','#efd5fb');c.restore();
+      // A visible impact contour expands around the fist; it does not wash out the scene.
+      for(let i=0;i<18;i++){const a=i*TAU/18,d=Math.min(w,h)*(.12+q*.25);line(c,[[w*.57+Math.cos(a)*d*.7,h*.49+Math.sin(a)*d*.7],[w*.57+Math.cos(a)*d,h*.49+Math.sin(a)*d]],'rgba(248,228,186,'+(.7*(1-q))+')',i%3===0?3:1);}
+    }
+    border(c,w,h,['REVEAL / STAR PLATINUM','FIRST STRIKES / FIND THE RHYTHM','ORA ORA / BARRAGE','OVERDRIVE / BREAK THE LIMIT','ORA! / FINAL IMPACT','RECOVERY / STAND DOWN'][phase],'STAR PLATINUM','#c4a3ed');
+    c.restore();
+  }
+
+  root.JoJoCharacterDirector=Object.freeze({heaven,heavenEcho,ora,world,version:'5.0-scene-rebuild'});
 })(typeof window!=='undefined'?window:globalThis);
 

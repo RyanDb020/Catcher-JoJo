@@ -31,6 +31,7 @@ for(const [w,h] of [[640,480],[1280,720],[1920,1080],[375,667]]){
  const b=canvasMock(),c=b.ctx;
  for(const t of [0,.12,.32,.57,.78,.96,1]){
   test('intro '+w+'x'+h+' t='+t,()=>cosmos.intro(c,w,h,t));
+  test('acceleration '+w+'x'+h+' t='+t,()=>cosmos.accelerate(c,w,h,t));
   test('rewind '+w+'x'+h+' t='+t,()=>cosmos.rewind(c,w,h,t,snapshots));
   test('Made in Heaven '+w+'x'+h+' t='+t,()=>char.heaven(c,w,h,t));
   test('ORA '+w+'x'+h+' t='+t,()=>char.ora(c,w,h,t));
