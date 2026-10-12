@@ -443,7 +443,7 @@ function resetGame() {
   for(const item of Object.values(soundEffects))if(item?.sound&&item.ready)try{item.sound.stop();}catch(_){}
   if(gameOverSoundLoaded)gameOverSound.stop();
   cancelDirectorVoice();stopJoJoVoices();stopCinematicEffects();pausedHtmlAudio=[];
-  packMove={kind:null,start:0,end:0,shots:[]};packCooldowns={};packVoiceUntil=0;
+  packMove={kind:null,start:0,end:0,shots:[]};packCooldowns={};packVoiceUntil=0;queuedTimeStop=null;queuedReset=false;
   score = 0;
   lives = START_LIVES;
   combo = 0;
@@ -690,7 +690,7 @@ function startTimeStop(x, y) {
     if (timeStop.phase === 'slow') slowPowerUpEnd += TIME_STOP_EXTRA_MS;
     return;
   }
-  if(packMove.kind)return;
+  if(packMove.kind){queuedTimeStop={x,y};return;}
   stopJoJoVoices();
   timeStop.introDuration=(jojoVoiceObjectUrls.stop||packTimeVoice!=='classic')?cinematicDuration(packTimeVoice==='classic'?'stop':packTimeVoice,TIME_STOP_INTRO_MS):TIME_STOP_INTRO_MS;
   timeStop.releaseDuration=TIME_STOP_RELEASE_MS;
@@ -1029,7 +1029,7 @@ function drawBalls(speedFactor) {
     const ball = balls[i];
     const previousY = ball.y;
     ball.y += ball.speed * speedFactor * frameStep * getDifficultyScale() * (packMove.kind==='cmoon'?-0.72:1);
-    if(packMove.kind==='cmoon'&&ball.y<-BALL_SIZE)ball.y=-BALL_SIZE;
+    if(speedFactor>0&&packMove.kind==='cmoon'&&ball.y<-BALL_SIZE)ball.y=-BALL_SIZE;
     drawOrb(ball.x, ball.y, BALL_SIZE, ball.kind === 'bomb' ? 'bomb' : ball.gold ? 'gold' : 'normal');
 
     // Niet scoren of verliezen in de filmische intro
@@ -1239,6 +1239,7 @@ function draw() {
   if (gameOver) { drawGameOverWorld(); return; }
   if (gameStarted && !gameOver) updateTimeStop();
   if(gameStarted&&!gameOver)updatePackMove();
+  if(queuedTimeStop&&!queuedReset&&!packMove.kind&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active){const q=queuedTimeStop;queuedTimeStop=null;startTimeStop(q.x,q.y);}
   if(queuedReset&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active&&!packMove.kind){queuedReset=false;startUniverseReset();}
   const freezePhysics = timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
   if (freezePhysics) {
@@ -2510,6 +2511,7 @@ function initializeTimeResumeAudio() {
  });
 }
 function beginTimeResumeAudio() {
+ stopJoJoVoices();
  stopTimeResumeAudio();
  timeStop.releaseDuration=resumeAudio&&Number.isFinite(resumeAudio.duration)?Math.max(TIME_STOP_RELEASE_MS,resumeAudio.duration*1000):TIME_STOP_RELEASE_MS;
  if(!resumeAudio){playTimeSound('resume');return;}

@@ -14,11 +14,12 @@ try{
  await page.waitForFunction(()=>window.__JOJO_QA_STATE__.timeStop==='idle',{},{timeout:25000});
  for(const [key,kind] of [['h','hand'],['j','tusk'],['c','cmoon'],['m','muda'],['n','giorno']]){
   await page.keyboard.press('g');await page.keyboard.press(key);await page.waitForFunction(k=>window.__JOJO_QA_STATE__.packMove===k,kind);await page.waitForTimeout(450);await page.screenshot({path:path.join(out,'jojo-move-'+kind+'.png')});
+  if(kind==='cmoon'){await page.evaluate(()=>startTimeStop(catcherX,catcherY));assert(await page.evaluate(()=>!!queuedTimeStop));}
   if(kind==='giorno'){
    await page.keyboard.press('o');const at=await page.evaluate(()=>window.__JOJO_QA_STATE__);await page.waitForTimeout(500);const still=await page.evaluate(()=>window.__JOJO_QA_STATE__);assert.equal(at.gameMillis,still.gameMillis);assert(Math.abs(at.clips.giorno.currentTime-still.clips.giorno.currentTime)<.12);await page.selectOption('#pack-preview','giorno');await page.click('#pack-listen');await page.waitForTimeout(300);const preview=await page.evaluate(()=>({position:jojoVoiceClips.giorno.currentTime,preview:packPreview.currentTime}));assert(Math.abs(preview.position-still.clips.giorno.currentTime)<.12);assert(preview.preview>0);await page.click('#close-options');
    await page.waitForTimeout(8800);assert.equal((await page.evaluate(()=>window.__JOJO_QA_STATE__)).packMove,'giorno');
   }
-  await page.waitForFunction(()=>!window.__JOJO_QA_STATE__.packMove,{},{timeout:22000});results.push({move:kind,completed:true});
+  await page.waitForFunction(()=>!window.__JOJO_QA_STATE__.packMove,{},{timeout:22000});results.push({move:kind,completed:true});if(kind==='cmoon'){await page.waitForFunction(()=>window.__JOJO_QA_STATE__.timeStop==='intro');await page.keyboard.press('Space');await page.waitForFunction(()=>window.__JOJO_QA_STATE__.timeStop==='idle',{},{timeout:25000});results.push({trigger:'queued blue Time Stop pickup',completed:true});}
  }
  await page.keyboard.press('g');await page.keyboard.press('f');await page.waitForFunction(()=>window.__JOJO_QA_STATE__.clips.crimson.currentTime>0);results.push({trigger:'King Crimson',played:true});
  await page.waitForTimeout(4500);await page.keyboard.press('g');await page.keyboard.press('c');await page.keyboard.press('r');await page.waitForFunction(()=>window.__JOJO_QA_STATE__.universeReset,{},{timeout:7000});await page.keyboard.press('Space');await page.waitForFunction(()=>!window.__JOJO_QA_STATE__.universeReset,{},{timeout:6000});const state=await page.evaluate(()=>window.__JOJO_QA_STATE__);assert.equal(state.packMove,null);assert.equal(state.score,0);assert.equal(state.lives,3);assert.equal(errors.length,0,errors.join(';'));

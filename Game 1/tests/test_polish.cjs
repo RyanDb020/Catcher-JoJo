@@ -254,3 +254,8 @@ test('all 17 personal pack assets decode-sized and local',()=>{const records=JSO
 test('Space cancels added attacks and releases target claims without refund',()=>{
  run('resetGame();gameStarted=true;standEnergy=100;balls[0].y=200;startPackMove("tusk");updatePackMove();keyCode=32;key=" ";keyPressed()');assert.equal(run('packMove.kind'),null);assert.equal(run('standEnergy'),75);assert(!run('balls.some(b=>b.targeted)'));run('keyCode=0;key="";resetGame()');
 });
+test('blue Time Stop pickup is retained during extra moves and fires after recovery',()=>{
+ run('resetGame();gameStarted=true;standEnergy=100;startPackMove("cmoon");startTimeStop(120,130)');assert.equal(run('timeStop.phase'),'idle');assert.equal(run('queuedTimeStop.x'),120);
+ run('gameClock=packMove.end+1;draw()');assert.equal(run('timeStop.phase'),'intro');assert.equal(run('queuedTimeStop'),null);
+ run('resetGame()');assert.equal(run('queuedTimeStop'),null);assert.equal(run('queuedReset'),false);
+});
