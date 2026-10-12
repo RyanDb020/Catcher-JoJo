@@ -1,7 +1,7 @@
 import {createUpgradeMenu} from './upgrades.mjs?v=1.6.0';
 import * as THREE from 'three';
 import {createCombatAudio} from './audio.mjs?v=1.5.1';
-import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone, freshUpgrades} from './rules.mjs?v=1.6.0';
+import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone, freshUpgrades, enemyThreatens} from './rules.mjs?v=1.6.0';
 
 // Shattered Universe 1.0: a complete five-wave mission, separate from the Arcade game.
 const $=id=>document.getElementById(id);
@@ -644,7 +644,7 @@ function dodge(){
   state.dodgeTime=.18;state.invuln=.34;state.dodgeCooldown=.85;
   state.shake=.05;
   const perfect=state.enemy.state==='windup'&&state.enemy.timer<=.26&&state.stopRemaining<=0&&
-    Math.hypot(state.enemyPosition.x-state.playerPos.x,state.enemyPosition.z-state.playerPos.z)<=(state.enemy.pattern==='timeline'?8:state.enemy.pattern==='sweep'?4.4:2.65);
+    enemyThreatens(state.enemy,state.enemyPosition,state.playerPos);
   if(perfect){
     state.invuln=.60; // Covers the short Echo slow as well as the announced strike.
     state.stand=clamp(state.stand+18,0,100);state.echoSlow=.22;

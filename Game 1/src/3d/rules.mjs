@@ -46,6 +46,16 @@ export function damageEnemy(enemy, damage, stagger = 0.22) {
   else if (!enemy.boss) { enemy.state = 'stagger'; enemy.timer = stagger; } // Boss windups have armour: use dodge or Time Stop, then punish recovery.
   return { dealt, killed: enemy.dead };
 }
+// The late dodge reward and hit event use the same footprint, including locked lane attacks.
+export function enemyThreatens(enemy,enemyPos,playerPos){
+  const dx=playerPos.x-enemyPos.x,dz=playerPos.z-enemyPos.z;
+  if(enemy.pattern==='timeline'){
+    const along=dx*enemy.aim.x+dz*enemy.aim.z;
+    const across=Math.abs(dx*enemy.aim.z-dz*enemy.aim.x);
+    return along>=0 && along<=8 && across<=.85;
+  }
+  return Math.hypot(dx,dz)<(enemy.pattern==='sweep'?4.4:2.65);
+}
 // Returns movement and a single explicit attack event; never damages the player internally.
 export function stepEnemy(enemy, enemyPos, playerPos, delta, frozen = false) {
   const dt = clamp(delta, 0, 0.05);
@@ -63,9 +73,7 @@ export function stepEnemy(enemy, enemyPos, playerPos, delta, frozen = false) {
       enemy.state = 'recover';
       enemy.timer = enemy.boss ? 1.15 : 0.7;
       enemy.attackReady = 0.5;
-      const along = dx * enemy.aim.x + dz * enemy.aim.z;
-      const across = Math.abs(dx * enemy.aim.z - dz * enemy.aim.x);
-      out.attack = enemy.pattern === 'timeline' ? along >= 0 && along <= 8 && across <= .85 : dist < (enemy.pattern === 'sweep' ? 4.4 : 2.65);
+      out.attack = enemyThreatens(enemy,enemyPos,playerPos);
     }
   } else if (enemy.state === 'recover') {
     if (enemy.timer <= 0) enemy.state = 'chase';

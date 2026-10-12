@@ -5,7 +5,7 @@ const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const root=path.join(__dirname,'..');
 (async()=>{
- const {RULES,MISSION_WAVES,isBossWave,resolveDefeat,withinAttackCone,enforceArena,createEnemy,damageEnemy,stepEnemy,grantXP,xpRequired,applyUpgrade,freshUpgrades}=await import(pathToFileURL(path.join(root,'src/3d/rules.mjs')).href);
+ const {RULES,MISSION_WAVES,isBossWave,resolveDefeat,withinAttackCone,enforceArena,createEnemy,damageEnemy,stepEnemy,grantXP,xpRequired,applyUpgrade,freshUpgrades,enemyThreatens}=await import(pathToFileURL(path.join(root,'src/3d/rules.mjs')).href);
  let checks=0;
  const test=(title,fn)=>{fn();console.log('PASS: '+title);checks++};
  test('3D launch files exist without overwriting Arcade index',()=>{
@@ -144,7 +144,7 @@ const root=path.join(__dirname,'..');
  });
  test('timeline attack locks aim, misses sideways dodge, respects freeze',()=>{
   const boss=createEnemy(5,true);boss.phase=2;boss.attackIndex=1;
-  const origin={x:0,z:0};stepEnemy(boss,origin,{x:0,z:6},.01);assert.equal(boss.pattern,'timeline');
+  const origin={x:0,z:0};stepEnemy(boss,origin,{x:0,z:6},.01);assert.equal(boss.pattern,'timeline');assert(enemyThreatens(boss,origin,{x:0,z:6}));assert(!enemyThreatens(boss,origin,{x:3,z:6}));assert(!enemyThreatens(boss,origin,{x:0,z:-2}));
   const timer=boss.timer;stepEnemy(boss,origin,{x:3,z:6},.05,true);assert.equal(boss.timer,timer);
   let hits=0;for(let i=0;i<22;i++)if(stepEnemy(boss,origin,{x:3,z:6},.05).attack)hits++;
   assert.equal(hits,0);assert.equal(boss.state,'recover');
