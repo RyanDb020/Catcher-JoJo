@@ -32,10 +32,13 @@ async function run(){
   if(before.renderer!=='webgl')throw Error('WebGL renderer did not start; renderer='+before.renderer);
   if(!(before.drawCalls>0))throw Error('WebGL renderer produced no draw calls: '+JSON.stringify(before));
   await page.keyboard.down('w');
-  await page.waitForTimeout(700);
+  await page.waitForFunction(start=>{
+    const qa=window.__SHATTERED_QA__;
+    return qa.player.z<start-.20&&qa.rig.heroKnees.some(angle=>angle>.10);
+  },before.player.z,{timeout:15000});
+  await page.waitForTimeout(250);
   await page.keyboard.up('w');
   const after=await page.evaluate(()=>window.__SHATTERED_QA__);
-  if(!after.rig.heroKnees.some(angle=>angle>.10))throw Error('Walking did not animate articulated knees');
   const bodyDistance=Math.hypot(after.player.x-after.enemy.x,after.player.z-after.enemy.z);
   if(bodyDistance<1.24)throw Error('Fighter body volumes overlap: '+bodyDistance);
   if(!(after.player.z<before.player.z-.20))throw Error('WASD movement failed: '+JSON.stringify({before:before.player,after:after.player}));
