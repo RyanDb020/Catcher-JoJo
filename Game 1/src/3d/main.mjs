@@ -239,7 +239,7 @@ const state={
   running:false,paused:false,dead:false,pointerLocked:false,started:false,
   hp:100,maxHp:100,stand:30,level:1,xp:0,kills:0,wave:1,combo:0,
   attack:null,ultimate:null,stopRemaining:0,dodgeTime:0,dodgeCooldown:0,invuln:0,
-  arenaTime:0,shake:0,impactTimer:0,enemyRespawn:-1,toastUntil:0,hitstop:0,
+  arenaTime:0,shake:0,impactTimer:0,enemyRespawn:-1,toastUntil:0,hitstop:0,comboExpiresAt:0,
   enemy:createEnemy(),enemyPosition:v(0,0,-6.0),
   facing:v(0,0,-1),yaw:0,pitch:.22,
   moveVelocity:v(0,0,0),audioContext:null,frameCounter:0,frameAccum:0,
@@ -252,6 +252,8 @@ function placeEnemy(){
   state.enemy=createEnemy(state.wave);
   state.enemyPosition.set(Math.sin(a)*r,0,Math.cos(a)*r);
   enemyModel.root.visible=true;
+  enemyShadow.visible=true;
+  enemyModel.warn.visible=false;
   enemyModel.root.position.copy(state.enemyPosition);
   UI.enemyFill.style.transform='scaleX(1)';
 }
@@ -259,11 +261,14 @@ function reset(){
   state.running=true;state.dead=false;state.paused=false;state.started=true;
   Object.assign(state,{hp:100,maxHp:100,stand:30,level:1,xp:0,kills:0,wave:1,combo:0,
     attack:null,ultimate:null,stopRemaining:0,dodgeTime:0,dodgeCooldown:0,invuln:0,
-    enemyRespawn:-1,arenaTime:0,shake:0,impactTimer:0,hitstop:0});
+    enemyRespawn:-1,arenaTime:0,shake:0,impactTimer:0,hitstop:0,comboExpiresAt:0,toastUntil:0});
   state.playerPos.set(0,0,6);state.facing.set(0,0,-1);
   state.yaw=0;state.pitch=.22;
   state.moveVelocity.set(0,0,0);keys.clear();
   hero.rotation.y=Math.PI;placeEnemy();UI.gameover.hidden=true;UI.pause.hidden=true;
+  UI.impact.classList.remove('show');UI.toast.classList.remove('visible');
+  stand.arms.forEach(arm=>{arm.rotation.x=0;});
+  state.ultimate=null;
   UI.intro.hidden=true;
   updateHud();
 }
@@ -273,7 +278,8 @@ function resume(){
   keys.clear();requestPointerLock();
 }
 function start(){
-  if(!state.started)reset();else resume();
+  if(!state.started){reset();requestPointerLock();}
+  else resume();
 }
 function requestPointerLock(){
   if(typeof renderer.domElement.requestPointerLock!=='function')return;
@@ -403,6 +409,7 @@ function faceEnemy(){
 function startAttack(heavy){
   if(!state.running||state.attack||state.ultimate||state.hitstop>0)return;
   faceEnemy();
+  if(state.arenaTime>=state.comboExpiresAt)state.combo=0;
   const stage=heavy?3:(state.combo%3);
   const spec=heavy?{duration:.67,hitAt:.36,damage:34,range:3.55}:
     [{duration:.34,hitAt:.17,damage:14,range:3.25},
@@ -410,6 +417,7 @@ function startAttack(heavy){
      {duration:.50,hitAt:.27,damage:26,range:3.55}][stage];
   state.attack={...spec,stage,heavy,elapsed:0,applied:false};
   state.combo=heavy?0:state.combo+1;
+  state.comboExpiresAt=heavy?0:state.arenaTime+1.3;
   sound(heavy?135:235+stage*36,.10,'sawtooth',.025);
 }
 function enemyHit(damage,heavy=false){
@@ -427,7 +435,8 @@ function enemyHit(damage,heavy=false){
     state.kills++;state.wave++;
     const leveled=grantXP(state,42+Math.floor(state.wave*4));
     if(leveled)banner('LEVEL UP — LV '+state.level,2.1);else banner('ENEMY DEFEATED +XP',1.5);
-    state.enemyRespawn=2.1;enemyModel.root.visible=false;
+    state.enemyRespawn=2.1;enemyModel.root.visible=false;enemyShadow.visible=false;
+    state.combo=0;state.comboExpiresAt=0;
   }
   return true;
 }
@@ -582,10 +591,11 @@ function loop(now){
     state.impactTimer=Math.max(0,state.impactTimer-dt);
     if(state.impactTimer===0)UI.impact.classList.remove('show');
     if(state.arenaTime>=state.toastUntil)UI.toast.classList.remove('visible');
+    if(state.combo&&state.arenaTime>=state.comboExpiresAt)state.combo=0;
     movePlayer(dt);
     updateAttack(dt);
     updateOra(dt);
-    updateEnemy(state.hitstop>0?0:dt);
+    if(state.hitstop<=0)updateEnemy(dt);
     animateStand(dt);
     updateEffects(dt);
     animated.forEach(f=>f(dt,state.arenaTime));
@@ -604,6 +614,8 @@ Object.defineProperty(window,'__SHATTERED_QA__',{get:()=>Object.freeze({
   started:state.started,running:state.running,paused:state.paused,dead:state.dead,
   hp:state.hp,stand:state.stand,enemyHp:state.enemy.hp,enemyState:state.enemy.state,
   kills:state.kills,wave:state.wave,level:state.level,stop:state.stopRemaining,
+  combo:state.combo,attackActive:!!state.attack,ultimateActive:!!state.ultimate,
+  pointerLocked:state.pointerLocked,enemyVisible:enemyModel.root.visible,
   player:{x:state.playerPos.x,z:state.playerPos.z},
   camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z}
 })});
