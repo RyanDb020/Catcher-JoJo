@@ -42,6 +42,27 @@ async function run(){
   await page.screenshot({path:path.join(output,'3d-combat-preview.png')});
   console.log('PASS 3D browser smoke test');
   console.log(JSON.stringify({start:before,after,screenshot:'tests/artifacts/3d-combat-preview.png'},null,2));
+
+  // Repeat the launch with WebGL deliberately disabled to verify the playable fallback.
+  await browser.close();browser=null;
+  browser=await chromium.launch({headless:true,args:['--disable-webgl','--no-sandbox']});
+  const fallbackPage=await browser.newPage({viewport:{width:1280,height:720},deviceScaleFactor:1});
+  const fallbackErrors=[];
+  fallbackPage.on('pageerror',e=>fallbackErrors.push(e.message));
+  await fallbackPage.goto(address+'/combat.html',{waitUntil:'domcontentloaded',timeout:45000});
+  await fallbackPage.waitForFunction(()=>window.__SHATTERED_QA__?.renderer==='canvas2d',null,{timeout:45000});
+  await fallbackPage.getByRole('button',{name:/ENTER THE ARENA/}).click();
+  await fallbackPage.waitForFunction(()=>window.__SHATTERED_QA__?.running===true,null,{timeout:10000});
+  const fallbackBefore=await fallbackPage.evaluate(()=>window.__SHATTERED_QA__);
+  await fallbackPage.keyboard.down('w');
+  await fallbackPage.waitForTimeout(700);
+  await fallbackPage.keyboard.up('w');
+  const fallbackAfter=await fallbackPage.evaluate(()=>window.__SHATTERED_QA__);
+  if(!(fallbackAfter.player.z<fallbackBefore.player.z-.20))throw Error('Canvas2D WASD movement failed');
+  if(fallbackErrors.length)throw Error('Canvas2D browser JavaScript errors: '+fallbackErrors.join('; '));
+  await fallbackPage.screenshot({path:path.join(output,'3d-combat-canvas2d-fallback.png')});
+  console.log('PASS Canvas2D no-WebGL fallback smoke test');
+  console.log(JSON.stringify({renderer:fallbackAfter.renderer,running:fallbackAfter.running,player:fallbackAfter.player,screenshot:'tests/artifacts/3d-combat-canvas2d-fallback.png'},null,2));
  }finally{
   if(browser)await browser.close();
   await new Promise(resolve=>server.close(resolve));
