@@ -1,4 +1,4 @@
-import {UPGRADES,applyUpgrade} from './rules.mjs?v=1.6.0';
+import {UPGRADES,applyUpgrade} from './rules.mjs?v=1.6.2';
 // One choice per defeated wave. All simulation and one-shots stop during selection.
 export function createUpgradeMenu(state,{clearInput,onOpen,onChoose}) {
   const overlay=document.getElementById('upgrade');

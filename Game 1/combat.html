@@ -11,7 +11,7 @@
   </script>
   <script type="module">
     // Keep the 3D build when possible; load playable Canvas2D combat when WebGL/CDN fails.
-    const build = '1.6.0';
+    const build = '1.6.2';
     import('./src/3d/main.mjs?v=' + build).catch(async error => {
       console.warn('3D renderer unavailable; loading Canvas2D fallback.', error);
       try {

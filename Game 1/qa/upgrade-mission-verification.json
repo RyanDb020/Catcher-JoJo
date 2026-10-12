@@ -1,0 +1,151 @@
+{
+  "workflow": "https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38314771054",
+  "revision": "2fdd8a213f9a9444feec3216a2ab57d7afc94989",
+  "scope": "Full mission using real keyboard/mouse inputs, upgrades, victory and replay. This route uses Time Stop; individual attack geometry also has engine-neutral tests.",
+  "victory": {
+    "renderer": "webgl",
+    "drawCalls": 366,
+    "triangles": 101424,
+    "upgradePending": false,
+    "upgrades": {
+      "power": 1,
+      "vitality": 2,
+      "time": 1
+    },
+    "bossPattern": "strike",
+    "bossPhase": 3,
+    "enemyTimer": 0,
+    "started": true,
+    "running": false,
+    "paused": false,
+    "dead": false,
+    "victory": true,
+    "hp": 145,
+    "maxHp": 145,
+    "stand": 80,
+    "enemyHp": 0,
+    "enemyState": "dead",
+    "kills": 5,
+    "wave": 5,
+    "missionWaves": 5,
+    "boss": true,
+    "level": 4,
+    "stop": 2.6100000000000017,
+    "combo": 0,
+    "attackActive": true,
+    "ultimateActive": false,
+    "pointerLocked": false,
+    "enemyVisible": true,
+    "anchors": 0,
+    "audio": {
+      "ready": 14,
+      "muted": false,
+      "active": true,
+      "voices": 2
+    },
+    "player": {
+      "x": 6.470323638721974,
+      "z": -1.4353562739543682
+    },
+    "enemy": {
+      "x": 7.603765087985951,
+      "z": -3.374140616050369,
+      "type": "chrono-shade"
+    },
+    "rig": {
+      "heroElbows": [
+        -0.03388094908698255,
+        -0.03388094908698255
+      ],
+      "heroKnees": [
+        0.08104489407316853,
+        0.08104489407316853
+      ]
+    },
+    "camera": {
+      "x": 11.139727494256384,
+      "y": 3.888751800616239,
+      "z": 4.563651444105931,
+      "yaw": 19.377229924618256,
+      "aspect": 1.7777777777777777,
+      "focus": {
+        "x": 6.470323638721974,
+        "y": 1.65,
+        "z": -1.4353562739543682
+      }
+    }
+  },
+  "replay": {
+    "renderer": "webgl",
+    "drawCalls": 368,
+    "triangles": 100620,
+    "upgradePending": false,
+    "upgrades": {
+      "power": 0,
+      "vitality": 0,
+      "time": 0
+    },
+    "bossPattern": "strike",
+    "bossPhase": 1,
+    "enemyTimer": 0,
+    "started": true,
+    "running": true,
+    "paused": false,
+    "dead": false,
+    "victory": false,
+    "hp": 100,
+    "maxHp": 100,
+    "stand": 30,
+    "enemyHp": 100,
+    "enemyState": "patrol",
+    "kills": 0,
+    "wave": 1,
+    "missionWaves": 5,
+    "boss": false,
+    "level": 1,
+    "stop": 0,
+    "combo": 0,
+    "attackActive": false,
+    "ultimateActive": false,
+    "pointerLocked": false,
+    "enemyVisible": true,
+    "anchors": 3,
+    "audio": {
+      "ready": 14,
+      "muted": false,
+      "active": true,
+      "voices": 0
+    },
+    "player": {
+      "x": 0,
+      "z": 6
+    },
+    "enemy": {
+      "x": -7.187190873688928,
+      "z": -4.151419919155685,
+      "type": "time-wraith"
+    },
+    "rig": {
+      "heroElbows": [
+        -0.03388094908698255,
+        -0.03388094908698255
+      ],
+      "heroKnees": [
+        0.08104489407316853,
+        0.08104489407316853
+      ]
+    },
+    "camera": {
+      "x": 10.4379520378213,
+      "y": 3.8799566722830843,
+      "z": 5.388573191397408,
+      "yaw": 0,
+      "aspect": 1.7777777777777777,
+      "focus": {
+        "x": 6.470323638721974,
+        "y": 1.65,
+        "z": -1.4353562739543682
+      }
+    }
+  }
+}

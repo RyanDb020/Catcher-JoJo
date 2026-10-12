@@ -1,5 +1,5 @@
-import {createUpgradeMenu} from './upgrades.mjs?v=1.6.0';
-import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone, freshUpgrades} from './rules.mjs?v=1.6.0';
+import {createUpgradeMenu} from './upgrades.mjs?v=1.6.2';
+import {RULES, MISSION_WAVES, isBossWave, resolveDefeat, clamp, createEnemy, damageEnemy, enforceArena, grantXP, xpRequired, stepEnemy, withinAttackCone, freshUpgrades} from './rules.mjs?v=1.6.2';
 import {createCombatAudio} from './audio.mjs?v=1.5.1';
 const audio=createCombatAudio();
 

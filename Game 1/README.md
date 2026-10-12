@@ -165,15 +165,17 @@ Click **ENTER THE ARENA** on a desktop browser with WebGL support. Mouse look us
 | WASD / arrow keys | Move |
 | Mouse | Third-person camera |
 | Left mouse | Three-hit light combo |
-| Right mouse | Heavy stagger punch |
+| Right mouse | Heavy strike; interrupts regular enemies and breaks the Iron Guard |
 | Shift | Dodge with temporary invulnerability |
 | Q | Star Platinum ORA ORA, costs 55 Stand Energy |
 | T | ZA WARUDO: freeze enemies for 3.2 s, costs 40 energy |
+| F | Disable a nearby Time Anchor |
+| 1 / 2 / 3 | Choose a mission upgrade between waves |
 | Esc | Pause / mouse unlock |
 
-**Included:** 3D arena with clock tower, follow camera and obstacle avoidance, stylized player and articulated procedural Star Platinum, four increasingly difficult Time Wraith fights, a larger 420 HP Chrono Shade boss, readable enemy attack warnings, knockback effects, original generated sound, Stand Energy, XP and level-ups, Time Stop, game-over, mission victory and replay. Wave 05 ends the mission instead of spawning an endless loop.
+**Included:** One upgrade choice after each of the first four waves (stacking damage, health/recovery, or Time Stop duration). Chrono Shade adds a locked Time Lance and wide sweep across its three phases; dodge the marked areas and counter during recovery. Repeated heavy hits cannot interrupt its windup. 3D arena with clock tower, follow camera and obstacle avoidance, stylized player and articulated procedural Star Platinum, four different enemy roles, a larger 420 HP Chrono Shade boss, readable enemy attack warnings, knockback effects, credited recorded foley plus existing generated ambience/music, Stand Energy, XP and level-ups, Time Stop, game-over, mission victory and replay. Wave 05 ends the mission instead of spawning an endless loop.
 
-**Outside this mission release:** imported rigged Blender models, the full Universe Rebirth 3.0, permanent saves, multiple enemy AI types, and an open world. The arena uses original procedural geometry and is not the full 3D RPG. No copyrighted anime audio was added to 3D Combat Mode.
+**Outside this mission release:** imported rigged Blender models, the full Universe Rebirth 3.0, permanent saves, persistent mastery progression, and an open world. The arena uses original procedural geometry and is not the full 3D RPG. No copyrighted anime audio was added to 3D Combat Mode.
 
 ### Test & QA
 
@@ -183,13 +185,8 @@ Run `npm test` from \`Game 1\` to execute the Arcade and 3D regression suites. T
 
 ### Optional real-browser smoke test
 
-Run `npm install`, `npx playwright install chromium`, then `npm run qa:3d`. This opens the page in headless Chromium and verifies WASD movement and enemy pursuit. The existing Playwright smoke test passed on GitHub Actions before the 1.0 mission update: [previous run](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38294270710). The new five-wave flow and boss still need browser testing. The local browser test could not start here because the environment blocks local server binding (`listen EPERM`).
+Run `npm install`, `npx playwright install chromium`, then `npm run qa:3d`. This requires a browser download and access to the pinned Three.js CDN. The runner checks real WebGL draws, wide/portrait layouts, movement and joints, audio lifecycle, anchors, Time Stop, five waves, upgrade selection, victory and replay. It then tests Canvas2D with WebGL disabled. `--smoke-only` skips the complete mission.
 
-### Interrupted-session recovery (12 October 2026)
+The earlier full mission and Arcade cinematic route passed in [run 38312201430](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38312201430); recorded audio updates passed in [run 38313253786](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38313253786). Current results, screenshots and remaining release work are recorded in [the polish checkpoint](POLISH_STATUS_2026_10_12.md).
 
-- Continued from saved `Game 1/src/3d/main.mjs` and `rules.mjs` without resetting the Arcade Mode.
-- Fixed pointer lock not starting on first launch, combo expiry, the enemy shadow persisting after a kill, and enemy AI updates during hitstop.
-- Fixed older Arcade test mocks and stale cinematic timing assumptions.
-- GitHub Actions runs 35 Arcade, 156 cinematic rendering, and 10 3D rules tests automatically.
-- [Browser smoke test passed](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38294270710).
-- Remaining QA: full player attack/hit/death/retry, ORA and Time Stop interactions, GPU performance, long-run stability and full Universe Rebirth.
+Browser downloads in the local workspace are truncated, so actual Chromium/SwiftShader verification runs through GitHub Actions. Node tests alone do not establish WebGL graphics, GPU performance or subjective combat/audio quality.
