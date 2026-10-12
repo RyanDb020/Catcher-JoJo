@@ -4,7 +4,7 @@ const server=http.createServer((req,res)=>{const file=path.join(root,decodeURICo
 (async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});const page=await browser.newPage({viewport:{width:1365,height:900}}),errors=[],results=[];
 try{
  page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(()=>{window.__JOJO_QA_AUTOMATION__=true;window.__packPlayback=[];const play=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){window.__packPlayback.push(this.src);return play.call(this)}});
- await page.goto('http://127.0.0.1:'+server.address().port+'/index.html');await page.waitForFunction(()=>window.__JOJO_QA_STATE__?.gameStarted===false);await page.keyboard.press('Enter');
+ await page.goto('http://127.0.0.1:'+server.address().port+'/index.html?test=1');await page.waitForFunction(()=>window.__JOJO_QA_STATE__?.gameStarted===false);await page.keyboard.press('Enter');
  await page.waitForFunction(()=>Object.keys(window.__JOJO_QA_STATE__.clips).length>=20&&['hand','tusk','cmoon','giorno','yes','resume'].every(k=>window.__JOJO_QA_STATE__.clips[k].duration>0));
  await page.keyboard.press('o');
  const keys=await page.locator('#pack-preview option').evaluateAll(opts=>opts.map(o=>o.value));assert.equal(keys.length,17);
@@ -23,4 +23,4 @@ try{
  await page.keyboard.press('g');await page.keyboard.press('f');await page.waitForFunction(()=>window.__JOJO_QA_STATE__.clips.crimson.currentTime>0);results.push({trigger:'King Crimson',played:true});
  await page.waitForTimeout(4500);await page.keyboard.press('g');await page.keyboard.press('c');await page.keyboard.press('r');await page.waitForFunction(()=>window.__JOJO_QA_STATE__.universeReset,{},{timeout:7000});await page.keyboard.press('Space');await page.waitForFunction(()=>!window.__JOJO_QA_STATE__.universeReset,{},{timeout:6000});const state=await page.evaluate(()=>window.__JOJO_QA_STATE__);assert.equal(state.packMove,null);assert.equal(state.score,0);assert.equal(state.lives,3);assert.equal(errors.length,0,errors.join(';'));
  fs.writeFileSync(path.join(out,'jojo-pack-browser-results.json'),JSON.stringify({passed:true,results,errors,playback:await page.evaluate(()=>window.__packPlayback)},null,2));console.log('PASS JoJo pack: 17 real audio previews, five moves, Star Platinum activation, pause, long Giorno, King Crimson, queued Rewind/reset');
-}finally{await browser.close();server.close();}})().catch(e=>{console.error(e);server.close();process.exitCode=1});
+}catch(error){fs.writeFileSync(path.join(out,'jojo-pack-browser-failure.json'),JSON.stringify({error:error.message,results,errors,state:await page.evaluate(()=>window.__JOJO_QA_STATE__)},null,2));await page.screenshot({path:path.join(out,'jojo-pack-failure.png')});throw error;}finally{await browser.close();server.close();}})().catch(e=>{console.error(e);server.close();process.exitCode=1});
