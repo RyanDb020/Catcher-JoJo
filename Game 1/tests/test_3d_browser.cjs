@@ -41,9 +41,19 @@ async function run(){
   await page.waitForTimeout(550);
   if(errors.length)throw Error('Browser JavaScript errors: '+errors.join('; '));
   const output=path.join(__dirname,'artifacts');fs.mkdirSync(output,{recursive:true});
+  const focusOffset=Math.hypot(before.camera.focus.x-before.player.x,before.camera.focus.z-before.player.z);
+  if(!(focusOffset>0&&focusOffset<=1.2))throw Error('Combat camera is not composing toward the opponent: '+JSON.stringify(before.camera));
+  const wideBounds=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth}));
+  if(wideBounds.scrollWidth>wideBounds.width)throw Error('Wide viewport has horizontal overflow: '+JSON.stringify(wideBounds));
   await page.screenshot({path:path.join(output,'3d-combat-preview.png')});
-  console.log('PASS 3D browser smoke test');
-  console.log(JSON.stringify({start:before,after,screenshot:'tests/artifacts/3d-combat-preview.png'},null,2));
+  // Check the same HUD and WebGL scene at a narrow mobile-sized viewport.
+  await page.setViewportSize({width:390,height:844});
+  await page.waitForTimeout(250);
+  const narrowBounds=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth}));
+  if(narrowBounds.scrollWidth>narrowBounds.width)throw Error('Narrow viewport has horizontal overflow: '+JSON.stringify(narrowBounds));
+  await page.screenshot({path:path.join(output,'3d-combat-mobile-preview.png')});
+  console.log('PASS 3D browser smoke test (wide + narrow viewports)');
+  console.log(JSON.stringify({start:before,after,focusOffset,wideBounds,narrowBounds,screenshots:['tests/artifacts/3d-combat-preview.png','tests/artifacts/3d-combat-mobile-preview.png']},null,2));
 
   // Repeat the launch with WebGL deliberately disabled to verify the playable fallback.
   await browser.close();browser=null;
