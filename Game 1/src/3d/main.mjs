@@ -628,7 +628,8 @@ function dodge(){
   if(!state.running||state.dodgeCooldown>0||state.ultimate)return;
   state.dodgeTime=.18;state.invuln=.34;state.dodgeCooldown=.85;
   state.shake=.05;
-  const perfect=state.enemy.state==='windup'&&state.enemy.timer<=.46;
+  const perfect=state.enemy.state==='windup'&&state.enemy.timer<=.26&&state.stopRemaining<=0&&
+    Math.hypot(state.enemyPosition.x-state.playerPos.x,state.enemyPosition.z-state.playerPos.z)<=2.65;
   if(perfect){
     state.stand=clamp(state.stand+18,0,100);state.echoSlow=.22;
     state.chronoEcho={age:0,damage:state.lastStrike.damage,heavy:state.lastStrike.heavy,triggered:false,from:state.playerPos.clone()};
@@ -1037,7 +1038,7 @@ Object.defineProperty(window,'__SHATTERED_QA__',{get:()=>Object.freeze({
   player:{x:state.playerPos.x,z:state.playerPos.z},
   enemy:{x:state.enemyPosition.x,z:state.enemyPosition.z,type:state.enemy.type},
   rig:{heroElbows:hero.userData.rig.elbows.map(joint=>joint.rotation.x),heroKnees:hero.userData.rig.knees.map(joint=>joint.rotation.x)},
-  camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,
+  camera:{x:camera.position.x,y:camera.position.y,z:camera.position.z,yaw:state.yaw,
     focus:{x:camera.userData.combatFocus?.x??0,y:camera.userData.combatFocus?.y??0,z:camera.userData.combatFocus?.z??0}}
 })});
 updateCamera(.1);

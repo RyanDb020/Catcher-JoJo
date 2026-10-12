@@ -72,6 +72,55 @@ async function run(){
   await page.locator('#resume-btn').click();
   await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true);
   if(errors.length)throw Error('Browser errors after narrow viewport/audio lifecycle: '+errors.join('; '));
+  // Complete the existing five-wave mission using only real keyboard/mouse inputs.
+  await page.setViewportSize({width:1280,height:720});
+  const held=new Set();
+  async function steer(x,z,arrival=2.35){
+    const qa=await page.evaluate(()=>window.__SHATTERED_QA__);
+    if(qa.dead)throw Error('Mission player died: '+JSON.stringify(qa));
+    const dx=x-qa.player.x,dz=z-qa.player.z,distance=Math.hypot(dx,dz);
+    const wants=new Set();
+    if(distance>arrival){
+      const right=dx*Math.cos(qa.camera.yaw)-dz*Math.sin(qa.camera.yaw);
+      const forward=-dx*Math.sin(qa.camera.yaw)-dz*Math.cos(qa.camera.yaw);
+      if(Math.abs(right)>.40)wants.add(right>0?'d':'a');
+      if(Math.abs(forward)>.40)wants.add(forward>0?'w':'s');
+    }
+    for(const key of held)if(!wants.has(key)){await page.keyboard.up(key);held.delete(key)}
+    for(const key of wants)if(!held.has(key)){await page.keyboard.down(key);held.add(key)}
+    return {qa,distance};
+  }
+  for(const [x,z] of [[-6,4],[7,1],[0,-12]]){
+    const deadline=Date.now()+20000;
+    for(;;){const {distance}=await steer(x,z,2.5);if(distance<=2.5){await page.keyboard.press('f');break}
+      if(Date.now()>deadline)throw Error('Failed to reach time anchor');await page.waitForTimeout(100);}
+  }
+  const anchorsOff=await page.evaluate(()=>window.__SHATTERED_QA__.anchors);
+  if(anchorsOff!==0)throw Error('Time anchor interaction failed: '+anchorsOff);
+  await page.keyboard.press('t');
+  await page.waitForFunction(()=>window.__SHATTERED_QA__?.stop>0);
+  const stoppedEnemy=await page.evaluate(()=>window.__SHATTERED_QA__.enemy);
+  await page.waitForTimeout(350);
+  const stillEnemy=await page.evaluate(()=>window.__SHATTERED_QA__.enemy);
+  if(Math.hypot(stillEnemy.x-stoppedEnemy.x,stillEnemy.z-stoppedEnemy.z)>.01)throw Error('Time Stop moved the frozen enemy');
+  const missionDeadline=Date.now()+180000;
+  while(Date.now()<missionDeadline){
+    const qa=await page.evaluate(()=>window.__SHATTERED_QA__);
+    if(qa.victory)break;
+    const {distance}=await steer(qa.enemy.x,qa.enemy.z,2.35);
+    if(distance<3.2&&qa.enemyHp>0&&!qa.attackActive){await page.mouse.down({button:'right'});await page.mouse.up({button:'right'})}
+    await page.waitForTimeout(110);
+  }
+  for(const key of held)await page.keyboard.up(key);
+  const victory=await page.evaluate(()=>window.__SHATTERED_QA__);
+  if(!victory.victory||victory.wave!==5||victory.kills!==5)throw Error('Five-wave mission did not complete: '+JSON.stringify(victory));
+  await page.screenshot({path:path.join(output,'3d-mission-victory.png')});
+  await page.locator('#victory-retry-btn').click();
+  await page.waitForFunction(()=>window.__SHATTERED_QA__?.running===true&&window.__SHATTERED_QA__.wave===1);
+  const replay=await page.evaluate(()=>window.__SHATTERED_QA__);
+  if(replay.hp!==100||replay.kills!==0||replay.anchors!==3||replay.stop!==0)throw Error('Victory reset left stale mission state: '+JSON.stringify(replay));
+  if(errors.length)throw Error('Mission browser errors: '+errors.join('; '));
+  console.log('PASS time anchors, Time Stop, all five waves, victory and replay',JSON.stringify({victory,replay}));
   console.log('PASS 3D browser smoke test (wide + narrow viewports)');
   console.log(JSON.stringify({start:before,after,bodyDistance,decodedAudio,pausedAudio,focusOffset,wideBounds,narrowBounds,screenshots:['tests/artifacts/3d-combat-preview.png','tests/artifacts/3d-combat-mobile-preview.png']},null,2));
 
