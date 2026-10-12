@@ -9,7 +9,17 @@
   <script type="importmap">
     {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}
   </script>
-  <script type="module" src="src/3d/main.mjs?v=01"></script>
+  <script type="module">
+    // Catch CDN/module failures as well as WebGL failures, with a return path.
+    import('./src/3d/main.mjs?v=01').catch(error => {
+      document.getElementById('intro').hidden = true;
+      document.getElementById('fatal').hidden = false;
+      document.getElementById('fatal-text').textContent =
+        'De 3D-engine kon niet worden gestart: ' + (error?.message || String(error)) +
+        '. Controleer je internetverbinding en WebGL-ondersteuning.';
+      console.error('3D Combat Mode failed to load', error);
+    });
+  </script>
 </head>
 <body>
   <div id="viewport" aria-label="3D Stand combat arena"></div>
