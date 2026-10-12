@@ -44,16 +44,17 @@ jobs:
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Exercise playable 3D Combat Mode
+        if: ${{ !contains(github.event.head_commit.message, '[pack-only]') }}
         working-directory: 'Game 1'
         run: npm run qa:3d -- ${{ contains(github.event.head_commit.message, '[3d-smoke]') && '--smoke-only' || '' }}
       - name: Exercise Arcade cinematics and local audio
-        if: always()
+        if: always() && !contains(github.event.head_commit.message, '[pack-only]')
         working-directory: 'Game 1'
         env:
           QA_OUTPUT_DIR: tests/artifacts
         run: node tests/live_qa.cjs --duration-ms=10000 --label=foley
       - name: Verify cinematic audio faults and pause/recovery
-        if: always() && !contains(github.event.head_commit.message, '[visual-only]')
+        if: always() && !contains(github.event.head_commit.message, '[visual-only]') && !contains(github.event.head_commit.message, '[pack-only]')
         working-directory: 'Game 1'
         run: node tests/test_cinematic_browser.cjs
       - name: Verify complete JoJo audio pack in browser

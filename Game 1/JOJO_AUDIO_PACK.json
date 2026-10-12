@@ -6,7 +6,8 @@
     "path": "assets/jojo/cmoon.mp3",
     "duration": 2.690612,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 43604
   },
   {
     "key": "wryyy",
@@ -15,7 +16,8 @@
     "path": "assets/jojo/wryyy.mp3",
     "duration": 3.004082,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 48527
   },
   {
     "key": "dio",
@@ -24,7 +26,8 @@
     "path": "assets/jojo/dio.mp3",
     "duration": 12.303673,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 197338
   },
   {
     "key": "run",
@@ -33,7 +36,8 @@
     "path": "assets/jojo/run.mp3",
     "duration": 4.571429,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 73774
   },
   {
     "key": "giorno",
@@ -42,7 +46,8 @@
     "path": "assets/jojo/giorno.mp3",
     "duration": 14.236735,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 228297
   },
   {
     "key": "crimson",
@@ -51,7 +56,8 @@
     "path": "assets/jojo/crimson.mp3",
     "duration": 4.101224,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 66174
   },
   {
     "key": "muda",
@@ -60,7 +66,8 @@
     "path": "assets/jojo/muda.mp3",
     "duration": 5.041633,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 81221
   },
   {
     "key": "starstop",
@@ -69,7 +76,8 @@
     "path": "assets/jojo/starstop.mp3",
     "duration": 3.813878,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 61502
   },
   {
     "key": "kira",
@@ -78,7 +86,8 @@
     "path": "assets/jojo/kira.mp3",
     "duration": 3.73551,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 60264
   },
   {
     "key": "hand",
@@ -87,7 +96,8 @@
     "path": "assets/jojo/hand.mp3",
     "duration": 1.776327,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 28900
   },
   {
     "key": "freezefx",
@@ -96,7 +106,8 @@
     "path": "assets/jojo/freezefx.mp3",
     "duration": 3.160816,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 51128
   },
   {
     "key": "teleport",
@@ -105,7 +116,8 @@
     "path": "assets/jojo/teleport.mp3",
     "duration": 0.444082,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 7660
   },
   {
     "key": "tusk",
@@ -114,7 +126,8 @@
     "path": "assets/jojo/tusk.mp3",
     "duration": 2.011429,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 32644
   },
   {
     "key": "yes",
@@ -123,7 +136,8 @@
     "path": "assets/jojo/yes.mp3",
     "duration": 4.231837,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 68264
   },
   {
     "key": "kiratheme",
@@ -132,7 +146,8 @@
     "path": "assets/jojo/kiratheme.mp3",
     "duration": 12.329796,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 197738
   },
   {
     "key": "overheaven",
@@ -141,7 +156,8 @@
     "path": "assets/jojo/overheaven.mp3",
     "duration": 5.485714,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 88446
   },
   {
     "key": "resume",
@@ -150,6 +166,7 @@
     "path": "assets/jojo/resume.mp3",
     "duration": 2.115918,
     "rights": "User supplied for personal use; licence not verified",
-    "identification": "Filename-based, not confirmed by perceptual listening"
+    "identification": "Filename-based, not confirmed by perceptual listening",
+    "bytes": 34409
   }
 ]

@@ -407,6 +407,7 @@ function keyPressed() {
     skipUniverseDirector();
     return false;
   }
+  if(keyCode===32&&packMove.kind){for(const nail of packMove.shots)nail.target.targeted=false;for(const punch of standPunches)punch.target.targeted=false;standPunches=[];packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;return false;}
   if (keyCode === 32 && standRush.active) {stopCinematicEffects();cancelDirectorVoice();standRush.active=false;standPunches=[];return false;}
   if (keyCode === 32 && timeStop.phase === 'intro') {
     if (timeStopSoundLoaded && timeStopSound.isPlaying()) timeStopSound.stop();
@@ -2739,7 +2740,7 @@ function initializeJoJoPack(){
  if(music){music.value=selection==='kiratheme'?'kiratheme':'giorno';if(selection==='kiratheme')setMusic(selection);music.addEventListener('change',()=>setMusic(music.value));}
  document.getElementById('pack-listen')?.addEventListener('click',()=>{
   stopPackPreview();const name=document.getElementById('pack-preview')?.value,a=jojoVoiceClips[name];if(!a)return;
-  packPreview=a;a.currentTime=0;a.volume=OVERHAUL_AUDIO.master*OVERHAUL_AUDIO.voices*.7;const p=a.play();if(p?.catch)p.catch(()=>{});
+  packPreview=new Audio(JOJO_CLIP_URLS[name]);packPreview.volume=OVERHAUL_AUDIO.master*OVERHAUL_AUDIO.voices*.7;const p=packPreview.play();if(p?.catch)p.catch(()=>{});
  });
  document.getElementById('pack-stop')?.addEventListener('click',stopPackPreview);
 }

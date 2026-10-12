@@ -8,14 +8,14 @@ try{
  await page.waitForFunction(()=>Object.keys(window.__JOJO_QA_STATE__.clips).length>=20&&['hand','tusk','cmoon','giorno','yes','resume'].every(k=>window.__JOJO_QA_STATE__.clips[k].duration>0));
  await page.keyboard.press('o');
  const keys=await page.locator('#pack-preview option').evaluateAll(opts=>opts.map(o=>o.value));assert.equal(keys.length,17);
- for(const key of keys){await page.selectOption('#pack-preview',key);await page.click('#pack-listen');await page.waitForFunction(k=>window.__JOJO_QA_STATE__.clips[k].currentTime>0,k);await page.click('#pack-stop');results.push({clip:key,previewPlayed:true});}
+ for(const key of keys){await page.selectOption('#pack-preview',key);await page.click('#pack-listen');await page.waitForFunction(()=>packPreview&&packPreview.currentTime>0);await page.click('#pack-stop');results.push({clip:key,previewPlayed:true});}
  await page.selectOption('#pack-music','kiratheme');await page.selectOption('#pack-time-voice','starstop');await page.screenshot({path:path.join(out,'jojo-pack-settings.png')});await page.click('#close-options');
  await page.keyboard.press('t');await page.waitForFunction(()=>window.__JOJO_QA_STATE__.timeStop==='intro');await page.screenshot({path:path.join(out,'jojo-star-platinum-time-stop.png')});await page.keyboard.press('Space');
  await page.waitForFunction(()=>window.__JOJO_QA_STATE__.timeStop==='idle',{},{timeout:25000});
  for(const [key,kind] of [['h','hand'],['j','tusk'],['c','cmoon'],['m','muda'],['n','giorno']]){
   await page.keyboard.press('g');await page.keyboard.press(key);await page.waitForFunction(k=>window.__JOJO_QA_STATE__.packMove===k,kind);await page.waitForTimeout(450);await page.screenshot({path:path.join(out,'jojo-move-'+kind+'.png')});
   if(kind==='giorno'){
-   await page.keyboard.press('o');const at=await page.evaluate(()=>window.__JOJO_QA_STATE__);await page.waitForTimeout(500);const still=await page.evaluate(()=>window.__JOJO_QA_STATE__);assert.equal(at.gameMillis,still.gameMillis);assert(Math.abs(at.clips.giorno.currentTime-still.clips.giorno.currentTime)<.12);await page.click('#close-options');
+   await page.keyboard.press('o');const at=await page.evaluate(()=>window.__JOJO_QA_STATE__);await page.waitForTimeout(500);const still=await page.evaluate(()=>window.__JOJO_QA_STATE__);assert.equal(at.gameMillis,still.gameMillis);assert(Math.abs(at.clips.giorno.currentTime-still.clips.giorno.currentTime)<.12);await page.selectOption('#pack-preview','giorno');await page.click('#pack-listen');await page.waitForTimeout(300);const preview=await page.evaluate(()=>({position:jojoVoiceClips.giorno.currentTime,preview:packPreview.currentTime}));assert(Math.abs(preview.position-still.clips.giorno.currentTime)<.12);assert(preview.preview>0);await page.click('#close-options');
    await page.waitForTimeout(8800);assert.equal((await page.evaluate(()=>window.__JOJO_QA_STATE__)).packMove,'giorno');
   }
   await page.waitForFunction(()=>!window.__JOJO_QA_STATE__.packMove,{},{timeout:22000});results.push({move:kind,completed:true});

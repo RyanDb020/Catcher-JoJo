@@ -251,3 +251,6 @@ test('new moves cannot activate in pause, game over or a cinematic',()=>{
  run('resetGame();gameStarted=true;standEnergy=100;optionsVisible=true');assert.equal(run('startPackMove("hand")'),false);run('optionsVisible=false;gameOver=true');assert.equal(run('startPackMove("hand")'),false);run('gameOver=false;timeStop.phase="freeze"');assert.equal(run('startPackMove("cmoon")'),false);run('resetGame()');
 });
 test('all 17 personal pack assets decode-sized and local',()=>{const records=JSON.parse(fs.readFileSync(path.join(__dirname,'../JOJO_AUDIO_PACK.json')));assert.equal(records.length,17);for(const item of records){assert(fs.statSync(path.join(__dirname,'..',item.path)).size>1000,item.key);assert(item.duration>0);assert(code.includes("assets/jojo/"+item.key+".mp3"),item.key);}});
+test('Space cancels added attacks and releases target claims without refund',()=>{
+ run('resetGame();gameStarted=true;standEnergy=100;balls[0].y=200;startPackMove("tusk");updatePackMove();keyCode=32;key=" ";keyPressed()');assert.equal(run('packMove.kind'),null);assert.equal(run('standEnergy'),75);assert(!run('balls.some(b=>b.targeted)'));run('keyCode=0;key="";resetGame()');
+});
