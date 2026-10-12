@@ -29,11 +29,12 @@ export function enforceArena(position, radius = RULES.arenaRadius) {
   return position;
 }
 export function createEnemy(level = 1, boss = false) {
-  const hp = boss ? 420 : RULES.enemyBaseHp + Math.min(180, (level - 1) * 12);
+  const type = boss ? 'chrono-shade' : level === 2 ? 'rift-stalker' : level === 3 ? 'iron-guard' : level === 4 ? 'clock-adept' : 'time-wraith';
+  const hp = boss ? 420 : RULES.enemyBaseHp + Math.min(180, (level - 1) * 18);
   return {
-    hp, maxHp: hp, level, boss, state: 'patrol', timer: 0, attackReady: 0,
-    damage: boss ? 23 : RULES.enemyBaseDamage + Math.floor(level * .75),
-    speed: boss ? 1.72 : 2.15 + Math.min(1.2, (level - 1) * 0.07),
+    hp, maxHp: hp, level, boss, type, phase: 1, state: 'patrol', timer: 0, attackReady: 0,
+    damage: boss ? 23 : RULES.enemyBaseDamage + Math.floor(level * .9),
+    damageScale: 1, speed: boss ? 1.72 : type === 'rift-stalker' ? 3.45 : type === 'iron-guard' ? 1.65 : 2.2 + Math.min(1.0, (level - 1) * 0.12),
     stagger: 0, attacked: false, dead: false
   };
 }
@@ -71,8 +72,9 @@ export function stepEnemy(enemy, enemyPos, playerPos, delta, frozen = false) {
   } else if (dist > 2.35 || enemy.attackReady > 0) {
     enemy.state = 'chase';
     if (dist > 1.5) {
-      out.x = dx / dist * enemy.speed * dt;
-      out.z = dz / dist * enemy.speed * dt;
+      const flank = enemy.type === 'rift-stalker' ? .38 : 0;
+      out.x = (dx / dist - dz / dist * flank) * enemy.speed * dt;
+      out.z = (dz / dist + dx / dist * flank) * enemy.speed * dt;
     }
   } else {
     enemy.state = 'windup';
@@ -96,3 +98,4 @@ export function grantXP(profile, amount) {
   return leveled;
 }
 export const xpRequired = level => Math.round(80 + (level - 1) * 42 + (level - 1) ** 1.4 * 12);
+

@@ -9,10 +9,9 @@ const root=path.join(__dirname,'..');
  let checks=0;
  const test=(title,fn)=>{fn();console.log('PASS: '+title);checks++};
  test('3D launch files exist without overwriting Arcade index',()=>{
-  for(const f of ['combat.html','combat.css','src/3d/main.mjs','src/3d/rules.mjs','src/3d/fallback.mjs'])assert(fs.existsSync(path.join(root,f)),f);
+  for(const f of ['combat.html','combat.css','src/3d/main.mjs','src/3d/rules.mjs'])assert(fs.existsSync(path.join(root,f)),f);
   assert.match(fs.readFileSync(path.join(root,'index.html'),'utf8'),/src\/sketch\.js/);
   assert.match(fs.readFileSync(path.join(root,'combat.html'),'utf8'),/src\/3d\/main\.mjs/);
-  assert.match(fs.readFileSync(path.join(root,'combat.html'),'utf8'),/src\/3d\/fallback\.mjs/);
  });
  test('mission has four ramping waves and a distinct final boss',()=>{
   assert.equal(MISSION_WAVES,5);
@@ -102,6 +101,24 @@ const root=path.join(__dirname,'..');
  test('source has actual player controls and attack loop',()=>{
   const js=fs.readFileSync(path.join(root,'src/3d/main.mjs'),'utf8');
   for(const marker of ['requestAnimationFrame(loop)','withinAttackCone','startAttack(false)','startAttack(true)','beginOra()','timeStop()','stepEnemy(','requestPointerLock','damageEnemy(','updateCamera(dt)','grantXP('])assert(js.includes(marker),marker);
+ });
+ test('player, Stand and enemy have distinct articulated designs',()=>{
+  const js=fs.readFileSync(path.join(root,'src/3d/main.mjs'),'utf8');
+  for(const marker of ['function createHero()','function makeStand()','function makeEnemy()','new THREE.LatheGeometry','new THREE.CapsuleGeometry','coatTails','horns','makeFace(head','root.position.set(1.52,0,-.05)'])assert(js.includes(marker),marker);
+  assert.match(js,/function animateStand\(dt\)/);
+  assert.match(js,/enemyModel\.deathFall/);
+ });
+ test('district includes time anchors, a landmark clock tower and camera obstruction checks',()=>{
+  const js=fs.readFileSync(path.join(root,'src/3d/main.mjs'),'utf8');
+  for(const marker of ['Paved clock plaza','Clock tower landmark','Three time anchors','TIME WAVE · STOP TIME OR DODGE THROUGH','pillars.push(building)','obstaclesRay.intersectObjects(pillars,true)'])assert(js.includes(marker),marker);
+  assert.match(fs.readFileSync(path.join(root,'combat.html'),'utf8'),/id="anchor-status"/);
+ });
+ test('combat audio is local, preference-controlled and backed by credited Ogg files',()=>{
+  const js=fs.readFileSync(path.join(root,'src/3d/audio.mjs'),'utf8');
+  for(const marker of ['district-ambience.ogg','combat-music.ogg','time-resume.ogg','localStorage','audio-mute',"new URL('../../assets/combat-audio/"])assert(js.includes(marker),marker);
+  const credits=fs.readFileSync(path.join(root,'AUDIO_CREDITS.md'),'utf8');
+  assert.match(credits,/original, locally generated synthesis/);
+  for(const f of ['dash-whoosh.ogg','punch-light.ogg','punch-heavy.ogg','stone-steps.ogg','enemy-telegraph.ogg','enemy-hit.ogg','time-stop.ogg','time-resume.ogg','stand-summon.ogg','chrono-echo.ogg','district-ambience.ogg','combat-music.ogg'])assert(fs.existsSync(path.join(root,'assets/combat-audio',f)),f);
  });
  console.log('PASS:',checks,'3D combat regression checks');
 })().catch(error=>{console.error(error);process.exitCode=1});

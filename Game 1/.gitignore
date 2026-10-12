@@ -2,3 +2,5 @@ node_modules/
 tests/artifacts/
 dist/
 *.log
+
+build/audio-source/

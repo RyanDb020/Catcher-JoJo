@@ -15,3 +15,19 @@
 @media(max-width:880px){.hud-panel{top:76px!important}.stats{width:205px;padding:11px}.objective{width:190px;padding:11px}.objective>strong{font-size:16px}.objective p{font-size:10px}.abilities{bottom:46px;gap:4px}.ability{min-width:0;padding:6px;gap:5px}.ability kbd{min-width:26px;padding:5px;font-size:13px}.ability b{font-size:11px}.ability span{font-size:8px}.hint{font-size:9px}.stats-bottom{font-size:12px}}
 @media(max-width:520px){.brand small,.build{display:none}.brand strong{font-size:17px}.topline{padding:12px}.back{font-size:10px!important}.hud-panel{top:62px!important}.stats{left:7px;width:49%;max-width:49%!important;padding:8px}.objective{right:7px;width:45%;max-width:45%!important;padding:8px}.stats .eyebrow,.objective .eyebrow{font-size:8px;margin-bottom:8px}.meterline{font-size:9px}.stats-bottom{font-size:10px}.ability span{display:none}.ability b{font-size:10px}.hint{letter-spacing:.04em}.intro-panel{padding:20px}#fps{display:none}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Combat readability pass: hit feedback stays below the action and menus stay compact. */
+.topline-tools{display:flex;align-items:center;gap:18px;position:relative}
+.audio-settings{position:relative;font:800 11px 'Barlow Condensed',sans-serif;letter-spacing:.12em;color:#eadcff}
+.audio-settings summary{list-style:none;cursor:pointer;border:1px solid #a57ac688;border-radius:5px;padding:7px 10px;background:#110d24d9}
+.audio-settings summary::-webkit-details-marker{display:none}
+.audio-panel{position:absolute;right:0;top:calc(100% + 9px);width:224px;padding:12px;border:1px solid #a57ac688;border-radius:9px;background:#100d22f5;box-shadow:0 14px 36px #0009;backdrop-filter:blur(14px);z-index:30}
+.audio-panel label{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#d2c5e6;font-size:10px;margin:8px 0}
+.audio-panel input[type=range]{width:116px;accent-color:#caa0ff}
+.audio-panel .mute-row{justify-content:flex-start;color:#ffe1ae}
+.anchor-status{font:800 10px 'Barlow Condensed',sans-serif;letter-spacing:.1em;color:#ffe0a3;border-top:1px solid #b49ad533;padding-top:8px;margin-top:4px}
+#impact-label{top:auto;bottom:24%;left:50%;font-size:clamp(14px,1.6vw,19px);letter-spacing:.08em;max-width:min(80vw,460px);padding:7px 13px;border:1px solid #ecd8a944;border-radius:7px;background:#110d22c9;text-shadow:0 2px 8px #080511;box-shadow:0 5px 20px #0004}
+#toast{top:19%;font-size:clamp(12px,1.3vw,15px);letter-spacing:.09em;text-shadow:0 2px 8px #05020e}
+.hint{max-width:96%;left:2%;line-height:1.6}
+@media(max-width:520px){.topline-tools{gap:7px}.audio-settings summary{font-size:9px;padding:6px}.audio-panel{right:-6px;width:200px}.anchor-status{font-size:8px;padding-top:5px}.hint{font-size:8px;letter-spacing:.025em;bottom:10px}}
+
