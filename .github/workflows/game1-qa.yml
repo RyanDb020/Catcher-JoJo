@@ -82,7 +82,7 @@ jobs:
       - name: Install Chromium
         working-directory: 'Game 1'
         run: |
-          npm ci --no-audit --no-fund
+          npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Verify full muted cinematics
         working-directory: 'Game 1'
