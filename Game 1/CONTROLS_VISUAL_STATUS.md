@@ -1,3 +1,7 @@
+# Current animation update
+
+For the VFX 5.0 movement, destruction, audio timing and test evidence, see [VFX5_STATUS.md](VFX5_STATUS.md). The earlier illustration/control report below is historical.
+
 # Visual, controls and full-audio update
 
 This update continues the existing Game 1 from saved revision 8d6a205. The supplied 69-second 2556x1396 gameplay video was inspected at regular frame samples. Its main weak points were the identical tiny silhouettes for different Stands, floating purple forearms on gold MUDA attacks, and simultaneous messages at the same position.
