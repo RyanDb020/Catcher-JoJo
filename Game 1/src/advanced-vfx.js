@@ -130,7 +130,7 @@ function singularity(c,w,h,t,seconds){
  for(let i=0;i<5;i++){c.beginPath();c.ellipse(cx,cy,r*(1.07+i*.11),r*(1.06+i*.08),seconds*.10,Math.PI*.05,Math.PI*.85);c.strokeStyle=`rgba(225,212,255,${.65-i*.1})`;c.lineWidth=1.5;c.stroke();}
  shock(c,w,h,cx,cy,fract(seconds*.45),.45,'173,138,249');c.restore();
 }
-function galaxy(c,x,y,r,seconds,alpha){c.save();c.globalAlpha=alpha;c.translate(x,y);c.rotate(seconds*.12);c.scale(1,.5);for(let arm=0;arm<3;arm++){const pts=[];for(let j=0;j<28;j++){const q=j/28,a=arm*TAU/3+q*5,rr=q*r;pts.push([Math.cos(a)*rr,Math.sin(a)*rr]);}stroke(c,pts,arm%2?'rgba(182,153,248,.5)':'rgba(156,212,255,.6)',2);for(let j=0;j<20;j++){const q=j/20,a=arm*TAU/3+q*5;disk(c,Math.cos(a)*q*r,Math.sin(a)*q*r,1,'#dcefff');}}glow(c,0,0,r*.4,'222,200,255',.8);c.restore();}
+function galaxy(c,x,y,r,seconds,alpha){c.save();c.globalAlpha=alpha;c.translate(x,y);c.rotate(seconds*.12);c.scale(1,.5);for(let arm=0;arm<3;arm++){const pts=[];for(let j=0;j<28;j++){const q=j/28,a=arm*TAU/3+q*5,rr=q*r;pts.push([Math.cos(a)*rr,Math.sin(a)*rr]);}stroke(c,pts,arm%2?'rgba(182,153,248,.14)':'rgba(156,212,255,.16)',Math.max(3,r*.08));stroke(c,pts,arm%2?'rgba(182,153,248,.5)':'rgba(156,212,255,.6)',2);for(let j=0;j<20;j++){const q=j/20,a=arm*TAU/3+q*5;disk(c,Math.cos(a)*q*r,Math.sin(a)*q*r,1,'#dcefff');}}glow(c,0,0,r*.4,'222,200,255',.8);c.restore();}
 function rebirth(c,w,h,t){
  c.save();c.fillStyle='#000006';c.fillRect(0,0,w,h);if(t<.035){c.restore();return;}
  const seed=smooth((t-.035)/.11),bang=clamp((t-.18)/.24),expand=out(bang),cosmos=smooth((t-.27)/.27),fly=smooth((t-.66)/.32),seconds=t*8.5;
@@ -138,10 +138,10 @@ function rebirth(c,w,h,t){
  if(t<.23){glow(c,w*.5,h*.46,Math.min(w,h)*(.025+.035*seed),'199,222,255',.65*seed);disk(c,w*.5,h*.46,2+seed*4*(1+.2*Math.sin(seconds*12)),'#f5f8ff');for(let i=0;i<count(24);i++){const a=i*2.399+seconds*(1+seed*3),d=Math.min(w,h)*(.12-.10*seed),x=w*.5+Math.cos(a)*d,y=h*.46+Math.sin(a)*d;stroke(c,[[x,y],[x+Math.sin(a)*12,y-Math.cos(a)*12]],'#aec7ff',1.5);}}
  if(t>.18){sky(c,w,h,seconds,'birth',expand);shock(c,w,h,w*.5,h*.46,bang,1.3,'203,232,255');impact(c,w,h,w*.5,h*.46,bang,2.1,'219,235,255');
   // Gas clouds condense along travelling filaments, followed by rotating galaxies.
-  for(let i=0;i<count(14);i++){const a=i*2.399+seconds*.08,d=Math.min(w,h)*(.22+hash(i)*.55)*(1+fly),x=w*.5+Math.cos(a)*d,y=h*.46+Math.sin(a)*d*.7;glow(c,x,y,Math.min(w,h)*(.06+.09*hash(i)),i%2?'99,119,244':'186,107,219',cosmos*.16);}
+  for(let i=0;i<count(14);i++){const a=i*2.399+seconds*.08,d=Math.min(w,h)*(.22+hash(i)*.55)*(1+fly),x=w*.5+Math.cos(a)*d,y=h*.46+Math.sin(a)*d*.7;glow(c,x,y,Math.min(w,h)*(.06+.09*hash(i)),i%2?'99,119,244':'186,107,219',cosmos*.45);}
   for(let i=0;i<3;i++)galaxy(c,w*(.18+i*.32)+Math.sin(seconds*.2+i)*w*.07,h*(.30+(i%2)*.35),Math.min(w,h)*(.10+i*.04)*(1+fly*.8),seconds+i,smooth((t-.35-i*.035)/.20));
  }
- if(t>.29){c.save();c.globalAlpha=cosmos;for(let i=0;i<8;i++){const y=h*(.19+i*.085+Math.sin(seconds*.12+i)*.04);c.beginPath();c.moveTo(-w*.1,y);c.bezierCurveTo(w*.24,y-h*.22,w*.55,y+h*.18,w*1.1,y-h*.12);c.strokeStyle=i%2?'rgba(103,131,232,.10)':'rgba(171,106,216,.10)';c.lineWidth=Math.min(w,h)*(.018+.014*hash(i));c.stroke();}c.restore();}
+ if(t>.29){c.save();c.globalAlpha=cosmos;for(let i=0;i<8;i++){const y=h*(.19+i*.085+Math.sin(seconds*.12+i)*.04);c.beginPath();c.moveTo(-w*.1,y);c.bezierCurveTo(w*.24,y-h*.22,w*.55,y+h*.18,w*1.1,y-h*.12);c.strokeStyle=i%2?'rgba(103,131,232,.17)':'rgba(171,106,216,.17)';c.lineWidth=Math.min(w,h)*(.030+.024*hash(i));c.stroke();}c.restore();}
  if(t>.60){const p=smooth((t-.60)/.17),x=w*(.84-fly*.09),y=h*(.30+fly*.08),r=Math.min(w,h)*(.03+.12*p)*(1+fly*.35);glow(c,x,y,r*1.4,'106,190,255',.25);const g=c.createLinearGradient(x-r,y-r,x+r,y+r);g.addColorStop(0,'#d3efff');g.addColorStop(.4,'#608bab');g.addColorStop(1,'#12192e');disk(c,x,y,r,g);c.save();c.beginPath();c.arc(x,y,r,0,TAU);c.clip();for(let i=0;i<8;i++)stroke(c,[[x-r,y+(i-4)*r*.2],[x+r,y+(i-4)*r*.2+Math.sin(seconds+i)*r*.17]],'#668ca8',r*.04);c.restore();}
  if(t>.79){const p=smooth((t-.79)/.21);for(let i=0;i<10;i++){const x=i*w/9,y=h*(.86+.03*Math.sin(i));masonry(c,x,y,Math.min(w,h)*.075*p,0,.4,0,i);}}
  c.restore();
