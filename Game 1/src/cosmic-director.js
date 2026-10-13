@@ -171,6 +171,7 @@ function singularity(c,w,h,t){
  c.restore();
 }
 function collapse(c,w,h,t,history=[],quality=2){
+ if(root.JoJoVFX)return root.JoJoVFX.collapse(c,w,h,t,history);
  if(!c||typeof c.save!=='function')return;
  t=clamp(t);const snap=history.length?history[Math.max(0,Math.floor((1-t)*(history.length-1)))]:null;
  c.save();
@@ -277,6 +278,7 @@ function clockwork(c,x,y,r,t,reverse=true){
  ellipse(c,0,0,r*.034,r*.034,'#fbebc7');c.restore();
 }
 function rewind(c,w,h,t,history=[],quality=2){
+ if(root.JoJoVFX)return root.JoJoVFX.rewind(c,w,h,t,history);
  c.save();fill(c,w,h,'rgba(12,11,30,.35)');
  const count=history.length,progress=1-smooth(t),index=Math.floor(progress*Math.max(0,count-1));
  const r=Math.min(w,h)*.265,cy=h*.43;
@@ -350,6 +352,7 @@ function genesis(c,w,h,t){
  c.restore();
 }
 function rebirth(c,w,h,t,quality=2){
+ if(root.JoJoVFX)return root.JoJoVFX.rebirth(c,w,h,t);
  if(!c||typeof c.save!=='function')return;
  t=clamp(t);c.save();
  fill(c,w,h,'#01030c');
@@ -424,7 +427,7 @@ function intro(c,w,h,t){
  }
  c.restore();
 }
-root.JoJoCosmicDirector=Object.freeze({intro,collapse,rebirth,rewind,accelerate,sky,version:'4.0.0',diagnostics:{
+root.JoJoCosmicDirector=Object.freeze({intro,collapse,rebirth,rewind,accelerate,sky,clockworkMini:clockwork,version:'4.0.0',diagnostics:{
   collapseStages:['reality-fracture','gravitational-collapse','everything-falls-apart','final-singularity'],
   rebirthStages:['first-light','cosmic-genesis','new-cosmos','gameplay-reveal']
 }});

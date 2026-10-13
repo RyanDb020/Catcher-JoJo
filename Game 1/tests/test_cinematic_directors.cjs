@@ -16,7 +16,7 @@ function canvasMock(){
  return {ctx:c,get fills(){return fills}};
 }
 const window={};
-for(const file of ['character-director.js','cosmic-director.js']){
+for(const file of ['advanced-vfx.js','character-director.js','cosmic-director.js']){
  vm.runInNewContext(fs.readFileSync(path.join(root,'src',file),'utf8'),{window},{filename:file,timeout:5000});
 }
 const char=window.JoJoCharacterDirector,cosmos=window.JoJoCosmicDirector;

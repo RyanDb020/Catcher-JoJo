@@ -540,6 +540,7 @@
                 'rgba(255,236,185,'+(1-k)+')',4);
       }c.restore();
     }
+    root.JoJoVFX?.punches(c,w,h,t,age,'star');
     topBanner(c,w,h,['STAR PLATINUM  /  REVEAL','ORA  /  FIRST STRIKES','ORA ORA  /  BARRAGE',
       'STAR PLATINUM  /  OVERDRIVE','ORA!  /  FINAL IMPACT','STAND  /  RECOVERY'][phase],
       '#b76cf3');
@@ -647,19 +648,23 @@
     if(!ctxReady(c))return;t=clamp(t);c.save();
     const manifest=smooth((t-.18)/.30),pull=smooth((t-.60)/.32),entry=ease(t/.20);
     stage(c,w,h,'116,98,202',t,.38);
+    root.JoJoVFX?.manifestation(c,w,h,t,settings.elapsed||t*8.664,false);
     // Chapel-like arch and luminous floor establish an environment behind the pair.
     c.save();c.strokeStyle='rgba(192,173,229,.20)';c.lineWidth=3;
     for(let i=0;i<5;i++){const x=w*(.08+i*.21),r=w*.09;c.beginPath();c.moveTo(x-r,h*.84);c.lineTo(x-r,h*.32);c.bezierCurveTo(x-r,h*.06,x+r,h*.06,x+r,h*.32);c.lineTo(x+r,h*.84);c.stroke();}
     c.restore();
     tint(c,w*.61,h*.54,w*.25,'161,216,242',.15*manifest);
     // Pucci remains distinct in front-left; Stand manifests in full side silhouette.
+    c.save();if(root.JoJoVFX)c.transform(1,Math.sin((settings.elapsed||0)*3)*.012,Math.sin((settings.elapsed||0)*2)*.012,1,Math.sin((settings.elapsed||0)*3)*w*.006,Math.cos((settings.elapsed||0)*4)*h*.004);
     const painted=actor(c,'heaven',w,h,.52,.52,.80,t<.18?0:t<.5?1:t<.8?2+Math.floor((settings.elapsed||t*8.664)*3)%2:4,{alpha:entry,appear:Math.min(1,t*7),glow:'#bacef3'});
+    c.restore();
     if(!painted)figure(c,w,h,cc=>pucci(cc,Math.min(t, .64)*3),{x:.31-(1-entry)*.12,y:.63,zoom:.83+pull*.05});
     c.save();c.globalAlpha=manifest;
     if(!painted)figure(c,w,h,cc=>equineStand(cc,t*3,pull*.3),{x:.57+pull*.02,y:.53,zoom:.75+manifest*.06});c.restore();
     if(t>.52){
       for(let i=0;i<10;i++){const yy=h*(.14+i*.065);line(c,[[w*.76,yy],[w*(.79+.16*pull),yy-.03*h]],'rgba(178,220,249,'+(.08+.18*pull)+')',1);}
     }
+    root.JoJoVFX?.manifestation(c,w,h,t,settings.elapsed||t*8.664,true);
     border(c,w,h,t<.18?'PUCCI / THE FINAL PRAYER':t<.55?'MADE IN HEAVEN / MANIFESTATION':'TIME HAS NO LIMIT',t<.55?'THE STAND AWAKENS':'THE UNIVERSE WILL FOLLOW','#c6ddeb');
     c.restore();
   }
@@ -669,11 +674,13 @@
   }
   function world(c,w,h,phase,t,settings={}){
     if(!ctxReady(c))return;t=clamp(t);
+    root.JoJoVFX?.timeStop(c,w,h,phase,t,settings.elapsed||0,settings.balls||[],false,settings.backdrop);
     if(phase==='slow'){worldLegacy(c,w,h,phase,t,settings);return;}
     if(phase==='freeze'){
       c.save();c.fillStyle='rgba(10,35,49,.23)';c.fillRect(0,0,w,h);
       c.save();c.translate(w*.5,h*.28);c.scale(.30,.30);c.translate(-w*.5,-h*.49);timeDial(c,w,h,1,true);c.restore();
       if(!actor(c,settings.character==='jotaro'?'star':'world',w,h,.84,.58,.25,1))figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,1,5):worldFigure(cc,1,true),{x:.84,y:.58,zoom:.29});
+      root.JoJoVFX?.timeStop(c,w,h,phase,t,settings.elapsed||0,settings.balls||[],true,settings.backdrop);
       border(c,w,h,'ZA WARUDO / TIME LOCK',Number.isFinite(settings.remaining)?settings.remaining.toFixed(1)+' s REMAINING':'REALITY IS FROZEN','#a9e3e5');c.restore();return;
     }
     c.save();
@@ -682,6 +689,7 @@
       for(let j=0;j<3;j++){const q=clamp((t-j*.09)/.65),r=ease(q)*Math.max(w,h);oval(c,w*.5,h*.48,r,r*.67,'rgba(0,0,0,0)','rgba(183,235,241,'+(.56*(1-q))+')',2+6*(1-q));}
       // The broken rim peels outward; the arena is visible throughout.
       for(let i=0;i<24;i++){const a=i*TAU/24,r=Math.min(w,h)*(.25+release*.6);c.save();c.translate(w*.5+Math.cos(a)*r,h*.48+Math.sin(a)*r*.7);c.rotate(a+t*2);line(c,[[-6,-13],[3,9],[10,14]],'rgba(246,222,158,'+(.6*(1-t))+')',2);c.restore();}
+      root.JoJoVFX?.timeStop(c,w,h,phase,t,settings.elapsed||0,settings.balls||[],true,settings.backdrop);
       topBanner(c,w,h,'TIME RESUMES / THE WORLD MOVES AGAIN','#bce8e5');c.restore();return;
     }
     const p=smooth((t-.22)/.4),lock=smooth((t-.76)/.12);
@@ -696,6 +704,7 @@
     c.save();c.translate(w*.018*Math.sin(t*PI)*(1-lock),0);
     if(!actor(c,settings.character==='jotaro'?'star':'world',w,h,.56+(1-p)*.1-close*.03,.50,.57+close*.10,t<.30?0:t<.64?1:t<.90?4:5,{alpha:p,appear:Math.min(1,p*1.7),glow:'#ffdf86'}))figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,poseTime,0):worldFigure(cc,poseTime,t>.90),{x:.56+(1-p)*.13-close*.035,y:.53-close*.02,zoom:.57+.26*p+close*.13});c.restore();
     if(t>.72&&t<.97){const q=clamp((t-.72)/.25),r=ease(q)*Math.max(w,h);oval(c,w*.52,h*.46,r,r*.66,'rgba(0,0,0,0)','rgba(235,222,178,'+(.75*(1-q))+')',4+6*(1-q));}
+    root.JoJoVFX?.timeStop(c,w,h,phase,t,settings.elapsed||0,settings.balls||[],true,settings.backdrop);
     border(c,w,h,t<.22?(settings.character==='jotaro'?'JOTARO / STAR PLATINUM':'DIO / THE WORLD'):t<.76?(settings.character==='jotaro'?'STAR PLATINUM / CHRONOSTASIS':'THE WORLD / CHRONOSTASIS'):'ZA WARUDO / REALITY LOCK',extended?(t<.32?'REVEAL / THE COMMAND':t<.56?'STAND / CLOSE-UP':t<.80?'TIME PRESSURE / BUILD-UP':'REALITY LOCK / ACTIVATION'):'SPACE TO SKIP THE REVEAL','#ead29a');
     c.restore();
   }
@@ -707,7 +716,7 @@
     const rootX=phase===4?.53:.51,rootY=phase===4?.45:.46;
     if(!actor(c,'jotaro',w,h,.24,.58,.36,phase===5?5:phase<2?1:3))figure(c,w,h,cc=>jotaro(cc,age),{x:.25,y:.60,zoom:.47});
     const zoom=[.50,.61,.68,.74,.93,.58][phase];
-    c.save();c.translate((phase>=1&&phase<=3?Math.sin(age*(phase===3?32:17))*w*.004:0),0);
+    c.save();if(root.JoJoVFX)c.transform(1,Math.sin(age*9)*.025,Math.sin(age*11)*.025,1,Math.sin(age*8)*w*.009,Math.cos(age*6)*h*.009);c.translate((phase>=1&&phase<=3?Math.sin(age*(phase===3?32:17))*w*.004:0),0);
     const painted=actor(c,'star',w,h,rootX,rootY,.53+(phase===4?.12:phase===3?.05:0),phase===0?0:phase===5?1:phase===4?5:phase===1?1:2+Math.floor(age*(phase===3?16:11))%3,{appear:Math.min(1,t*10),glow:'#ad7ced'});
     if(!painted)figure(c,w,h,cc=>starFigure(cc,age,phase),{x:rootX,y:rootY,zoom});c.restore();
     if(phase>=1&&phase<=3){
@@ -726,6 +735,7 @@
       // A visible impact contour expands around the fist; it does not wash out the scene.
       for(let i=0;i<18;i++){const a=i*TAU/18,d=Math.min(w,h)*(.12+q*.25);line(c,[[w*.57+Math.cos(a)*d*.7,h*.49+Math.sin(a)*d*.7],[w*.57+Math.cos(a)*d,h*.49+Math.sin(a)*d]],'rgba(248,228,186,'+(.7*(1-q))+')',i%3===0?3:1);}
     }
+    root.JoJoVFX?.punches(c,w,h,t,age,'star');
     topBanner(c,w,h,['STAR PLATINUM / REVEAL','ORA / FIRST STRIKES','ORA ORA / BARRAGE','STAR PLATINUM / OVERDRIVE','ORA! / FINAL IMPACT','STAND / RECOVERY'][phase],'#c4a3ed');
     c.restore();
   }

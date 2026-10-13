@@ -83,7 +83,7 @@ const KING_CRIMSON_MS = 1450;
 const PERFECT_WINDOW = 13;
 const OVERHAUL_AUDIO = {
   master: 0.78, music: 0.65, voices: 0.95, effects: 0.75,
-  shake: true, flashes: true, particles: true, particlesMultiplier: 1, quality: 2, slowFactor: 0.55
+  shake: true, flashes: true, reduced: false, particles: true, particlesMultiplier: 1, quality: 2, slowFactor: 0.55
 };
 const soundEffects = {};
 const effectLastPlayed = {};
@@ -140,7 +140,7 @@ function openOptions(value) {
 }
 function applySetting(name, value) {
   if (!(name in OVERHAUL_AUDIO)) return;
-  OVERHAUL_AUDIO[name] = (name === 'shake' || name === 'flashes' || name === 'particles') ? !!value : Number(value);
+  OVERHAUL_AUDIO[name] = (name === 'shake' || name === 'flashes' || name === 'particles' || name === 'reduced') ? !!value : Number(value);
   if (name === 'slowFactor') OVERHAUL_AUDIO.slowFactor = getSlowFactor();
   if (name === 'quality') rebuildVisuals();
   saveSettings();
@@ -243,8 +243,8 @@ let mangaPulse = 0;
 // versnelt de tijd en begint opnieuw in een nieuw universum.
 const REWIND_MS = 8882;
 const ACCELERATE_MS = 2750;
-const SINGULARITY_MS = 3600;
-const REBIRTH_MS = 4600;
+const SINGULARITY_MS = 6400;
+const REBIRTH_MS = 8500;
 const HEAVEN_REVEAL_MS = 8664; // new user-supplied 8.664 second opening
 const UNIVERSE_RESET_MS = HEAVEN_REVEAL_MS + REWIND_MS + ACCELERATE_MS + SINGULARITY_MS + REBIRTH_MS;
 const HISTORY_MAX_FRAMES = 550; // bounded ~9 seconds at 60 fps
@@ -444,6 +444,7 @@ function keyPressed(event) {
 }
 
 function resetGame() {
+  window.JoJoVFX?.clear();
   for(const item of Object.values(soundEffects))if(item?.sound&&item.ready)try{item.sound.stop();}catch(_){}
   if(gameOverSoundLoaded)gameOverSound.stop();
   cancelDirectorVoice();stopJoJoVoices();stopCinematicEffects();pausedHtmlAudio=[];
@@ -842,7 +843,7 @@ function drawTimeStopEffects() {
     let flashAlpha = 0;
     if (timeStopSceneProgress() >= .21 && elapsed < 1130) flashAlpha = 150 * (1 - (elapsed - 950) / 180);
     if (elapsed >= 3800 && elapsed < 3950) flashAlpha = max(flashAlpha, 105 * (1 - (elapsed - 3800) / 150));
-    if (flashAlpha > 0 && OVERHAUL_AUDIO.flashes) {
+    if (flashAlpha > 0 && OVERHAUL_AUDIO.flashes&&!OVERHAUL_AUDIO.reduced) {
       fill(215, 235, 255, flashAlpha);
       rect(0, 0, width, height);
     }
@@ -1230,11 +1231,13 @@ function drawGameOverWorld() {
   if(standRush.active)drawStandAura();drawStandPunches();
   pop();
   drawTimeStopEffects();drawTimeStopRebuild();drawCinematicDirector();drawKingCrimsonEffects();
-  drawJoJoParticles();drawRoadRoller();drawJoJoPopups();drawMenacingGlyphs();drawHUD();
+  drawJoJoParticles();
+  window.JoJoVFX?.drawHits(drawingContext,width,height,gameMillis(),timeStop.phase==='intro'||timeStop.phase==='freeze');drawRoadRoller();drawJoJoPopups();drawMenacingGlyphs();drawHUD();
   if(gameMillis()>=gameOverRevealAt)drawGameOver();
 }
 
 function draw() {
+  window.JoJoVFX?.configure(OVERHAUL_AUDIO);
   const paused = optionsVisible;
   frameStep = paused ? 0 : min(2, max(0, deltaTime / (1000 / 60)));
   if (!paused) gameClock += min(50, max(0, deltaTime));
@@ -1263,7 +1266,7 @@ function draw() {
   updateJoJoAttacks();
   if(getTimeSpeed()>0)updateJoJoParticles();
   const speedFactor = roadRoller.active || freezePhysics || gameMillis()<rushHitStopUntil ? 0 : getTimeSpeed();
-  const shake = OVERHAUL_AUDIO.shake ? min(15, getCameraShake() + jojoShake) : 0;
+  const shake = OVERHAUL_AUDIO.shake&&!OVERHAUL_AUDIO.reduced ? min(15, getCameraShake() + jojoShake) : 0;
   push();
   const zoom = getCinematicCameraScale();
   if (zoom !== 1) {
@@ -1305,6 +1308,7 @@ function draw() {
   drawCinematicDirector();
   drawKingCrimsonEffects();
   drawJoJoParticles();
+  window.JoJoVFX?.drawHits(drawingContext,width,height,gameMillis(),timeStop.phase==='intro'||timeStop.phase==='freeze');
   drawRoadRoller();
   if(!standRush.active)drawJoJoPopups();
   drawMenacingGlyphs();
@@ -1440,6 +1444,7 @@ function resolvePunches() {
     const elapsed = now - punch.start;
     if (punch.impacted || elapsed < (punch.duration||180)) continue;
     punch.impacted = true;
+    window.JoJoVFX?.emitHit(punch.target.x,punch.target.y,punch.finisher?1.5:.6,punch.artKey==='star'?'211,165,255':'255,221,145');
     if (!punch.target.targeted) continue;
     const x = punch.target.x, y = punch.target.y;
     punch.target.targeted = false;
@@ -1514,7 +1519,7 @@ function addJoJoPopup(message, x, y, tint, duration, size) {
 }
 
 function burstJoJoParticles(x, y, tint, count) {
-  for (let i = 0; i < (OVERHAUL_AUDIO.particles ? min(90, count * OVERHAUL_AUDIO.particlesMultiplier) : 0); i++) {
+  for (let i = 0; i < (OVERHAUL_AUDIO.particles ? min(90, count * OVERHAUL_AUDIO.particlesMultiplier*(OVERHAUL_AUDIO.reduced?.35:1)) : 0); i++) {
     const angle = random(TWO_PI);
     const speed = random(2, 15);
     const part=jojoParticlePool.pop()||(jojoParticles.length>=MAX_PARTICLES?jojoParticles.shift():{});
@@ -1893,6 +1898,7 @@ function drawUniverseReset() {
  }else if(phase==='collapse'){
   drawUniverseCollapse(t);
  }else{
+  if(t>=.18&&!u.rebirthBoomPlayed){u.rebirthBoomPlayed=true;playUniverseSound('reborn');}
   drawUniverseRebirth(t);
  }
  if(phase==='reveal'){
@@ -1917,7 +1923,7 @@ function drawUniverseReset() {
  if(phase==='accelerate'){
   u.phase='collapse';u.phaseStart=gameMillis();playUniverseSound('collapse');
  }else if(phase==='collapse'){
-  u.phase='rebirth';u.phaseStart=gameMillis();commitNewUniverse();playUniverseSound('reborn');
+  u.phase='rebirth';u.phaseStart=gameMillis();commitNewUniverse();u.rebirthBoomPlayed=false;
  }else{
   u.active=false;u.source=[];universeHistory=[];startGameMusic();updateMusicVolume(true);
  }
@@ -1994,7 +2000,7 @@ function rewindStreakY(index, t, canvasHeight = height) {
 function drawRewindOverlay(t) {
   if(window.JoJoCosmicDirector?.rewind){
     window.JoJoCosmicDirector.rewind(drawingContext,width,height,t,universeReset.source,Number(OVERHAUL_AUDIO.quality)||0);
-    const c=drawingContext;c.save();c.font='bold '+min(26,width*.042)+'px Arial';c.textAlign='center';c.fillStyle='#eee2ff';c.fillText('REWIND · THE CLOCK RUNS BACKWARDS',width*.5,height*.085);c.restore();
+    const c=drawingContext;c.save();c.font='bold '+min(26,width*.042)+'px Arial';c.textAlign='center';c.fillStyle='#eee2ff';c.fillText('REWIND · REALITY RETRACES ITS STEPS',width*.5,height*.085);c.restore();
     return;
   }
   push();
@@ -2093,7 +2099,7 @@ function drawUniverseCollapse(t) {
   fill(240,193,255, 130+100*t); circle(0,0, 32*(1-t)+7);
   drawingContext.shadowBlur=0;
   pop();
-  if (t > .73 && OVERHAUL_AUDIO.flashes) {
+  if (t > .73 && OVERHAUL_AUDIO.flashes&&!OVERHAUL_AUDIO.reduced) {
     noStroke(); fill(255,245,255,200*easeOutCubic((t-.73)/.27)); rect(0,0,width,height);
   }
   if (t < .70) drawUniverseHeader('UNIVERSE RESET','THE SINGULARITY CONSUMES EVERYTHING','#ffe1ff');
@@ -2143,7 +2149,7 @@ function drawUniverseRebirth(t) {
   }
   noStroke(); fill(185,151,255,50*(1-t)); circle(0,0,100+progress*520);
   pop();
-  if (t < .36 && OVERHAUL_AUDIO.flashes) {
+  if (t < .36 && OVERHAUL_AUDIO.flashes&&!OVERHAUL_AUDIO.reduced) {
     noStroke(); fill(255,255,255,115*(1-t/.36)); rect(0,0,width,height);
   }
   drawUniverseHeader('NEW UNIVERSE ' + String(universeNumber).padStart(2,'0'),
@@ -2620,7 +2626,7 @@ function skipUniverseDirector() {
   universeReset.phase = 'rebirth';
   universeReset.phaseStart = gameMillis() - REBIRTH_MS + 900;
   universeReset.finished = false;
-  if (!universeReset.committed) {commitNewUniverse();playUniverseSound('reborn');}
+  if (!universeReset.committed) {commitNewUniverse();playUniverseSound('reborn');universeReset.rebirthBoomPlayed=true;}
 }
 
 function drawHeavenReveal(t){
@@ -2683,7 +2689,7 @@ function drawOraRebuild(){
    line(width*.5+cos(a)*22,height*.46+sin(a)*22,
    width*.5+cos(a)*(80+t*width*.53),height*.46+sin(a)*(80+t*height*.53));
   }
-  if(OVERHAUL_AUDIO.flashes){noStroke();fill(255,245,225,100*(1-t));rect(0,0,width,height);}
+  if(OVERHAUL_AUDIO.flashes&&!OVERHAUL_AUDIO.reduced){noStroke();fill(255,245,225,100*(1-t));rect(0,0,width,height);}
  }
  const bar=min(55,height*.075);noStroke();fill(3,2,14,235);
  rect(0,0,width,bar);rect(0,height-bar,width,bar);
@@ -2694,7 +2700,7 @@ function drawOraRebuild(){
 function drawTimeStopRebuild(){
  if(window.JoJoCharacterDirector && timeStop.phase!=='idle'){
   window.JoJoCharacterDirector.world(drawingContext,width,height,timeStop.phase,
-    timeStopSceneProgress(),{character:timeStop.voiceCharacter||'dio',elapsed:(gameMillis()-timeStop.phaseStart)/1000,duration:stopIntroDuration()/1000,remaining:timeStop.phase==='freeze'?max(0,(TIME_STOP_FREEZE_MS-(gameMillis()-timeStop.phaseStart))/1000):max(0,(slowPowerUpEnd-gameMillis())/1000)});
+    timeStopSceneProgress(),{character:timeStop.voiceCharacter||'dio',elapsed:(gameMillis()-timeStop.phaseStart)/1000,duration:stopIntroDuration()/1000,balls,backdrop:visualAtlas.space,remaining:timeStop.phase==='freeze'?max(0,(TIME_STOP_FREEZE_MS-(gameMillis()-timeStop.phaseStart))/1000):max(0,(slowPowerUpEnd-gameMillis())/1000)});
   return;
  }
  if(timeStop.phase==='idle'||timeStop.phase==='slow')return;
@@ -2798,7 +2804,7 @@ function drawPackMove(){
  if(p.kind==='cmoon'&&age<4000){
   c.strokeStyle='#a8ed86';c.lineWidth=2;for(let i=0;i<5;i++){const gy=catcherY-60-i*55-(age*.06%55);c.beginPath();c.moveTo(x-140,gy+15);c.lineTo(x-140,gy);c.lineTo(x-148,gy+8);c.moveTo(x+140,gy+15);c.lineTo(x+140,gy);c.lineTo(x+148,gy+8);c.stroke();}
  }
- if(window.JoJoStandArt?.pack(c,width,height,x,catcherY,p.kind,t,age/1000,OVERHAUL_AUDIO.quality)){c.restore();push();fill('#ead9ff');noStroke();textSize(14);textAlign(CENTER);text(p.kind.toUpperCase()+' · '+Math.max(0,(p.end-gameMillis())/1000).toFixed(1)+'s',width*.5,height*.18);pop();return;}
+ if(window.JoJoStandArt?.pack(c,width,height,x,catcherY,p.kind,t,age/1000,OVERHAUL_AUDIO.quality)){window.JoJoVFX?.attack(c,width,height,p.kind,t,age/1000,x,catcherY-140);c.restore();push();fill('#ead9ff');noStroke();textSize(14);textAlign(CENTER);text(p.kind.toUpperCase()+' · '+Math.max(0,(p.end-gameMillis())/1000).toFixed(1)+'s',width*.5,height*.18);pop();return;}
  c.translate(x,y);const scaleV=Math.min(1.1,width/850);c.scale(scaleV,scaleV);
  const col=p.kind==='hand'?'#68baff':p.kind==='cmoon'?'#b8d87a':p.kind==='tusk'?'#f2b3da':p.kind==='giorno'?'#e5c56b':'#d0af55';
  c.fillStyle=col;c.strokeStyle='#241b39';c.lineWidth=3;
