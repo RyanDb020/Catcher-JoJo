@@ -218,7 +218,7 @@ function punches(c,w,h,t,seconds,kind='star'){
 function timeObjectOffset(w,h,t,seconds,b){
  if(config.reduced)return 0;
  const wave=out((t-.55)/.35),arrival=Math.max(.01,Math.hypot(b.x-w*.56,b.y-h*.49)/(Math.hypot(w,h)*.72)),settle=1-smooth(wave/arrival);
- return Math.sin(seconds*3+b.x*.01)*Math.min(34,h*.04)*settle;
+ return settle===0?0:Math.sin(seconds*3+b.x*.01)*Math.min(34,h*.04)*settle;
 }
 function timeStop(c,w,h,phase,t,seconds,balls=[],front=false,backdrop=null){
  const release=phase==='release',held=phase==='freeze'||phase==='slow',
