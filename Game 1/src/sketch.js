@@ -1812,7 +1812,7 @@ function playJoJoVoice(name) {
 
 function stopJoJoVoices() {
   for (const name in jojoVoiceClips) {
-    try { jojoVoiceClips[name].pause(); jojoVoiceClips[name].currentTime = 0; } catch (_) {}
+    try { const clip=jojoVoiceClips[name];const completed=clip.ended;clip.pause();if(!completed)clip.currentTime=0; } catch (_) {}
   }
 }
 
@@ -2537,7 +2537,7 @@ function beginTimeResumeAudio() {
 }
 function stopTimeResumeAudio(){
  if(!resumeAudio)return;
- try{resumeAudio.pause();resumeAudio.currentTime=0;}catch(_){}
+ try{const completed=resumeAudio.ended;resumeAudio.pause();if(!completed)resumeAudio.currentTime=0;}catch(_){}
 }
 function initializeCinematicAudio() {
   if (typeof Audio === 'undefined') return;
