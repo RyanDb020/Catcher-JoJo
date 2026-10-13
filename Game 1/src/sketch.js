@@ -278,7 +278,7 @@ const CINEMATIC_CUES=['time-freeze','time-resume','acceleration','collapse','gen
 let pausedHtmlAudio=[];
 function stopCinematicEffects(){for(const name of CINEMATIC_CUES){const a=soundEffects[name];if(a&&a.sound&&a.ready)try{a.sound.stop();}catch(_){}}}
 function cinematicDuration(name,base){const a=jojoVoiceClips[name];return a&&Number.isFinite(a.duration)&&a.duration>0?Math.max(base,a.duration*1000):base;}
-function sceneClockFinished(audio,elapsed,duration,base=0){return !!(audio&&audio.ended&&Number.isFinite(audio.duration)&&audio.duration*1000>=base-50)||elapsed>=duration;}
+function sceneClockFinished(audio,elapsed,duration,base=0){return !!(audio&&audio.ended&&Number.isFinite(audio.duration)&&audio.duration*1000>=base-100)||elapsed>=duration;}
 function stopIntroDuration(){return timeStop.introDuration||TIME_STOP_INTRO_MS;}
 function stopReleaseDuration(){return timeStop.releaseDuration||TIME_STOP_RELEASE_MS;}
 function universePhaseDuration(phase){
@@ -1239,7 +1239,7 @@ function drawGameOverWorld() {
 }
 
 function draw() {
-  window.JoJoVFX?.configure(OVERHAUL_AUDIO);
+  window.JoJoVFX?.configure(OVERHAUL_AUDIO,gameMillis());
   const paused = optionsVisible;
   frameStep = paused ? 0 : min(2, max(0, deltaTime / (1000 / 60)));
   if (!paused) gameClock += min(50, max(0, deltaTime));

@@ -5,12 +5,12 @@
 const TAU=Math.PI*2,clamp=x=>Math.max(0,Math.min(1,x)),lerp=(a,b,t)=>a+(b-a)*t,
  smooth=x=>{x=clamp(x);return x*x*(3-2*x)},out=x=>1-(1-clamp(x))**3,
  hash=n=>{const a=Math.sin(n*127.1+17.7)*43758.5453;return a-Math.floor(a)},fract=x=>x-Math.floor(x);
-const glowCache=new Map();
+const glowCache=new Map();let flashClock=0,lastFlashAt=-1000;
 let config={quality:2,reduced:false,flashes:true,shake:true,particles:true};
 const stars=Array.from({length:180},(_,i)=>({x:hash(i*4),y:hash(i*4+1),z:.2+hash(i*4+2)*.8}));
 const blocks=Array.from({length:72},(_,i)=>{const building=i%12,row=Math.floor(i/12);return {building,row,seed:hash(i*19),depth:.35+hash(i*7)*.65};});
 const count=(n)=>Math.ceil(n*(config.reduced?.35:config.quality===0?.5:config.quality===1?.75:1));
-function configure(s={}){config={...config,quality:Number(s.quality)||0,reduced:!!s.reduced,flashes:s.flashes!==false,shake:s.shake!==false,particles:s.particles!==false};}
+function configure(s={},now=0){flashClock=now;config={...config,quality:Number(s.quality)||0,reduced:!!s.reduced,flashes:s.flashes!==false,shake:s.shake!==false,particles:s.particles!==false};}
 function stroke(c,pts,col,width=1){if(pts.length<2)return;c.beginPath();c.moveTo(...pts[0]);for(let j=1;j<pts.length;j++)c.lineTo(...pts[j]);c.strokeStyle=col;c.lineWidth=width;c.lineCap='round';c.stroke();}
 function polygon(c,pts,col,edge){c.beginPath();c.moveTo(...pts[0]);for(let j=1;j<pts.length;j++)c.lineTo(...pts[j]);c.closePath();c.fillStyle=col;c.fill();if(edge){c.strokeStyle=edge;c.lineWidth=1;c.stroke();}}
 function disk(c,x,y,r,col){c.beginPath();c.arc(x,y,Math.max(.1,r),0,TAU);c.fillStyle=col;c.fill();}
@@ -41,7 +41,7 @@ function burst(c,x,y,time,seed,color='225,184,255',size=1){
 }
 function impact(c,w,h,x,y,beat,power=1,color='211,165,255'){
  if(beat<0||beat>1)return;const q=out(beat);c.save();c.globalCompositeOperation='screen';
- if(config.flashes&&!config.reduced&&beat<.2)glow(c,x,y,Math.min(w,h)*(.03+.1*power),color,(1-beat/.2)*.75);
+ if(config.flashes&&!config.reduced&&beat<.2&&flashClock-lastFlashAt>=330){lastFlashAt=flashClock;glow(c,x,y,Math.min(w,h)*(.03+.1*power),color,(1-beat/.2)*.75);}
  for(let j=0;j<12;j++){const a=j*TAU/12,inner=(12+40*q)*power,r=(25+95*q)*power;stroke(c,[[x+Math.cos(a)*inner,y+Math.sin(a)*inner],[x+Math.cos(a)*r,y+Math.sin(a)*r]],`rgba(${color},${(1-beat)*.8})`,j%3?1:3);}
  c.restore();shock(c,w,h,x,y,beat,.25*power,color);burst(c,x,y,beat,3,color,power);
 }
@@ -179,7 +179,7 @@ function timeStop(c,w,h,phase,t,seconds,balls=[],front=false,backdrop=null){
 function attack(c,w,h,kind,t,seconds,x,y){if(kind==='muda'||kind==='giorno'){c.save();c.translate(x,y);c.scale(.44,.44);c.translate(-w*.54,-h*.43);punches(c,w,h,t,seconds,kind==='muda'?'world':'experience');c.restore();}else if(kind==='hand'&&seconds>.14&&seconds<1.05){const q=(seconds-.14)/.91;stroke(c,[[x-120+q*180,y-100],[x+40+q*120,y],[x-120+q*200,y+100]],'rgba(147,216,255,.75)',5*(1-q)+1);burst(c,x+q*100,y,q,11,'154,217,255',1);}else if(kind==='cmoon'&&seconds<4){for(let i=0;i<4;i++){const q=fract(seconds*.5+i*.25);stroke(c,[[x-150,y+100-q*260],[x-110,y+70-q*260],[x+110,y+70-q*260],[x+150,y+100-q*260]],'rgba(162,231,132,.45)',2);}}else if(kind==='tusk'){const q=fract(seconds*2);stroke(c,[[x+Math.cos(seconds*8)*25,y+Math.sin(seconds*8)*25],[x+120*q,y-180*q]],'rgba(249,161,218,.65)',3);}}
 let hits=[],lastHitClock=null;
 function emitHit(x,y,power=1,color='211,165,255'){if(hits.length>=24)hits.shift();hits.push({x,y,power,color,age:0});}
-function clear(){hits=[];lastHitClock=null;}
+function clear(){hits=[];lastHitClock=null;lastFlashAt=-1000;}
 function drawHits(c,w,h,now,frozen=false){const dt=lastHitClock===null?0:Math.max(0,Math.min(50,now-lastHitClock));lastHitClock=now;for(let i=hits.length-1;i>=0;i--){const hit=hits[i];if(!frozen)hit.age+=dt;if(hit.age>700){hits.splice(i,1);continue;}impact(c,w,h,hit.x,hit.y,hit.age/700,hit.power,hit.color);}}
 root.JoJoVFX=Object.freeze({configure,emitHit,drawHits,clear,manifestation,rewind,collapse,rebirth,singularity,punches,timeStop,attack,sky,camera,version:'5.0',diagnostics:{history:sample,hitCount:()=>hits.length,glowTextures:()=>glowCache.size,blockCount:blocks.length,starCount:stars.length,settings:()=>({...config}),strikeRate:t=>t<.37?4:t<.70?8:12}});
 })(typeof window!=='undefined'?window:globalThis);
