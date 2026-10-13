@@ -421,7 +421,7 @@
   function heavenFigure(c,time) {
     heavenFigurePainted(c,time);
   }
-  function actor(c,key,w,h,x,y,size,frame,options={}){return !!root.JoJoStandArt?.draw(c,key,w*x,h*y,Math.min(w*size,h*.96),frame,options);}
+  function actor(c,key,w,h,x,y,size,frame,options={}){return !!root.JoJoStandArt?.draw(c,key,w*x,h*y,Math.min(w*size,h*.82),frame,options);}
   function figure(c,w,h,drawing,options={}) {
     const size=Math.min(w/960,h/740)*1.18*(options.zoom || 1);
     c.save(); c.translate(w*(options.x ?? .5),h*(options.y ?? .53));
