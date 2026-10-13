@@ -53,12 +53,15 @@ function manifestation(c,w,h,t,seconds,front=false){
   camera(c,w,h,seconds,release,1+Math.sin(t*Math.PI)*.025);
   for(let j=0;j<3;j++){const q=fract(seconds*.22+j/3),pts=[];for(let k=0;k<36;k++){const x=k/35*w,y=h*q+Math.sin(k*.45-seconds*3)*h*.025*(config.reduced?.2:1);pts.push([x,y]);}stroke(c,pts,`rgba(171,206,255,${.24*(1-q)})`,2);}
   for(let i=0;i<7;i++){const a=i*2.399+seconds*.6,r=Math.min(w,h)*(.14+.17*(1-pull)+Math.sin(seconds*2+i)*.025),p=fract(seconds*.6+i/7);stroke(c,[[cx+Math.cos(a)*r,cy+Math.sin(a)*r],[cx+Math.cos(a+.5)*r*.55,cy+Math.sin(a+.5)*r*.55],[cx,cy]],`rgba(192,197,255,${.16+.3*pull})`,2);disk(c,cx+Math.cos(a)*r*(1-p),cy+Math.sin(a)*r*(1-p),3,'#d8eaff');}
-  for(let i=0;i<6;i++)lightning(c,w,h,i,seconds*.7,.3+manifest*.7);
+  for(let i=0;i<6;i++)lightning(c,w,h,i,seconds*.7,.5+manifest);
+  // The developing aura lifts individual floor sections, then ejects them at release.
+  for(let i=0;i<count(16);i++){const x0=w*(.08+i*.057),q=hash(i+20),lift=manifest*(.02+.09*q),eject=release*(config.reduced?.05:1),x=x0+(x0-w*.51)*eject*.5,y=h*.90-lift*h-eject*h*(.12+.24*q);masonry(c,x,y,Math.min(w,h)*(.022+.015*q),eject*(q-.5)*5,.7,manifest,i+600);glow(c,x,y+10,22,'184,206,255',.18*manifest);}
+
   sky(c,w,h,seconds,'flow',.15+release*3.5);
   for(let i=0;i<3;i++){const p=fract(seconds*.35+i/3);shock(c,w,h,cx,cy,p,.35+.3*manifest,'155,186,245');}
  }else{
   for(let i=0;i<count(9);i++){const q=fract(seconds*.45+i/9),x=w*(.56+.075*Math.sin(q*12+i)),y=h*(.80-q*.56);glow(c,x,y,14+manifest*12,'191,221,255',.22);stroke(c,[[x-4,y+24],[x,y],[x+8,y-16]],'rgba(223,238,255,.65)',1.5);}
-  for(let i=0;i<4;i++){const open=smooth((t-.36-i*.08)/.28),x=w*(.14+i*.24),y=h*(.20+hash(i)*.48);if(open>0){const pts=[[x-40*open,y-90*open],[x+12*open,y-30*open],[x-8*open,y+20*open],[x+30*open,y+100*open]];stroke(c,pts,'#050312',8*open);stroke(c,pts,'rgba(208,177,255,.8)',2);glow(c,x,y,70*open,'161,105,255',.15);}}
+  for(let i=0;i<4;i++){const open=smooth((t-.30-i*.08)/.28),x=w*(.14+i*.24),y=h*(.20+hash(i)*.48);if(open>0){const pts=[[x-40*open,y-90*open],[x+12*open,y-30*open],[x-8*open,y+20*open],[x+30*open,y+100*open]];stroke(c,pts,'#050312',16*open);stroke(c,pts,'rgba(208,177,255,.95)',3);stroke(c,pts,'rgba(255,240,255,.75)',1);glow(c,x,y,70*open,'161,105,255',.15);}}
   // Traversing light sheets reveal different body layers, never a single opacity fade.
   if(manifest<1){for(let j=0;j<3;j++){const y=h*(.8-(t*1.7+j*.18)%1*.7);stroke(c,[[w*.35,y+12],[w*.51,y],[w*.74,y-20]],'rgba(213,240,255,.55)',2);}}
   glow(c,w*.60,h*.54,Math.min(w,h)*(.16+.025*Math.sin(seconds*4)),'129,175,255',.18+.10*manifest);
@@ -183,6 +186,8 @@ function reaction(c,w,h,x,y,q,seed,power,color){
   else if(j%3===1)glow(c,px,py,(8+q*16)*power,color,.16);
   else stroke(c,[[px-Math.cos(a)*12,py-Math.sin(a)*12],[px,py]],`rgba(${color},.9)`,2);
  }
+ // Cracks propagate from the pressure point and remain while the dust settles.
+ for(let j=0;j<5;j++){const a=j*1.26+seed,rr=size*.20*power*travel,pts=[[x,h*.83]];for(let k=1;k<5;k++){const d=rr*k/4;pts.push([x+Math.cos(a)*d,h*.83+Math.sin(a)*d*.18+(hash(seed+j+k)-.5)*8]);}stroke(c,pts,'rgba(8,5,19,.8)',4);stroke(c,pts,`rgba(${color},.65)`,1);}
  // A reflected light sheet and projected shadow cross the floor at contact.
  const floor=h*.83;glow(c,x,floor,size*.30*power,color,.24*fade);
  c.fillStyle=`rgba(0,0,8,${.3*fade})`;c.beginPath();c.ellipse(x+(x-w*.5)*q,floor,size*.16*power,size*.014,0,0,TAU);c.fill();
@@ -195,7 +200,7 @@ function punches(c,w,h,t,seconds,kind='star'){
  for(let i=n-1;i>=0;i--){
   const clock=seconds*rate*.5+i*.23,seed=finish?99:Math.floor(clock)*4+i,
    cycle=finish?clamp((t-.88)/.10):fract(clock),pose=strikePose(cycle,seed,finish),{side,angle,reach}=pose,
-   depth=finish?1.8:.65+i*.10,shoulder=[cx+side*size*.11,cy-size*.13],
+   depth=finish?2.0:.95+i*.12,shoulder=[cx+side*size*.11,cy-size*.13],
    target=[cx+Math.sin(angle)*size*.24,cy+Math.cos(angle)*size*(finish?.31:.20)],
    start=[shoulder[0]+side*size*.09,shoulder[1]+size*.02],
    wrist=[lerp(start[0],target[0],reach),lerp(start[1],target[1],reach)],
@@ -206,10 +211,10 @@ function punches(c,w,h,t,seconds,kind='star'){
     wx=lerp(start[0],target[0],old),wy=lerp(start[1],target[1],old);
    stroke(c,[[wx,wy],[wrist[0],wrist[1]]],`rgba(${color},${.22/j})`,size*.035*depth);
   }
-  arm(c,shoulder,elbow,wrist,size*.025*depth,kind==='star'?'#8263aa':'#c99c46');
+  arm(c,shoulder,elbow,wrist,size*.045*depth,kind==='star'?'#8263aa':'#c99c46');
   glow(c,wrist[0],wrist[1],size*.09*depth,color,.12+.35*Math.max(0,reach));
-  gauntlet(c,wrist[0],wrist[1],size*(.042+.029*Math.max(0,reach))*depth,side,kind);
-  if(pose.hit){impact(c,w,h,...target,pose.contact,finish?2.2:.65,color);reaction(c,w,h,...target,pose.contact,seed,finish?2:.7,color);}
+  gauntlet(c,wrist[0],wrist[1],size*(.052+.039*Math.max(0,reach))*depth,side,kind);
+  if(pose.hit){impact(c,w,h,...target,pose.contact,finish?2.5:1.05,color);reaction(c,w,h,...target,pose.contact,seed,finish?2.3:1.05,color);}
  }
  if(finish){const q=(t-.932)/.053;if(q>=0){shock(c,w,h,cx,h*.65,q,.95,color);reaction(c,w,h,cx,h*.65,q,99,2.5,color);}}
  c.restore();
