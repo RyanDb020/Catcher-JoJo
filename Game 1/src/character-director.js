@@ -421,6 +421,7 @@
   function heavenFigure(c,time) {
     heavenFigurePainted(c,time);
   }
+  function actor(c,key,w,h,x,y,size,frame,options={}){return !!root.JoJoStandArt?.draw(c,key,w*x,h*y,Math.min(w*size,h*.96),frame,options);}
   function figure(c,w,h,drawing,options={}) {
     const size=Math.min(w/960,h/740)*1.18*(options.zoom || 1);
     c.save(); c.translate(w*(options.x ?? .5),h*(options.y ?? .53));
@@ -429,7 +430,7 @@
   }
   function timeDial(c,w,h,progress,frozen=false){
     const r=Math.min(w,h)*.34,cx=w*.5,cy=h*.49;
-    c.save();c.translate(cx,cy);c.rotate(frozen?-.14:-.14-progress*1.2);
+    c.save();c.translate(cx,cy);c.rotate(-.14-(frozen?1:progress)*1.2);
     for(const factor of [1,1.08,1.19])oval(c,0,0,r*factor,r*factor,'rgba(0,0,0,0)','rgba(238,215,150,.28)',factor===1?2:1);
     for(let i=0;i<60;i++){
       const a=i*TAU/60,major=i%5===0;
@@ -437,7 +438,10 @@
     }
     c.font='600 '+Math.max(10,r*.065)+'px Georgia';c.textAlign='center';c.textBaseline='middle';c.fillStyle='#ead9ac';
     ['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'].forEach((n,i)=>c.fillText(n,Math.sin(i*TAU/12)*r*.78,-Math.cos(i*TAU/12)*r*.78));
-    c.rotate(frozen?-.8:-progress*9);line(c,[[0,r*.12],[0,-r*.66]],'#efda9a',3);line(c,[[0,0],[r*.42,0]],'#bceaf4',2);
+    const dialT=frozen?1:progress,rotation=18*(1-Math.pow(1-dialT,3));
+    for(const [gx,gy,gr,index] of [[-r*.34,r*.22,r*.16,0],[r*.08,r*.35,r*.12,1],[r*.37,r*.18,r*.18,2]]){c.save();c.translate(gx,gy);c.rotate(rotation*(index%2?-1:1));for(let j=0;j<18;j++){const a=j*TAU/18;line(c,[[Math.cos(a)*gr,Math.sin(a)*gr],[Math.cos(a)*(gr+5),Math.sin(a)*(gr+5)]],'rgba(214,215,190,.30)',3);}oval(c,0,0,gr,gr,'rgba(10,16,32,.10)','rgba(230,207,143,.40)',1.5);for(let j=0;j<5;j++){const a=j*TAU/5;line(c,[[0,0],[Math.cos(a)*gr,Math.sin(a)*gr]],'rgba(221,219,188,.28)',2);}c.restore();}
+    if(progress>.77){const crack=(progress-.77)/.23;c.save();c.globalAlpha=crack;for(let j=0;j<7;j++){const a=j*TAU/7;line(c,[[0,0],[Math.cos(a)*r*.40,Math.sin(a)*r*.32],[Math.cos(a+.07)*r*.64,Math.sin(a+.07)*r*.61],[Math.cos(a)*r*.95,Math.sin(a)*r*.95]],'rgba(223,245,250,.65)',1.2);}c.restore();}
+    c.rotate(-rotation);line(c,[[0,r*.12],[0,-r*.66]],'#efda9a',3);line(c,[[0,0],[r*.42,0]],'#bceaf4',2);
     oval(c,0,0,5,5,'#fff0bd',null);c.restore();
   }
   function worldLegacy(c,w,h,phase,t,settings={}) {
@@ -501,7 +505,7 @@
     stage(c,w,h,'151,72,235',t,.13+power*.12);
     aura(c,[w*.31,h*.32,w*.13,h*.22],age,'166,83,246',power*.72);
     // Signature double portrait: Jotaro behind a readable full-bodied Stand.
-    figure(c,w,h,cc=>jotaro(cc,age),{x:.18,y:.35,zoom:.43+first*.045});
+    if(!actor(c,'jotaro',w,h,.24,.58,.36,phase===5?5:phase<2?1:3))figure(c,w,h,cc=>jotaro(cc,age),{x:.18,y:.35,zoom:.43+first*.045});
     const zoom=(.43+first*.11+(phase===3?.05:0)+(phase===4?.095:0));
     if(phase>=2 && phase<=3){
       c.save();c.globalAlpha=.20;
@@ -510,7 +514,8 @@
           {x:.32+(i%2?-.028:.020),y:.34,zoom:zoom*(1+i*.018)});
       c.restore();
     }
-    figure(c,w,h,cc=>starFigure(cc,age,phase),{x:.32,y:.32,zoom});
+    const painted=actor(c,'star',w,h,rootX,rootY,.53+(phase===4?.12:phase===3?.05:0),phase===0?0:phase===5?1:phase===4?5:phase===1?1:2+Math.floor(age*(phase===3?16:11))%3,{appear:Math.min(1,t*10),glow:'#ad7ced'});
+    if(!painted)figure(c,w,h,cc=>starFigure(cc,age,phase),{x:.32,y:.32,zoom});
     if(phase>=1 && phase<=3){
       const n=phase===1?4:phase===2?8:14;
       motion(c,w*.33,h*.34,age,'#f3d7ff',n);
@@ -578,7 +583,8 @@
   }
   // CINEMATIC SCENES 5: deliberate compositions rather than one looping pose.
   function dioFigure(c,t){
-    c.save();c.translate(0,-25);
+    const gesture=t>.25&&t<.86?Math.sin(t*PI*14)*12:0;
+    c.save();c.translate(0,-25+Math.sin(t*PI*8)*2);
     limb(c,[[-37,106],[-54,218],[-49,304]],48,'#cb9c36','#ffdf7b','#635223');
     limb(c,[[44,103],[71,209],[89,302]],50,'#d3a737','#ffdf7b','#635223');
     polygon(c,[[-64,286],[-21,292],[-20,321],[-79,323]],'#304334');
@@ -588,8 +594,8 @@
     line(c,[[-68,-82],[-15,-34],[-27,77]],'#fff0a3',3);
     line(c,[[58,-92],[23,-31],[30,77]],'#fff0a3',3);
     // Upraised hand with individual fingers; the pose precedes the Stand's lock.
-    limb(c,[[-66,-66],[-121,-143],[-124,-232]],42,'#c7952f','#ffe087','#695224');
-    c.save();c.translate(-122,-239);c.rotate(-.17);oval(c,0,0,19,26,'#e1b799');
+    limb(c,[[-66,-66],[-121+gesture*.4,-143-gesture*.2],[-124+gesture,-232+gesture*.4]],42,'#c7952f','#ffe087','#695224');
+    c.save();c.translate(-122+gesture,-239+gesture*.4);c.rotate(-.17+gesture*.006);oval(c,0,0,19,26,'#e1b799');
     for(let i=0;i<4;i++)line(c,[[-15+i*9,-3],[-19+i*10,-42+(i%2)*8]],'#e6c4a2',6);
     line(c,[[9,11],[34,-3]],'#e6c4a2',9);c.restore();
     limb(c,[[64,-57],[107,14],[105,85]],40,'#c7952f','#ffe087','#695224');
@@ -637,7 +643,7 @@
     for(const [x,y] of [[-95,-40],[6,-25],[35,60],[90,57],[144,55],[202,51]])oval(c,x,y,3,3,'#f6deb7','#657789',1);
     c.restore();
   }
-  function heaven(c,w,h,t,variant='reveal'){
+  function heaven(c,w,h,t,variant='reveal',settings={}){
     if(!ctxReady(c))return;t=clamp(t);c.save();
     const manifest=smooth((t-.18)/.30),pull=smooth((t-.60)/.32),entry=ease(t/.20);
     stage(c,w,h,'116,98,202',t,.38);
@@ -647,9 +653,10 @@
     c.restore();
     tint(c,w*.61,h*.54,w*.25,'161,216,242',.15*manifest);
     // Pucci remains distinct in front-left; Stand manifests in full side silhouette.
-    figure(c,w,h,cc=>pucci(cc,Math.min(t, .64)*3),{x:.31-(1-entry)*.12,y:.63,zoom:.83+pull*.05});
+    const painted=actor(c,'heaven',w,h,.52,.52,.80,t<.18?0:t<.5?1:t<.8?2+Math.floor((settings.elapsed||t*8.664)*3)%2:4,{alpha:entry,appear:Math.min(1,t*7),glow:'#bacef3'});
+    if(!painted)figure(c,w,h,cc=>pucci(cc,Math.min(t, .64)*3),{x:.31-(1-entry)*.12,y:.63,zoom:.83+pull*.05});
     c.save();c.globalAlpha=manifest;
-    figure(c,w,h,cc=>equineStand(cc,t*3,pull*.3),{x:.57+pull*.02,y:.53,zoom:.75+manifest*.06});c.restore();
+    if(!painted)figure(c,w,h,cc=>equineStand(cc,t*3,pull*.3),{x:.57+pull*.02,y:.53,zoom:.75+manifest*.06});c.restore();
     if(t>.52){
       for(let i=0;i<10;i++){const yy=h*(.14+i*.065);line(c,[[w*.76,yy],[w*(.79+.16*pull),yy-.03*h]],'rgba(178,220,249,'+(.08+.18*pull)+')',1);}
     }
@@ -658,7 +665,7 @@
   }
   function heavenEcho(c,w,h,t){
     if(!ctxReady(c))return;c.save();
-    figure(c,w,h,cc=>equineStand(cc,t*4,.9),{x:.81,y:.65,zoom:.30});c.restore();
+    if(!actor(c,'heaven',w,h,.78,.63,.36,2+Math.floor(t*18)%2,{alpha:.85}))figure(c,w,h,cc=>equineStand(cc,t*4,.9),{x:.81,y:.65,zoom:.30});c.restore();
   }
   function world(c,w,h,phase,t,settings={}){
     if(!ctxReady(c))return;t=clamp(t);
@@ -666,7 +673,7 @@
     if(phase==='freeze'){
       c.save();c.fillStyle='rgba(10,35,49,.23)';c.fillRect(0,0,w,h);
       c.save();c.translate(w*.5,h*.28);c.scale(.30,.30);c.translate(-w*.5,-h*.49);timeDial(c,w,h,1,true);c.restore();
-      figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,1,5):worldFigure(cc,1,true),{x:.84,y:.58,zoom:.29});
+      if(!actor(c,settings.character==='jotaro'?'star':'world',w,h,.84,.58,.25,1))figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,1,5):worldFigure(cc,1,true),{x:.84,y:.58,zoom:.29});
       border(c,w,h,'ZA WARUDO / TIME LOCK',Number.isFinite(settings.remaining)?settings.remaining.toFixed(1)+' s REMAINING':'REALITY IS FROZEN','#a9e3e5');c.restore();return;
     }
     c.save();
@@ -678,35 +685,40 @@
       topBanner(c,w,h,'TIME RESUMES / THE WORLD MOVES AGAIN','#bce8e5');c.restore();return;
     }
     const p=smooth((t-.22)/.4),lock=smooth((t-.76)/.12);
-    stage(c,w,h,'211,162,74',t,.63);
+    const elapsed=Number.isFinite(settings.elapsed)?settings.elapsed:t*4.5;
+    const extended=Number.isFinite(settings.duration)&&settings.duration>8;
+    const close=extended&&t>.32&&t<.72?Math.sin((t-.32)/.4*PI):0;
+    const poseTime=extended?elapsed:t*2;
+    stage(c,w,h,settings.character==='jotaro'?'136,90,210':'211,162,74',t,.63);
     timeDial(c,w,h,Math.min(t/.82,1),t>.82);
-    figure(c,w,h,cc=>settings.character==='jotaro'?jotaro(cc,t):dioFigure(cc,t),{x:.24,y:.59,zoom:.65});
+    if(!actor(c,settings.character==='jotaro'?'jotaro':'dio',w,h,.24,.56,.39,t<.22?0:t<.5?1:t<.76?3:4,{appear:Math.min(1,t*8),glow:'#f5cb79'}))figure(c,w,h,cc=>settings.character==='jotaro'?jotaro(cc,t):dioFigure(cc,t),{x:.24,y:.59,zoom:.65});
     // The Stand arrives from behind DIO, then locks into the final outstretched pose.
     c.save();c.translate(w*.018*Math.sin(t*PI)*(1-lock),0);
-    figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,t*2,0):worldFigure(cc,t*2,t>.80),{x:.56+(1-p)*.13,y:.53,zoom:.57+.26*p});c.restore();
+    if(!actor(c,settings.character==='jotaro'?'star':'world',w,h,.56+(1-p)*.1-close*.03,.50,.57+close*.10,t<.30?0:t<.64?1:t<.90?4:5,{alpha:p,appear:Math.min(1,p*1.7),glow:'#ffdf86'}))figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,poseTime,0):worldFigure(cc,poseTime,t>.90),{x:.56+(1-p)*.13-close*.035,y:.53-close*.02,zoom:.57+.26*p+close*.13});c.restore();
     if(t>.72&&t<.97){const q=clamp((t-.72)/.25),r=ease(q)*Math.max(w,h);oval(c,w*.52,h*.46,r,r*.66,'rgba(0,0,0,0)','rgba(235,222,178,'+(.75*(1-q))+')',4+6*(1-q));}
-    border(c,w,h,t<.22?(settings.character==='jotaro'?'JOTARO / STAR PLATINUM':'DIO / THE WORLD'):t<.76?(settings.character==='jotaro'?'STAR PLATINUM / CHRONOSTASIS':'THE WORLD / CHRONOSTASIS'):'ZA WARUDO / REALITY LOCK','SPACE TO SKIP THE REVEAL','#ead29a');
+    border(c,w,h,t<.22?(settings.character==='jotaro'?'JOTARO / STAR PLATINUM':'DIO / THE WORLD'):t<.76?(settings.character==='jotaro'?'STAR PLATINUM / CHRONOSTASIS':'THE WORLD / CHRONOSTASIS'):'ZA WARUDO / REALITY LOCK',extended?(t<.32?'REVEAL / THE COMMAND':t<.56?'STAND / CLOSE-UP':t<.80?'TIME PRESSURE / BUILD-UP':'REALITY LOCK / ACTIVATION'):'SPACE TO SKIP THE REVEAL','#ead29a');
     c.restore();
   }
   function ora(c,w,h,t,settings={}){
     if(!ctxReady(c))return;t=clamp(t);
     const phase=t<.12?0:t<.37?1:t<.70?2:t<.88?3:t<.965?4:5;
-    const age=t*8.359,power=[.15,.32,.55,.86,1,.14][phase];
+    const age=Number.isFinite(settings.elapsed)?settings.elapsed:t*8.359,power=[.15,.32,.55,.86,1,.14][phase];
     c.save();stage(c,w,h,'146,96,205',t,.15+power*.12);
     const rootX=phase===4?.53:.51,rootY=phase===4?.45:.46;
-    figure(c,w,h,cc=>jotaro(cc,age),{x:.25,y:.60,zoom:.47});
+    if(!actor(c,'jotaro',w,h,.24,.58,.36,phase===5?5:phase<2?1:3))figure(c,w,h,cc=>jotaro(cc,age),{x:.25,y:.60,zoom:.47});
     const zoom=[.50,.61,.68,.74,.93,.58][phase];
     c.save();c.translate((phase>=1&&phase<=3?Math.sin(age*(phase===3?32:17))*w*.004:0),0);
-    figure(c,w,h,cc=>starFigure(cc,age,phase),{x:rootX,y:rootY,zoom});c.restore();
+    const painted=actor(c,'star',w,h,rootX,rootY,.53+(phase===4?.12:phase===3?.05:0),phase===0?0:phase===5?1:phase===4?5:phase===1?1:2+Math.floor(age*(phase===3?16:11))%3,{appear:Math.min(1,t*10),glow:'#ad7ced'});
+    if(!painted)figure(c,w,h,cc=>starFigure(cc,age,phase),{x:rootX,y:rootY,zoom});c.restore();
     if(phase>=1&&phase<=3){
       const count=[0,4,8,12][phase],rate=phase===1?7:phase===2?13:21;
       for(let i=0;i<count;i++){
-        const v=(t*rate+i/count)%1,side=i%2?1:-1;
+        const v=(age*rate/8.359+i/count)%1,side=i%2?1:-1;
         c.save();c.globalAlpha=.48*(1-v);c.translate(w*(.50+side*(.035+v*.13)),h*(.28+v*.32));c.rotate(side*(-.22+v*.28));
         const s=Math.min(w,h)/740*(.10+v*.44);c.scale(s,s);
         // Each ghost is a complete arm/fist, never a generic capsule particle.
-        limb(c,[[0,-82],[side*25,-25],[side*18,12]],32,'#8063a9','#e0c8ee','#302340');
-        fist(c,side*18,24,.68,'#8063a9','#ecd4fb');c.restore();
+        if(!painted)limb(c,[[0,-82],[side*25,-25],[side*18,12]],32,'#8063a9','#e0c8ee','#302340');
+        if(!painted)fist(c,side*18,24,.68,'#8063a9','#ecd4fb');c.restore();
       }
     }
     if(phase===4){

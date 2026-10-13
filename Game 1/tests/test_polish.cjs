@@ -259,3 +259,30 @@ test('blue Time Stop pickup is retained during extra moves and fires after recov
  run('gameClock=packMove.end+1;draw()');assert.equal(run('timeStop.phase'),'intro');assert.equal(run('queuedTimeStop'),null);
  run('resetGame()');assert.equal(run('queuedTimeStop'),null);assert.equal(run('queuedReset'),false);
 });
+test('bindings swap duplicates, persist and reject movement/control keys',()=>{
+ run('arcadeBindings={...DEFAULT_ARCADE_BINDINGS};assignArcadeBinding("ora","1")');assert.equal(run('arcadeBindings.ora'),'1');assert.equal(run('arcadeBindings.stop'),'2');assert.equal(run('assignArcadeBinding("ora","a")'),false);
+ assert.equal(JSON.parse(storage['jojo.arcade.bindings.v1']).ora,'1');run('arcadeBindings={...DEFAULT_ARCADE_BINDINGS};initializeKeyBindings()');assert.equal(run('arcadeBindings.stop'),'2');
+ run('arcadeBindings={...DEFAULT_ARCADE_BINDINGS};saveArcadeBindings();resetGame();gameStarted=true;key="1";keyCode=49;keyPressed()');assert.equal(run('timeStop.phase'),'intro');run('resetGame();key="";keyCode=0');
+});
+test('held keys cannot repeatedly extend a Time Stop',()=>{
+ run('resetGame();gameStarted=true;timeStop.phase="slow";slowPowerUpEnd=12345;key="1";keyCode=49;keyPressed({repeat:true})');assert.equal(run('slowPowerUpEnd'),12345);run('resetGame();key="";keyCode=0');
+});
+test('long DIO uses its full clip and snapshot despite selection changes',()=>{
+ run('resetGame();gameStarted=true;var originalDio=jojoVoiceClips.dio;jojoVoiceClips.dio={duration:12.3,currentTime:0,paused:true,ended:false,pause(){this.paused=true},play(){this.paused=false;return Promise.resolve()}};packTimeVoice="dio";startTimeStop(10,10);packTimeVoice="starstop";jojoVoiceClips.dio.currentTime=6;gameClock=timeStop.phaseStart+13000;updateTimeStop()');
+ assert.equal(run('timeStop.voiceName'),'dio');assert.equal(run('timeStop.phase'),'intro');assert.equal(run('stopIntroDuration()'),12300);assert(Math.abs(run('timeStopSceneProgress()')-6/12.3)<.001);
+ run('jojoVoiceClips.dio.currentTime=12.3;jojoVoiceClips.dio.ended=true;updateTimeStop()');assert.equal(run('timeStop.phase'),'freeze');run('jojoVoiceClips.dio=originalDio;packTimeVoice="classic";resetGame()');
+});
+test('late clip metadata extends every move and a single Hand strike stays single',()=>{
+ run('resetGame();gameStarted=true;standEnergy=100;var originalHand=jojoVoiceClips.hand;jojoVoiceClips.hand={duration:NaN,currentTime:0,paused:true,ended:false,pause(){this.paused=true},play(){this.paused=false;return Promise.resolve()}};startPackMove("hand");jojoVoiceClips.hand.duration=6;jojoVoiceClips.hand.currentTime=.8;gameClock=packMove.start+1000;updatePackMove()');assert.equal(run('packMove.end-packMove.start'),6000);assert.equal(run('packMove.hit'),true);
+ run('gameClock=packMove.start+7000;jojoVoiceClips.hand.currentTime=5;updatePackMove()');assert.equal(run('packMove.kind'),'hand');run('jojoVoiceClips.hand.ended=true;updatePackMove()');assert.equal(run('packMove.kind'),null);run('jojoVoiceClips.hand=originalHand;resetGame()');
+});
+test('long C-Moon keeps its recovery animation but gravity returns after four seconds',()=>{
+ run('resetGame();gameStarted=true;standEnergy=100;var originalMoon=jojoVoiceClips.cmoon;jojoVoiceClips.cmoon={duration:14,currentTime:0,paused:true,pause(){this.paused=true},play(){this.paused=false;return Promise.resolve()}};startPackMove("cmoon");gameClock=packMove.start+4500;jojoVoiceClips.cmoon.currentTime=4.5;updatePackMove();balls[0].y=200');const y=run('balls[0].y');run('drawBalls(1)');assert(run('balls[0].y')>y);assert.equal(run('packMove.kind'),'cmoon');run('jojoVoiceClips.cmoon=originalMoon;resetGame()');
+});
+test('clips longer than a minute are not truncated and stalled audio is bounded',()=>{
+ run('var oldClip=jojoVoiceClips.hand;jojoVoiceClips.hand={duration:125}');assert.equal(run('cinematicDuration("hand",1000)'),125000);run('jojoVoiceClips.hand=oldClip;var stale={};var stalled={paused:false,ended:false,currentTime:0};sceneMediaAlive(stale,stalled);gameClock+=8500');assert.equal(run('sceneMediaAlive(stale,stalled)'),false);run('resetGame()');
+});
+test('pooled particles reuse retired objects and stay bounded through repeated bursts',()=>{
+ run('resetGame();jojoParticlePool=[];OVERHAUL_AUDIO.particles=true;burstJoJoParticles(1,2,"#fff",90);var originals=new Set(jojoParticles);jojoParticles.forEach(p=>p.life=0);updateJoJoParticles();burstJoJoParticles(3,4,"#fff",90)');assert(run('jojoParticles.every(p=>originals.has(p))'));
+ for(let i=0;i<8;i++)run('burstJoJoParticles(3,4,"#fff",90)');assert(run('jojoParticles.length+jojoParticlePool.length')<=run('MAX_PARTICLES'));run('resetGame()');
+});

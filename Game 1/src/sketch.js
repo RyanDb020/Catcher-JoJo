@@ -1,6 +1,7 @@
 // Instellingen van de catcher
 // Overhaul: tijd, instellingen, highscore en frame-onafhankelijke beweging
 let gameClock = 0;
+let skyClock=0;
 let frameStep = 1;
 let lastHistoryCapture = -100;
 let bestScore = 0;
@@ -17,6 +18,7 @@ let kingCrimson = { active: false, start: 0, used: false };
 let awakening = { active: false, end: 0 };
 let audioUnlocked = false;
 const MAX_PARTICLES = 180;
+let jojoParticlePool=[];
 // Debug-only energy refill is available only on explicit ?test=1 builds.
 const DEBUG_TEST_MODE = (() => {
   try { return typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('test') === '1'; }
@@ -37,8 +39,8 @@ function publishQaState() {
         !(location.hostname === 'localhost' || location.hostname === '127.0.0.1') ||
         typeof window.__JOJO_QA_AUTOMATION__ !== 'boolean') return;
     window.__JOJO_QA_STATE__ = {
-      gameStarted, gameOver, score, lives, standEnergy, packMove:packMove.kind, timeStop: timeStop.phase,
-      roadRoller: roadRoller.active, ora: standRush.active,
+      gameStarted, gameOver, score, lives, catcherX,standEnergy, packMove:packMove.kind, timeStop: timeStop.phase,
+      art:window.JoJoStandArt?.snapshot?.(),bindings:{...arcadeBindings},timeStopClip:timeStop.voiceName,timeStopDuration:stopIntroDuration(),timeStopProgress:timeStopSceneProgress(),kingCrimsonVisual:!!kingCrimson.visualActive,packDuration:packMove.kind?packMove.end-packMove.start:0,roadRoller: roadRoller.active, ora: standRush.active,
       universeReset: universeReset.active,
       universePhase: universeReset.active ? universeReset.phase : 'idle', gameMillis: gameClock,
       oraProgress:standRush.active?oraProgress():0,oraDuration:oraDuration(),paused:optionsVisible,
@@ -115,7 +117,7 @@ function openOptions(value) {
   optionsVisible = value;
   const panel = document.getElementById('options-panel');
   if (panel) panel.hidden = !value;
-  document.querySelectorAll('[data-voice]').forEach(input=>{input.disabled=!!(universeReset.active||standRush.active||timeStop.phase!=='idle');});
+  document.querySelectorAll('[data-voice]').forEach(input=>{input.disabled=!!(universeReset.active||standRush.active||roadRoller.active||packMove.kind||kingCrimson.visualActive||timeStop.phase!=='idle');});
   if (value) {
     pausedHtmlAudio=[];
     for(const audio of [...Object.values(jojoVoiceClips),resumeAudio,giornoTheme]){
@@ -254,6 +256,7 @@ let universeReset = { active: false, started: 0, source: [], committed: false,
 // Bestaande lokale JoJo-clips voor de persoonlijke versie.
 // De cinematic loopt ook door als audio ontbreekt.
 const JOJO_CLIP_URLS = {
+  classic: 'assets/za-warudo-toki-wo-tomare_WJVdsYt.mp3?v=personal-jojo-1',
   pucci: 'assets/made-in-heaven.mp3?v=personal-jojo-1',
   accelerate: 'assets/time-accelerate.mp3?v=personal-jojo-1',
   ora: 'assets/ora-ora.mp3?v=personal-jojo-1',
@@ -274,7 +277,7 @@ let resumeAudioObjectUrl = null;
 const CINEMATIC_CUES=['time-freeze','time-resume','acceleration','collapse','genesis','finisher'];
 let pausedHtmlAudio=[];
 function stopCinematicEffects(){for(const name of CINEMATIC_CUES){const a=soundEffects[name];if(a&&a.sound&&a.ready)try{a.sound.stop();}catch(_){}}}
-function cinematicDuration(name,base){const a=jojoVoiceClips[name];return a&&Number.isFinite(a.duration)&&a.duration>0?Math.max(base,Math.min(60000,a.duration*1000)):base;}
+function cinematicDuration(name,base){const a=jojoVoiceClips[name];return a&&Number.isFinite(a.duration)&&a.duration>0?Math.max(base,a.duration*1000):base;}
 function stopIntroDuration(){return timeStop.introDuration||TIME_STOP_INTRO_MS;}
 function stopReleaseDuration(){return timeStop.releaseDuration||TIME_STOP_RELEASE_MS;}
 function universePhaseDuration(phase){
@@ -370,6 +373,7 @@ function setup() {
   initializeCinematicAudio();
   initializeTimeResumeAudio();
   initializeJoJoPack();
+  initializeKeyBindings();
   const closeBtn = document.getElementById("close-options");
   if (closeBtn) closeBtn.addEventListener("click", () => openOptions(false));
   document.querySelectorAll('[data-voice]').forEach(input => {
@@ -394,7 +398,9 @@ function setup() {
   });
 }
 
-function keyPressed() {
+function keyPressed(event) {
+  if(event?.repeat)return false;
+  if(optionsVisible&&event?.target&&['INPUT','SELECT','TEXTAREA'].includes(event.target.tagName)&&keyCode!==ESCAPE)return;
   if (typeof userStartAudio === 'function') userStartAudio();
   audioUnlocked = true;
   if (key === 'o' || key === 'O' || keyCode === ESCAPE) {
@@ -408,7 +414,9 @@ function keyPressed() {
     return false;
   }
   if(keyCode===32&&packMove.kind){for(const nail of packMove.shots)nail.target.targeted=false;for(const punch of standPunches)punch.target.targeted=false;standPunches=[];packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;return false;}
-  if (keyCode === 32 && standRush.active) {stopCinematicEffects();cancelDirectorVoice();standRush.active=false;standPunches=[];return false;}
+  if (keyCode === 32 && standRush.active) {stopCinematicEffects();cancelDirectorVoice();standRush.active=false;for(const punch of standPunches)punch.target.targeted=false;standPunches=[];return false;}
+  if(keyCode===32&&roadRoller.active){roadRoller.active=false;roadRollerImpact.active=false;stopJoJoVoices();stopCinematicEffects();return false;}
+  if(keyCode===32&&kingCrimson.visualActive){kingCrimson.visualActive=false;kingCrimson.active=false;stopJoJoVoices();return false;}
   if (keyCode === 32 && timeStop.phase === 'intro') {
     if (timeStopSoundLoaded && timeStopSound.isPlaying()) timeStopSound.stop();
     stopJoJoVoices();
@@ -426,12 +434,8 @@ function keyPressed() {
     return false;
   }
   if (universeReset.active) return false;
-  const moveKeys={h:'hand',j:'tusk',c:'cmoon',m:'muda',n:'giorno'};
-  if(moveKeys[String(key).toLowerCase()]){startPackMove(moveKeys[String(key).toLowerCase()]);return false;}
-  if ((key === 't' || key === 'T') && gameStarted && !gameOver) startTimeStop(catcherX + catcherWidth / 2, catcherY);
-  if ((key === 'q' || key === 'Q') && gameStarted && !gameOver) startStandRush();
-  if ((key === 'e' || key === 'E') && gameStarted && !gameOver) startRoadRoller();
-  if ((key === 'f' || key === 'F') && gameStarted && !gameOver) startKingCrimson();
+  const action=Object.keys(arcadeBindings).find(action=>arcadeBindings[action]===String(key).toLowerCase());
+  if(action){activateArcadeAction(action);return false;}
   if (DEBUG_TEST_MODE && (key === 'g' || key === 'G') && gameStarted && !gameOver) {
     standEnergy = STAND_MAX_ENERGY;
     addJoJoPopup('STAND READY!', width / 2, height * 0.25, '#ffc65d', 900, 34);
@@ -581,9 +585,11 @@ function drawSpaceBackground(speedFactor) {
     ctx.fillStyle = nebulaGradient;
     ctx.fillRect(0, 0, width, height);
   }
+  skyClock+=Math.max(0,speedFactor)*frameStep*(1000/60);
   drawCosmicAtlas();
+  drawNebulaLayers();
   // Drie afstandslagen met een kalme twinkle en een bewegingsstreep per ster.
-  const clock = gameMillis() * .001;
+  const clock = skyClock * .001;
   for (let i = 0; i < stars.length; i++) {
     const star = stars[i];
     const distance = .35 + star.speed * .24;
@@ -690,9 +696,12 @@ function startTimeStop(x, y) {
     if (timeStop.phase === 'slow') slowPowerUpEnd += TIME_STOP_EXTRA_MS;
     return;
   }
-  if(packMove.kind){queuedTimeStop={x,y};return;}
+  if(packMove.kind||kingCrimson.visualActive){queuedTimeStop={x,y};return;}
   stopJoJoVoices();
-  timeStop.introDuration=(jojoVoiceObjectUrls.stop||packTimeVoice!=='classic')?cinematicDuration(packTimeVoice==='classic'?'stop':packTimeVoice,TIME_STOP_INTRO_MS):TIME_STOP_INTRO_MS;
+  timeStop.voiceName=jojoVoiceObjectUrls.stop?'stop':packTimeVoice;
+  timeStop.voiceCharacter=timeStop.voiceName==='starstop'?'jotaro':'dio';
+  timeStop.audioSyncMedia=null;
+  timeStop.introDuration=cinematicDuration(timeStop.voiceName,TIME_STOP_INTRO_MS);
   timeStop.releaseDuration=TIME_STOP_RELEASE_MS;
   timeStop.phase = "intro";
   timeStop.phaseStart = gameMillis();
@@ -716,8 +725,7 @@ function startTimeStop(x, y) {
   }
 
   // Het originele meegestuurde spraakfragment start tegelijk met de animatie
-  if(jojoVoiceObjectUrls.stop){playJoJoVoice('stop');}
-  else if(packTimeVoice!=='classic'){playJoJoVoice(packTimeVoice);}
+  if(jojoVoiceClips[timeStop.voiceName]){playJoJoVoice(timeStop.voiceName);}
   else if (timeStopSoundLoaded) {
     timeStopSound.stop();
     timeStopSound.setVolume(0.85 * OVERHAUL_AUDIO.master * OVERHAUL_AUDIO.voices);
@@ -730,20 +738,21 @@ function startTimeStop(x, y) {
 // Verandert de fases: intro -> bevroren -> slowmotion -> release -> normaal
 function updateTimeStop() {
   if (timeStop.phase === "idle") return;
+  if(timeStop.phase==='slow'&&roadRoller.active)slowPowerUpEnd+=Math.min(50,Math.max(0,deltaTime));
   const elapsed = gameMillis() - timeStop.phaseStart;
-  if(timeStop.phase==='intro'&&(jojoVoiceObjectUrls.stop||packTimeVoice!=='classic'))timeStop.introDuration=Math.max(stopIntroDuration(),cinematicDuration(jojoVoiceObjectUrls.stop?'stop':packTimeVoice,TIME_STOP_INTRO_MS));
+  if(timeStop.phase==='intro'){timeStop.introDuration=Math.max(stopIntroDuration(),cinematicDuration(timeStop.voiceName,TIME_STOP_INTRO_MS));sceneMediaAlive(timeStop,jojoVoiceClips[timeStop.voiceName]);}
   if(timeStop.phase==='release'&&resumeAudio&&Number.isFinite(resumeAudio.duration))timeStop.releaseDuration=Math.max(stopReleaseDuration(),resumeAudio.duration*1000);
 
   if (timeStop.phase === "intro") {
-    if (!timeStop.impactPlayed && elapsed >= stopIntroDuration()*.21) {
+    if (!timeStop.impactPlayed && timeStopSceneProgress() >= .21) {
       timeStop.impactPlayed = true;
       playTimeSound("impact");
     }
-    if (!timeStop.freezePlayed && elapsed >= stopIntroDuration()*.87) {
+    if (!timeStop.freezePlayed && timeStopSceneProgress() >= .87) {
       timeStop.freezePlayed = true;
       playTimeSound("freeze");
     }
-    if (elapsed >= stopIntroDuration()) {
+    if (elapsed >= stopIntroDuration()&&!sceneMediaAlive(timeStop,jojoVoiceClips[timeStop.voiceName])) {
       timeStop.phase = "freeze";
       stopJoJoVoices();if(timeStopSoundLoaded)timeStopSound.stop();
       timeStop.phaseStart = gameMillis();
@@ -761,7 +770,7 @@ function updateTimeStop() {
     slowPowerUpEnd = 0;
     beginTimeResumeAudio();
     updateMusicVolume(true);
-  } else if (timeStop.phase === "release" && elapsed >= stopReleaseDuration()) {
+  } else if (timeStop.phase === "release" && elapsed >= stopReleaseDuration()&&!sceneMediaAlive(timeStop,resumeAudio)) {
     timeStop.phase = "idle";
     timeStop.particles = [];
     stopTimeResumeAudio();
@@ -831,7 +840,7 @@ function drawTimeStopEffects() {
 
     // Twee korte flitsen, geen voortdurende stroboscoop
     let flashAlpha = 0;
-    if (elapsed >= stopIntroDuration()*.21 && elapsed < 1130) flashAlpha = 150 * (1 - (elapsed - 950) / 180);
+    if (timeStopSceneProgress() >= .21 && elapsed < 1130) flashAlpha = 150 * (1 - (elapsed - 950) / 180);
     if (elapsed >= 3800 && elapsed < 3950) flashAlpha = max(flashAlpha, 105 * (1 - (elapsed - 3800) / 150));
     if (flashAlpha > 0 && OVERHAUL_AUDIO.flashes) {
       fill(215, 235, 255, flashAlpha);
@@ -1028,8 +1037,9 @@ function drawBalls(speedFactor) {
   for (let i = 0; i < balls.length; i++) {
     const ball = balls[i];
     const previousY = ball.y;
-    ball.y += ball.speed * speedFactor * frameStep * getDifficultyScale() * (packMove.kind==='cmoon'?-0.72:1);
-    if(speedFactor>0&&packMove.kind==='cmoon'&&ball.y<-BALL_SIZE)ball.y=-BALL_SIZE;
+    ball.y += ball.speed * speedFactor * frameStep * getDifficultyScale() * (packMove.kind==='cmoon'&&gameMillis()-packMove.start<4000?-0.72:1);
+    if(speedFactor>0&&packMove.kind==='cmoon'&&gameMillis()-packMove.start<4000&&ball.y<-BALL_SIZE)ball.y=-BALL_SIZE;
+    if(OVERHAUL_AUDIO.quality>0&&(ball.gold||ball.kind==='bomb')){const c=drawingContext;c.save();c.strokeStyle=ball.gold?'rgba(255,221,134,.30)':'rgba(218,142,250,.26)';c.lineWidth=2;c.beginPath();c.moveTo(ball.x,ball.y-6);c.lineTo(ball.x,ball.y-Math.min(55,ball.speed*8));c.stroke();c.restore();}
     drawOrb(ball.x, ball.y, BALL_SIZE, ball.kind === 'bomb' ? 'bomb' : ball.gold ? 'gold' : 'normal');
 
     // Niet scoren of verliezen in de filmische intro
@@ -1057,8 +1067,8 @@ function drawBalls(speedFactor) {
 
 function drawCatcherMovement() {
   const beforeX = catcherX;
-  if (keyIsDown(LEFT_ARROW)) catcherX -= CATCHER_SPEED * frameStep;
-  if (keyIsDown(RIGHT_ARROW)) catcherX += CATCHER_SPEED * frameStep;
+  if ((keyIsDown(LEFT_ARROW)||keyIsDown(65))) catcherX -= CATCHER_SPEED * frameStep;
+  if ((keyIsDown(RIGHT_ARROW)||keyIsDown(68))) catcherX += CATCHER_SPEED * frameStep;
   const arena = getArenaBounds();
   catcherX = constrain(catcherX, arena.left, max(arena.left, arena.right - catcherWidth));
   const movement = catcherX - beforeX;
@@ -1112,8 +1122,8 @@ function drawHUD() {
   noStroke(); textAlign(RIGHT, CENTER); fill('#d8baff'); textSize(13 * u);
   text(footer, width - m, height - 24 * u);
   fill('#a8a1c0'); textSize(10 * u);
-  if (width > 920) text('← → MOVE · Q ORA · E ROLLER · F CRIMSON · H/J/C/M/N STANDS · O SETTINGS', width - m, height - 42 * u);
-  if (gameMillis() < waveNoticeUntil) {
+  if (width > 920) text('A/D · ←/→ MOVE   '+bindingLabel('stop')+' TIME   '+bindingLabel('ora')+' ORA   '+bindingLabel('roller')+' ROLLER   '+bindingLabel('crimson')+' CRIMSON   · O ALL KEYS', width - m, height - 42 * u);
+  if (gameMillis() < waveNoticeUntil&&!packMove.kind&&!kingCrimson.visualActive&&!standRush.active&&timeStop.phase==='idle') {
     const t = min(1, (waveNoticeUntil - gameMillis()) / 600);
     textAlign(CENTER); textSize(25 * u); fill(255, 218, 127, t * 255);
     text('WAVE ' + waveNumber + '  ·  PRESSURE RISES', width / 2, min(height * .21, 180 * u));
@@ -1138,7 +1148,7 @@ function drawStartScreen() {
   drawingContext.shadowBlur = 0;
   fill('#edbdff'); textSize(31*u); text('STAND OVERDRIVE', x, y - 49*u);
   fill('#d3c4e5'); textSize(14*u);
-  text('← → MOVE · Q ORA · E ROLLER · F CRIMSON · O: ALLE STAND-CONTROLS', x, y + 15*u);
+  text('A/D · ←/→ MOVE    '+bindingLabel('stop')+' TIME STOP    '+bindingLabel('ora')+' ORA    '+bindingLabel('roller')+' ROLLER    · O SETTINGS', x, y + 15*u);
   text('S POWER-UP = ZA WARUDO    ·    R = MADE IN HEAVEN', x, y + 43*u);
   text('CATCH · BUILD COMBOS · UNLEASH YOUR STAND', x, y + 73*u);
   const pulse = .84 + .16 * sin(gameMillis()*.006);
@@ -1198,9 +1208,9 @@ function beginGameOver() {
   gameOver=true;gameOverAt=gameMillis();gameOverBannerPlayed=false;
   if(packMove.kind){for(const nail of packMove.shots)nail.target.targeted=false;packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;}
   const now=gameMillis();let revealAt=now+850;
-  if(standRush.active) revealAt=max(revealAt,standRush.start+ORA_RUSH_DURATION_MS+420);
+  if(standRush.active) revealAt=max(revealAt,standRush.start+oraDuration()+420);
   for(const punch of standPunches) revealAt=max(revealAt,punch.start+(punch.duration||180)+470);
-  if(roadRoller.active) revealAt=max(revealAt,roadRoller.start+ROAD_ROLLER_DURATION_MS+400);
+  if(roadRoller.active) revealAt=max(revealAt,roadRoller.start+roadRollerDuration()+400);
   if(roadRollerImpact.active) revealAt=max(revealAt,roadRollerImpact.at+ROAD_ROLLER_IMPACT_MS);
   if(timeStop.phase==='intro') revealAt=max(revealAt,timeStop.phaseStart+TIME_STOP_INTRO_MS+TIME_STOP_FREEZE_MS+TIME_STOP_RELEASE_MS);
   else if(timeStop.phase==='freeze') revealAt=max(revealAt,timeStop.phaseStart+TIME_STOP_FREEZE_MS+TIME_STOP_RELEASE_MS);
@@ -1211,7 +1221,8 @@ function beginGameOver() {
 }
 function drawGameOverWorld() {
   if(timeStop.phase==='intro'||timeStop.phase==='freeze'||timeStop.phase==='release')updateTimeStop();
-  updateJoJoAttacks();updateJoJoParticles();
+  updateJoJoAttacks();updateJoJoParticles();updateKingCrimsonScene();
+  if(queuedReset&&!standRush.active&&!roadRoller.active&&!packMove.kind&&!kingCrimson.visualActive&&timeStop.phase==='idle'){queuedReset=false;startUniverseReset();return;}
   push();drawSpaceBackground(0);drawBackdropDetails();
   for(const ball of balls)drawOrb(ball.x,ball.y,BALL_SIZE,ball.kind==='bomb'?'bomb':ball.gold?'gold':'normal');
   if(!gameOver&&timeStop.phase!=='intro')drawCatcherMovement();
@@ -1238,9 +1249,9 @@ function draw() {
   if (universeReset.active) { drawUniverseReset(); return; }
   if (gameOver) { drawGameOverWorld(); return; }
   if (gameStarted && !gameOver) updateTimeStop();
-  if(gameStarted&&!gameOver)updatePackMove();
-  if(queuedTimeStop&&!queuedReset&&!packMove.kind&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active){const q=queuedTimeStop;queuedTimeStop=null;startTimeStop(q.x,q.y);}
-  if(queuedReset&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active&&!packMove.kind){queuedReset=false;startUniverseReset();}
+  if(gameStarted&&!gameOver){updatePackMove();updateKingCrimsonScene();}
+  if(queuedTimeStop&&!queuedReset&&!packMove.kind&&!kingCrimson.visualActive&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active){const q=queuedTimeStop;queuedTimeStop=null;startTimeStop(q.x,q.y);}
+  if(queuedReset&&!standRush.active&&timeStop.phase==='idle'&&!roadRoller.active&&!packMove.kind&&!kingCrimson.visualActive){queuedReset=false;startUniverseReset();}
   const freezePhysics = timeStop.phase === 'intro' || timeStop.phase === 'freeze' || roadRoller.active;
   if (freezePhysics) {
     const hold = min(50, max(0, deltaTime));
@@ -1251,7 +1262,7 @@ function draw() {
   } else updateGameplayEvents();
   updateJoJoAttacks();
   if(getTimeSpeed()>0)updateJoJoParticles();
-  const speedFactor = roadRoller.active || freezePhysics ? 0 : getTimeSpeed();
+  const speedFactor = roadRoller.active || freezePhysics || gameMillis()<rushHitStopUntil ? 0 : getTimeSpeed();
   const shake = OVERHAUL_AUDIO.shake ? min(15, getCameraShake() + jojoShake) : 0;
   push();
   const zoom = getCinematicCameraScale();
@@ -1366,7 +1377,7 @@ function scoreBall(ball, fromStand) {
 function canUseJoJoAttack(cost) {
   return gameStarted && !gameOver && standEnergy >= cost &&
          !standRush.active && !roadRoller.active && !kingCrimson.active &&
-         !universeReset.active && !packMove.kind && timeStop.phase !== 'intro';
+         !universeReset.active && !packMove.kind && !kingCrimson.visualActive && timeStop.phase !== 'intro';
 }
 
 function notEnoughStandEnergy(cost) {
@@ -1394,7 +1405,7 @@ function startRoadRoller() {
     return;
   }
   standEnergy -= ROAD_ROLLER_COST;
-  roadRoller = { active: true, start: gameMillis(), landed: false };
+  roadRoller = { active: true, start: gameMillis(), landed: false, duration:roadRollerDuration() };
   addJoJoPopup("ROAD ROLLER DA!!", width / 2, height * 0.18, "#ffe279", 1800, 48);
   playStandSound("roller");
   playJoJoVoice("roller");
@@ -1417,10 +1428,11 @@ function punchDangerousBall() {
     [catcherX+catcherWidth/2+55,catcherY-43],
     [target.x+170,-26]
   ];
-  const [sx,sy]=sources[n];
+  const sourceX=packMove.kind?catcherX+catcherWidth/2:width*.53,sourceY=packMove.kind?catcherY-Math.min(width*.39,height*.55)*.34:height*.49;
+  const [sx,sy]=window.JoJoStandArt?.ready(packMove.kind==='muda'?'world':packMove.kind==='giorno'?'experience':'star')?[sourceX+(n%2?-1:1)*Math.min(58,width*.05),sourceY]:sources[n];
   standPunches.push({target,tx:target.x,ty:target.y,start:gameMillis(),impacted:false,
     duration:constrain(dist(sx,sy,target.x,target.y)*.28,150,290),sx,sy,side:n%2?-1:1,
-    finisher:standRush.finisher});
+    finisher:packMove.kind?!!packMove.finisher:standRush.finisher,artKey:packMove.kind==='muda'?'world':packMove.kind==='giorno'?'experience':'star'});
 }
 function resolvePunches() {
   const now = gameMillis();
@@ -1476,16 +1488,17 @@ function updateJoJoAttacks() {
     const p=oraProgress();
     const interval=p<.12?100000:p<.38?250:p<.72?135:p<.88?80:100000;
     if(!gameOver&&now-standRush.lastPunch>=interval){standRush.lastPunch=now;punchDangerousBall();}
-    if(p>.88&&!standRush.finisher){standRush.finisher=true;punchDangerousBall();playCue('finisher',.88);jojoShake=19;mangaPulse=now+620;}
-    if((standRush.voiceFinished&&now-standRush.start>=oraDuration())||now-standRush.start>oraDuration()+1500){cancelDirectorVoice();standRush.active=false;}
+    if(p>.88&&!standRush.finisher){standRush.finisher=true;punchDangerousBall();playCue('finisher',.88);rushHitStopUntil=Math.max(rushHitStopUntil,now+80);jojoShake=19;mangaPulse=now+620;}
+    if((standRush.voiceFinished&&now-standRush.start>=oraDuration())||(now-standRush.start>oraDuration()+1500&&!sceneMediaAlive(standRush,directorVoice?.audio))){cancelDirectorVoice();standRush.active=false;}
   }
   if (roadRoller.active) {
     const elapsed = now - roadRoller.start;
     if (elapsed >= ROAD_ROLLER_LAND_MS && !roadRoller.landed) {
-      roadRoller.landed = true;playCharacterCue('wryyy',.75,true);
+      roadRoller.landed = true;if(!jojoVoiceClips.roller)playCharacterCue('wryyy',.75,true);
       slamRoadRoller();
     }
-    if (elapsed >= ROAD_ROLLER_DURATION_MS) roadRoller.active = false;
+    roadRoller.duration=Math.max(roadRoller.duration||0,roadRollerDuration());
+    if (elapsed >= roadRoller.duration&&!sceneMediaAlive(roadRoller,jojoVoiceClips.roller||jojoVoiceClips.wryyy)) roadRoller.active = false;
   }
   resolvePunches();
   if(roadRollerImpact.active&&now-roadRollerImpact.at>ROAD_ROLLER_IMPACT_MS)roadRollerImpact.active=false;
@@ -1494,7 +1507,9 @@ function updateJoJoAttacks() {
 }
 
 function addJoJoPopup(message, x, y, tint, duration, size) {
-  jojoPopups.push({message, x, y, tint, duration, size, start: gameMillis()});
+  const scoreMessage=/^(PERFECT|CHAIN REACTION|ORA!|MUDA!|ドドド|\+)/.test(message);
+  const priority=scoreMessage?20:/STAND READY/.test(message)?5:/WAVE|EVENT|GOLD RUSH|METEOR/.test(message)?70:/YARE|COMBO/.test(message)?40:100;
+  jojoPopups.push({message,x,y,tint,duration,size,start:gameMillis(),priority,scoreMessage});
   if (jojoPopups.length > 28) jojoPopups.shift();
 }
 
@@ -1502,10 +1517,9 @@ function burstJoJoParticles(x, y, tint, count) {
   for (let i = 0; i < (OVERHAUL_AUDIO.particles ? min(90, count * OVERHAUL_AUDIO.particlesMultiplier) : 0); i++) {
     const angle = random(TWO_PI);
     const speed = random(2, 15);
-    jojoParticles.push({
-      x, y, vx: cos(angle) * speed, vy: sin(angle) * speed,
-      size: random(2, 9), tint, life: random(23, 55), maxLife: 55
-    });
+    const part=jojoParticlePool.pop()||(jojoParticles.length>=MAX_PARTICLES?jojoParticles.shift():{});
+    part.x=x;part.y=y;part.vx=cos(angle)*speed;part.vy=sin(angle)*speed;part.size=random(2,9);part.tint=tint;part.life=random(23,55);part.maxLife=55;
+    jojoParticles.push(part);
   }
   if (jojoParticles.length > MAX_PARTICLES) jojoParticles.splice(0, jojoParticles.length - MAX_PARTICLES);
 }
@@ -1515,10 +1529,9 @@ function updateJoJoParticles() {
     const part = jojoParticles[i];
     part.x += part.vx * frameStep;
     part.y += part.vy * frameStep;
-    part.vx *= 0.97;
-    part.vy *= 0.97;
+    const damping=Math.pow(.97,frameStep);part.vx*=damping;part.vy*=damping;
     part.life -= frameStep;
-    if (part.life <= 0) jojoParticles.splice(i, 1);
+    if(part.life<=0){jojoParticles.splice(i,1);if(jojoParticlePool.length<MAX_PARTICLES)jojoParticlePool.push(part);}
   }
 }
 
@@ -1535,27 +1548,20 @@ function drawJoJoParticles() {
 }
 
 function drawJoJoPopups() {
-  if (jojoPopups.length === 0) return;
-  push();
-  textAlign(CENTER, CENTER);
-  textStyle(BOLD);
-  for (let i = jojoPopups.length - 1; i >= 0; i--) {
-    const item = jojoPopups[i];
-    const progress = (gameMillis() - item.start) / item.duration;
-    if (progress >= 1) {
-      jojoPopups.splice(i, 1);
-      continue;
-    }
-    const tint = color(item.tint);
-    tint.setAlpha(min(1, (1 - progress) * 2.1) * 255);
-    const bounce = progress < 0.14 ? 1.24 - 0.24 * progress / 0.14 : 1;
-    textSize(min(item.size * hudScale() * bounce, width * 0.10));
-    stroke(14, 8, 34, 255 * (1 - progress));
-    strokeWeight(5);
-    fill(tint);
-    text(item.message, constrain(item.x, 80, width - 80), item.y - progress * 43);
-  }
-  pop();
+ jojoPopups=jojoPopups.filter(item=>gameMillis()-item.start<item.duration);if(!jojoPopups.length)return;
+ const busy=standRush.active||universeReset.active||timeStop.phase==='intro'||timeStop.phase==='freeze'||packMove.kind||kingCrimson.visualActive;
+ const primary=busy?null:jojoPopups.filter(p=>!p.scoreMessage).sort((a,b)=>(b.priority||0)-(a.priority||0)||b.start-a.start)[0];
+ const scores=jojoPopups.filter(p=>p.scoreMessage).slice(-2);
+ push();textAlign(CENTER,CENTER);textStyle(BOLD);
+ for(const [i,item] of [primary,...scores].filter(Boolean).entries()){
+  const progress=constrain((gameMillis()-item.start)/item.duration,0,1),tint=color(item.tint);tint.setAlpha(Math.min(1,(1-progress)*2)*255);fill(tint);stroke(10,7,27,220*(1-progress));strokeWeight(3);
+  const isScore=!!item.scoreMessage;const top=width<930?Math.min(height*.40,230):Math.min(height*.26,220);
+  textSize(Math.min((isScore?22:Math.min(34,item.size))*hudScale(),width*(isScore?.045:.065)));
+  const px=isScore?constrain(item.x+(i%2?34:-34),65,width-65):width/2;
+  const py=isScore?constrain(item.y-progress*33,top+44,height*.80)+(i?i*25:0):top;
+  text(item.message,px,Math.min(height*.84,py));
+ }
+ pop();
 }
 
 // Stand-meter: genoeg energie? Dan licht de Q- of E-aanval op.
@@ -1565,8 +1571,8 @@ function drawStandMeter() {
   const bar = 244 * u, x = width - bar - m - 22 * u, y = width < 930 ? m + 107 * u : m;
   const energy = constrain(standEnergy, 0, STAND_MAX_ENERGY);
   hudEnergyDisplay = lerp(hudEnergyDisplay, energy, .19);
-  noStroke(); fill(9, 7, 27, 226); rect(x - 15*u, y, bar + 30*u, 91*u, 14*u);
-  stroke(153, 112, 217, 128); strokeWeight(1.4*u); noFill(); rect(x - 15*u, y, bar + 30*u, 91*u, 14*u);
+  noStroke(); fill(9, 7, 27, 226); rect(x - 15*u, y, bar + 30*u, 122*u, 14*u);
+  stroke(153, 112, 217, 128); strokeWeight(1.4*u); noFill(); rect(x - 15*u, y, bar + 30*u, 122*u, 14*u);
   noStroke(); fill('#dfb0ff'); textAlign(LEFT, CENTER); textStyle(BOLD); textSize(12*u);
   text('STAND ENERGY', x, y + 19*u);
   fill(255); textAlign(RIGHT); textSize(16*u); text(ceil(energy) + '/100', x + bar, y + 19*u);
@@ -1584,8 +1590,14 @@ function drawStandMeter() {
     line(tx, y + 37*u, tx, y + 54*u);
   }
   noStroke(); textSize(11*u); textAlign(LEFT); fill(energy >= 55 ? '#f2c8ff' : '#9c8eaf');
-  text('Q  ORA · 55', x, y + 73*u);
-  textAlign(RIGHT); fill(energy >= 100 ? '#ffe9aa' : '#9c8eaf'); text('E  ROLLER · 100', x + bar, y + 73*u);
+  text(bindingLabel('ora')+'  ORA · 55', x, y + 73*u);
+  textAlign(RIGHT); fill(energy >= 100 ? '#ffe9aa' : '#9c8eaf'); text(bindingLabel('roller')+'  ROLLER · 100', x + bar, y + 73*u);
+  const actions=['stop','ora','roller','crimson','hand','tusk','cmoon','muda','giorno'],icons={stop:'world',ora:'star',roller:'world',crimson:'crimson',hand:'hand',tusk:'tusk',cmoon:'cmoon',muda:'world',giorno:'experience'},costs={stop:0,ora:55,roller:100,crimson:45,hand:35,tusk:25,cmoon:40,muda:55,giorno:75};
+  for(let i=0;i<actions.length;i++){const action=actions[i],px=x+(i+.5)*bar/9,py=y+103*u,ready=energy>=costs[action]&&gameMillis()>=(packCooldowns[action]||0);drawingContext.save();drawingContext.globalAlpha=ready?1:.4;
+   if(!window.JoJoStandArt?.icon(drawingContext,icons[action],px,py,23*u)){noStroke();fill('#625176');circle(px,py,20*u);}drawingContext.restore();
+   noFill();stroke(ready?'#f3d08b':'#745c8e');strokeWeight(1);circle(px,py,25*u);noStroke();fill('#fef3da');textAlign(CENTER,CENTER);textSize(9*u);text(bindingLabel(action),px,py+8*u);
+  }
+
   pop();
 }
 
@@ -1761,7 +1773,7 @@ function drawStandPunches() {
       ctx.save(); const q=Math.max(0,t-i*.075);
       ctx.translate(lerp(punch.sx,punch.tx,q),lerp(punch.sy,punch.ty,q));ctx.rotate(angle);
       ctx.globalAlpha=(1-age)*(i? .12:1); const z=(punch.finisher?1.35:.9)+t*.32;
-      ctx.scale(z,z);ctx.drawImage(visualAtlas.fist,-28,-28,56,132);ctx.restore();
+      ctx.scale(z,z);if(!window.JoJoStandArt?.fist(ctx,punch.artKey||'star',0,0,punch.finisher?72:48,0,1))ctx.drawImage(visualAtlas.fist,-28,-28,56,132);ctx.restore();
     }
     if(punch.impacted) {
       ctx.translate(x,y);ctx.rotate(angle);ctx.strokeStyle='#ffedb5';ctx.lineWidth=2;
@@ -1822,7 +1834,7 @@ function recordUniverseFrame() {
 // herhaald R genegeerd zodat er niet meerdere resets tegelijk starten.
 function startUniverseReset() {
  if(universeReset.active)return;
- if(standRush.active || timeStop.phase!=='idle' || roadRoller.active || packMove.kind){queuedReset=true;return;}
+ if(standRush.active || timeStop.phase!=='idle' || roadRoller.active || packMove.kind || kingCrimson.visualActive){queuedReset=true;return;}
  if(gameOverSoundLoaded)gameOverSound.stop();stopCinematicEffects();
  gameStarted=true;
  if(!universeHistory.length)recordUniverseFrame();
@@ -1852,11 +1864,11 @@ function commitNewUniverse() {
 function drawUniverseReset() {
  const u=universeReset,phase=u.phase,age=gameMillis()-u.phaseStart;
  const d=universePhaseDuration(phase);
- const t=constrain(age/d,0,1);
+ const t=(phase==='reveal'||phase==='rewind')&&directorVoice?directorAudioProgress(d):constrain(age/d,0,1);
  if(phase==='reveal'){
   drawUniverseSnapshot(u.source[u.source.length-1]||null,1,t);
   if(window.JoJoCosmicDirector)window.JoJoCosmicDirector.intro(drawingContext,width,height,t);
-  if(window.JoJoCharacterDirector)window.JoJoCharacterDirector.heaven(drawingContext,width,height,t,'reveal');
+  if(window.JoJoCharacterDirector)window.JoJoCharacterDirector.heaven(drawingContext,width,height,t,'reveal',{elapsed:age/1000});
   else drawHeavenReveal(t);
  }else if(phase==='rewind'){
   const h=u.source;
@@ -1885,7 +1897,7 @@ function drawUniverseReset() {
  }
  if(phase==='reveal'){
   // A default 6-second legacy clip does not shorten the new 8.664-second intro.
-  if(age>=d && (u.introVoiceDone || age>=d+1800)){
+  if(age>=d && (u.introVoiceDone || (age>=d+1800&&!sceneMediaAlive(u,directorVoice?.audio)))){
    cancelDirectorVoice();
    u.phase='rewind';u.phaseStart=gameMillis();
    beginDirectorVoice('accelerate',()=>{
@@ -1895,7 +1907,7 @@ function drawUniverseReset() {
   return;
  }
  if(phase==='rewind'){
-  if(age>=d && (u.rewindVoiceDone || age>=d+1800)){
+  if(age>=d && (u.rewindVoiceDone || (age>=d+1800&&!sceneMediaAlive(u,directorVoice?.audio)))){
    cancelDirectorVoice();u.phase='accelerate';u.phaseStart=gameMillis();
    playUniverseSound('speed');
   }
@@ -2210,15 +2222,16 @@ function startKingCrimson() {
     return;
   }
   standEnergy -= KING_CRIMSON_COST;
-  kingCrimson = { active: true, start: gameMillis(), used: true };
+  kingCrimson = { active: true, visualActive:true, start: gameMillis(), used: true, duration:cinematicDuration('crimson',KING_CRIMSON_MS) };
   addJoJoPopup('KING CRIMSON!', width / 2, height * 0.33, '#ff89ae', 1300, 44);
   playCharacterCue('crimson',.75);
 }
 function drawKingCrimsonEffects() {
-  if (!kingCrimson.active) return;
+  if (!kingCrimson.active&&!kingCrimson.visualActive) return;
   push();
   noStroke(); fill(215, 31, 93, 41); rect(0, 0, width, height);
-  const t = (gameMillis() - kingCrimson.start) / KING_CRIMSON_MS;
+  const t = sceneAudioProgress(kingCrimson,jojoVoiceClips.crimson,kingCrimson.start,kingCrimson.duration||KING_CRIMSON_MS);
+  if(window.JoJoStandArt?.king(drawingContext,width,height,t,(gameMillis()-kingCrimson.start)/1000,kingCrimson.active,universeHistory,OVERHAUL_AUDIO.quality)){pop();return;}
   stroke(255, 104, 169, 116 * (1 - t)); strokeWeight(4); noFill();
   for (let i = 0; i < 4; i++) {
     const x = catcherX + catcherWidth / 2;
@@ -2226,7 +2239,7 @@ function drawKingCrimsonEffects() {
     ellipse(x, y, 100 + t * 200 + i * 20, 70 + t * 100 + i * 20);
   }
   noStroke(); textAlign(CENTER); fill('#ffb6c7'); textSize(17); textStyle(BOLD);
-  text('INVULNERABLE · FUTURE ERASED', width / 2, height * 0.15);
+  text(kingCrimson.active?'INVULNERABLE · FUTURE ERASED':'KING CRIMSON · RECOVERY', width / 2, height * 0.15);
   pop();
 }
 function explodeBomb(x, y, source) {
@@ -2329,11 +2342,11 @@ function updateMusicVolume(force = false) {
 
 function getCinematicCameraScale() {
   if (timeStop.phase === 'intro') {
-    const t = constrain((gameMillis() - timeStop.phaseStart) / stopIntroDuration(), 0, 1);
+    const t = constrain(timeStopSceneProgress(), 0, 1);
     return 1 + 0.072 * pow(sin(t * PI), 2);
   }
   if (roadRoller.active) {
-    const t = constrain((gameMillis() - roadRoller.start) / ROAD_ROLLER_DURATION_MS, 0, 1);
+    const t = constrain((gameMillis() - roadRoller.start) / roadRollerDuration(), 0, 1);
     return 1 + 0.035 * sin(t * PI);
   }
   return 1;
@@ -2364,7 +2377,7 @@ function drawCinematicDirector() {
   }
   if (standRush.active) {
     if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.ora(drawingContext,width,height,
-      oraProgress());
+      oraProgress(),{elapsed:(gameMillis()-standRush.start)/1000,duration:oraDuration()/1000});
     else drawOraRebuild();
     const t=constrain((gameMillis()-standRush.start)/ORA_RUSH_DURATION_MS,0,1);
     const alpha = 90*(1-t);
@@ -2372,7 +2385,7 @@ function drawCinematicDirector() {
     fill(250,211,255,150*(1-t)); rect(width-8*u,0,8*u,height);
   }
   if (roadRoller.active) {
-    const t=constrain((gameMillis()-roadRoller.start)/ROAD_ROLLER_DURATION_MS,0,1);
+    const t=constrain((gameMillis()-roadRoller.start)/roadRollerDuration(),0,1);
     if(t>.36 && t<.9) {
       noFill(); stroke(255,212,114,(1-t)*150); strokeWeight(3);
       const pulse = easeOutCubic(constrain((t-.36)/.64,0,1));
@@ -2425,7 +2438,7 @@ function paintOrb(c,kind){
  if(bomb){plate(c,[[32,17],[36,28],[46,32],[36,36],[32,47],[28,36],[18,32],[28,28]],'#160f26','#ffcaff');disc(c,32,32,3,'#ffefff');}
  if(gold){c.fillStyle='#5f3c26';c.font='bold 18px serif';c.textAlign='center';c.fillText('★',33,39);}
 }
-function drawOrb(x,y,size,kind){const a=visualAtlas[kind];if(!a){push();fill(kind==='gold'?'#ffdf84':'#e376af');circle(x,y,size);pop();return;}const c=drawingContext;c.save();c.translate(x,y);c.rotate(Math.sin(gameMillis()*.002+x)*.17);c.drawImage(a,-size*.59,-size*.59,size*1.18,size*1.18);c.restore();}
+function drawOrb(x,y,size,kind){const a=visualAtlas[kind];if(!a){push();fill(kind==='gold'?'#ffdf84':'#e376af');circle(x,y,size);pop();return;}const c=drawingContext;c.save();c.translate(x,y);c.rotate(Math.sin(skyClock*.002+x)*.17);c.drawImage(a,-size*.59,-size*.59,size*1.18,size*1.18);c.restore();}
 function paintFist(c){
  const shell=metal(c,0,0,84,185,['#f3d8ff','#9b74c0','#3a285e','#67447e']);
  plate(c,[[23,68],[62,68],[70,189],[48,197],[16,184]],shell,'#201a31',3);plate(c,[[27,86],[39,92],[37,184],[23,175]],'#c6aed3','#ece2f1');plate(c,[[47,94],[61,85],[65,178],[47,189]],'#47305e','#8d6eac');
@@ -2595,14 +2608,11 @@ function updateDirectorAudio() {
   // Do not strand the game if a referenced MP3 is absent, blocked or corrupted.
   const liveDuration = state.audio && Number.isFinite(state.audio.duration) ? state.audio.duration * 1000 : state.duration;
   const margin = state.audio ? 1300 : 0;
-  if (gameMillis() - state.started >= liveDuration + margin) finishDirectorVoice(state.token);
+  if (gameMillis() - state.started >= liveDuration + margin&&!sceneMediaAlive(state,state.audio)) finishDirectorVoice(state.token);
 }
 function directorAudioProgress(fallback) {
-  const state = directorVoice;
-  if (!state) return 0;
-  if (state.audio && Number.isFinite(state.audio.duration) && state.audio.duration > 0 && !state.audio.paused)
-    return constrain(state.audio.currentTime / state.audio.duration,0,1);
-  return constrain((gameMillis()-state.started) / (state.duration || fallback),0,1);
+ const state=directorVoice;if(!state)return 0;
+ return sceneAudioProgress(state,state.audio,state.started,state.duration||fallback);
 }
 function skipUniverseDirector() {
   stopCinematicEffects();  if (!universeReset.active) return;
@@ -2684,7 +2694,7 @@ function drawOraRebuild(){
 function drawTimeStopRebuild(){
  if(window.JoJoCharacterDirector && timeStop.phase!=='idle'){
   window.JoJoCharacterDirector.world(drawingContext,width,height,timeStop.phase,
-    constrain((gameMillis()-timeStop.phaseStart)/(timeStop.phase==='intro'?stopIntroDuration():timeStop.phase==='freeze'?TIME_STOP_FREEZE_MS:timeStop.phase==='release'?stopReleaseDuration():1000),0,1),{character:packTimeVoice==='starstop'?'jotaro':'dio',remaining:timeStop.phase==='freeze'?max(0,(TIME_STOP_FREEZE_MS-(gameMillis()-timeStop.phaseStart))/1000):max(0,(slowPowerUpEnd-gameMillis())/1000)});
+    timeStopSceneProgress(),{character:timeStop.voiceCharacter||'dio',elapsed:(gameMillis()-timeStop.phaseStart)/1000,duration:stopIntroDuration()/1000,remaining:timeStop.phase==='freeze'?max(0,(TIME_STOP_FREEZE_MS-(gameMillis()-timeStop.phaseStart))/1000):max(0,(slowPowerUpEnd-gameMillis())/1000)});
   return;
  }
  if(timeStop.phase==='idle'||timeStop.phase==='slow')return;
@@ -2745,13 +2755,14 @@ function initializeJoJoPack(){
   packPreview=new Audio(JOJO_CLIP_URLS[name]);packPreview.volume=OVERHAUL_AUDIO.master*OVERHAUL_AUDIO.voices*.7;const p=packPreview.play();if(p?.catch)p.catch(()=>{});
  });
  document.getElementById('pack-stop')?.addEventListener('click',stopPackPreview);
+ document.getElementById('reset-private-audio')?.addEventListener('click',()=>{if(universeReset.active||standRush.active||roadRoller.active||packMove.kind||kingCrimson.visualActive||timeStop.phase!=='idle')return;stopPackPreview();stopJoJoVoices();for(const name in jojoVoiceObjectUrls){URL.revokeObjectURL(jojoVoiceObjectUrls[name]);delete jojoVoiceClips[name];}jojoVoiceObjectUrls={};prepareJoJoVoiceClips();stopTimeResumeAudio();if(resumeAudioObjectUrl)URL.revokeObjectURL(resumeAudioObjectUrl);resumeAudioObjectUrl=null;resumeAudio=new Audio(JOJO_CLIP_URLS.resume);resumeAudio.preload='auto';document.querySelectorAll('[data-voice]').forEach(input=>input.value='');});
 }
 function startPackMove(kind){
  const costs={hand:35,tusk:25,cmoon:40,muda:55,giorno:75},cost=costs[kind];
  if(!cost||optionsVisible||timeStop.phase!=='idle'||!canUseJoJoAttack(cost))return false;
  if(gameMillis()<(packCooldowns[kind]||0))return false;
  standEnergy-=cost;stopJoJoVoices();packVoiceUntil=0;
- const duration=kind==='hand'?1050:kind==='tusk'?1650:kind==='cmoon'?4000:cinematicDuration(kind,kind==='giorno'?14200:5000);
+ const duration=cinematicDuration(kind,packMoveBaseDuration(kind));
  packMove={kind,start:gameMillis(),end:gameMillis()+duration,shots:[],hit:false,lastShot:0};
  packCooldowns[kind]=gameMillis()+duration+1200;
  playCharacterCue(kind,.75,true);
@@ -2761,7 +2772,9 @@ function startPackMove(kind){
 function updatePackMove(){
  if(timeStop.phase==='freeze'&&Math.abs(catcherX-packTeleportX)>75){playPackEffect('teleport',.45);packTeleportX=catcherX;}
  const p=packMove;if(!p.kind)return;
- if(p.kind==='muda'||p.kind==='giorno')p.end=Math.max(p.end,p.start+cinematicDuration(p.kind,p.kind==='giorno'?14200:5000));
+ p.end=Math.max(p.end,p.start+cinematicDuration(p.kind,packMoveBaseDuration(p.kind)));
+ sceneMediaAlive(p,jojoVoiceClips[p.kind]);
+ packCooldowns[p.kind]=Math.max(packCooldowns[p.kind]||0,p.end+1200);
  if(timeStop.phase==='intro'||timeStop.phase==='freeze'||roadRoller.active){const d=Math.min(deltaTime,50);p.start+=d;p.end+=d;return;}
  const age=gameMillis()-p.start,x=catcherX+catcherWidth/2;
  if(p.kind==='hand'&&age>340&&!p.hit){
@@ -2771,16 +2784,21 @@ function updatePackMove(){
  if(p.kind==='tusk'&&!p.hit){p.hit=true;const target=balls.filter(b=>b.y>0&&b.y<catcherY&&!b.targeted).sort((a,b)=>b.y-a.y)[0];if(target){target.targeted=true;p.shots.push({x,y:catcherY-15,target});}}
  for(const nail of p.shots){const d=Math.hypot(nail.target.x-nail.x,nail.target.y-nail.y),step=17*frameStep;if(d<=step+12){if(!gameOver&&nail.target.targeted){scoreBall(nail.target,true);respawnBall(nail.target);}nail.done=true;}else{nail.x+=(nail.target.x-nail.x)/d*step;nail.y+=(nail.target.y-nail.y)/d*step;}}
  p.shots=p.shots.filter(n=>!n.done);
- if((p.kind==='muda'||p.kind==='giorno')&&age>500&&gameMillis()-p.lastShot>(age>(p.end-p.start)*.75?100:220)){p.lastShot=gameMillis();punchDangerousBall();}
- if(gameMillis()>=p.end){for(const nail of p.shots)nail.target.targeted=false;packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;updateMusicVolume(true);}
+ if(p.kind==='muda'||p.kind==='giorno'){
+  const progress=sceneAudioProgress(p,jojoVoiceClips[p.kind],p.start,p.end-p.start);
+  if(progress>.16&&progress<.87&&gameMillis()-p.lastShot>(progress>.72?100:220)){p.lastShot=gameMillis();punchDangerousBall();}
+  if(progress>=.87&&!p.finisher){p.finisher=true;p.lastShot=gameMillis();punchDangerousBall();playCue('finisher',.8);jojoShake=Math.max(jojoShake,12);rushHitStopUntil=Math.max(rushHitStopUntil,gameMillis()+75);}
+ }
+ if(gameMillis()>=p.end&&!sceneMediaAlive(p,jojoVoiceClips[p.kind])){for(const nail of p.shots)nail.target.targeted=false;packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;updateMusicVolume(true);}
 }
 function drawPackMove(){
- const p=packMove;if(!p.kind)return;const c=drawingContext,age=gameMillis()-p.start,t=constrain(age/(p.end-p.start),0,1),x=catcherX+catcherWidth/2,y=catcherY-110;
+ const p=packMove;if(!p.kind)return;const c=drawingContext,age=gameMillis()-p.start,t=sceneAudioProgress(p,jojoVoiceClips[p.kind],p.start,p.end-p.start),x=catcherX+catcherWidth/2,y=catcherY-110;
  c.save();
  for(const nail of p.shots){c.save();c.translate(nail.x,nail.y);c.rotate(age*.023);c.strokeStyle='#ffd5ec';c.lineWidth=3;for(let i=0;i<3;i++){c.beginPath();c.arc(0,0,4+i*4,0,Math.PI*1.4);c.stroke();}c.restore();}
- if(p.kind==='cmoon'){
+ if(p.kind==='cmoon'&&age<4000){
   c.strokeStyle='#a8ed86';c.lineWidth=2;for(let i=0;i<5;i++){const gy=catcherY-60-i*55-(age*.06%55);c.beginPath();c.moveTo(x-140,gy+15);c.lineTo(x-140,gy);c.lineTo(x-148,gy+8);c.moveTo(x+140,gy+15);c.lineTo(x+140,gy);c.lineTo(x+148,gy+8);c.stroke();}
  }
+ if(window.JoJoStandArt?.pack(c,width,height,x,catcherY,p.kind,t,age/1000,OVERHAUL_AUDIO.quality)){c.restore();push();fill('#ead9ff');noStroke();textSize(14);textAlign(CENTER);text(p.kind.toUpperCase()+' · '+Math.max(0,(p.end-gameMillis())/1000).toFixed(1)+'s',width*.5,height*.18);pop();return;}
  c.translate(x,y);const scaleV=Math.min(1.1,width/850);c.scale(scaleV,scaleV);
  const col=p.kind==='hand'?'#68baff':p.kind==='cmoon'?'#b8d87a':p.kind==='tusk'?'#f2b3da':p.kind==='giorno'?'#e5c56b':'#d0af55';
  c.fillStyle=col;c.strokeStyle='#241b39';c.lineWidth=3;
@@ -2799,5 +2817,70 @@ function drawPackMove(){
  if(p.kind==='hand'){c.strokeStyle='#eee7db';c.lineWidth=4;c.beginPath();c.moveTo(0,-91);c.lineTo(0,-43);c.stroke();c.fillStyle='#eaca5c';c.fillRect(-28,-27,56,6);}
  if(p.kind==='cmoon'){c.strokeStyle='#d85665';c.lineWidth=3;c.beginPath();c.moveTo(-20,-84);c.lineTo(20,-45);c.moveTo(20,-84);c.lineTo(-20,-45);c.stroke();}
  c.restore();
- push();fill('#f4e2a8');noStroke();textSize(15);textAlign(CENTER);text(p.kind.toUpperCase()+' · '+Math.max(0,(p.end-gameMillis())/1000).toFixed(1)+'s',width*.5,height*.18);pop();
+ push();fill('#f4e2a8');noStroke();textSize(15);textAlign(CENTER);text((p.kind==='cmoon'&&age>=4000?'C-MOON · RECOVERY':p.kind.toUpperCase())+' · '+Math.max(0,(p.end-gameMillis())/1000).toFixed(1)+'s',width*.5,height*.18);pop();
+}
+
+// Audio is the scene clock when it is available. A stalled/failed file has a bounded fallback.
+function sceneMediaAlive(owner,audio){
+ if(!owner||!audio||audio.ended||audio.error||audio.paused!==false||!Number.isFinite(audio.currentTime))return false;
+ if(owner.audioSyncMedia!==audio){owner.audioSyncMedia=audio;owner.audioSyncTime=audio.currentTime;owner.audioSyncAt=gameMillis();}
+ if(audio.currentTime>owner.audioSyncTime+.015){owner.audioSyncTime=audio.currentTime;owner.audioSyncAt=gameMillis();}
+ return gameMillis()-(owner.audioSyncAt||0)<(owner.audioSyncTime>0?4000:8000);
+}
+function sceneAudioProgress(owner,audio,start,duration){
+ if(audio&&audio.paused===false&&!audio.error&&!audio.ended&&(!Number.isFinite(audio.duration)||audio.duration<=0))return 0;
+ if(audio&&Number.isFinite(audio.duration)&&audio.duration>0&&Number.isFinite(audio.currentTime)&&(audio.paused===false||audio.currentTime>0))return constrain(audio.currentTime/audio.duration,0,1);
+ return constrain((gameMillis()-start)/Math.max(1,duration),0,1);
+}
+function timeStopSceneProgress(){
+ const phase=timeStop.phase;
+ if(phase==='intro')return sceneAudioProgress(timeStop,jojoVoiceClips[timeStop.voiceName],timeStop.phaseStart,stopIntroDuration());
+ if(phase==='release')return sceneAudioProgress(timeStop,resumeAudio,timeStop.phaseStart,stopReleaseDuration());
+ return constrain((gameMillis()-timeStop.phaseStart)/(phase==='freeze'?TIME_STOP_FREEZE_MS:1000),0,1);
+}
+function packMoveBaseDuration(kind){return ({hand:1050,tusk:1650,cmoon:4000,muda:5000,giorno:14200})[kind]||1000;}
+function roadRollerDuration(){return Math.max(ROAD_ROLLER_DURATION_MS,cinematicDuration('roller',0),jojoVoiceClips.roller?0:ROAD_ROLLER_LAND_MS+cinematicDuration('wryyy',0));}
+function updateKingCrimsonScene(){
+ if(!kingCrimson.visualActive)return;
+ kingCrimson.duration=Math.max(kingCrimson.duration||KING_CRIMSON_MS,cinematicDuration('crimson',KING_CRIMSON_MS));
+ sceneMediaAlive(kingCrimson,jojoVoiceClips.crimson);
+ if(gameMillis()-kingCrimson.start>=kingCrimson.duration&&!sceneMediaAlive(kingCrimson,jojoVoiceClips.crimson))kingCrimson.visualActive=false;
+}
+
+const DEFAULT_ARCADE_BINDINGS=Object.freeze({stop:'1',ora:'2',roller:'3',crimson:'4',hand:'5',tusk:'6',cmoon:'7',muda:'8',giorno:'9'});
+const ARCADE_BINDING_KEYS='123456789qeft hjcmnzxvb uiklysw'.replace(/ /g,'').split('');
+let arcadeBindings={...DEFAULT_ARCADE_BINDINGS};
+function bindingLabel(action){return String(arcadeBindings[action]||DEFAULT_ARCADE_BINDINGS[action]).toUpperCase();}
+function activateArcadeAction(action){
+ if(optionsVisible||!gameStarted||gameOver||universeReset.active)return false;
+ if(action==='stop')return startTimeStop(catcherX+catcherWidth/2,catcherY);
+ if(action==='ora')return startStandRush();
+ if(action==='roller')return startRoadRoller();
+ if(action==='crimson')return startKingCrimson();
+ return startPackMove(action);
+}
+function assignArcadeBinding(action,value){
+ if(!(action in DEFAULT_ARCADE_BINDINGS)||!ARCADE_BINDING_KEYS.includes(value))return false;
+ const conflict=Object.keys(arcadeBindings).find(other=>other!==action&&arcadeBindings[other]===value);
+ if(conflict)arcadeBindings[conflict]=arcadeBindings[action];
+ arcadeBindings[action]=value;saveArcadeBindings();refreshArcadeBindingControls();return true;
+}
+function saveArcadeBindings(){try{localStorage.setItem('jojo.arcade.bindings.v1',JSON.stringify(arcadeBindings))}catch(_){}}
+function refreshArcadeBindingControls(){document.querySelectorAll('[data-keybind]').forEach(control=>{control.value=arcadeBindings[control.dataset.keybind];});}
+function initializeKeyBindings(){
+ try{const saved=JSON.parse(localStorage.getItem('jojo.arcade.bindings.v1')||'null');if(saved&&Object.keys(DEFAULT_ARCADE_BINDINGS).every(k=>ARCADE_BINDING_KEYS.includes(saved[k]))&&new Set(Object.values(saved)).size===9)arcadeBindings=Object.fromEntries(Object.keys(DEFAULT_ARCADE_BINDINGS).map(k=>[k,saved[k]]));}catch(_){}
+ document.querySelectorAll('[data-keybind]').forEach(control=>{control.addEventListener('change',()=>assignArcadeBinding(control.dataset.keybind,control.value));});
+ document.getElementById('reset-keybinds')?.addEventListener('click',()=>{arcadeBindings={...DEFAULT_ARCADE_BINDINGS};saveArcadeBindings();refreshArcadeBindingControls();});
+ refreshArcadeBindingControls();
+}
+let cachedNebulaLayers=null;
+function drawNebulaLayers(){
+ if(OVERHAUL_AUDIO.quality<=0)return;
+ if(!cachedNebulaLayers&&typeof document.createElement==='function'){
+  cachedNebulaLayers=['111,66,170','34,105,153','153,84,127'].map(rgb=>{const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;const c=canvas.getContext('2d'),g=c.createRadialGradient(256,256,12,256,256,250);g.addColorStop(0,'rgba('+rgb+',.46)');g.addColorStop(.55,'rgba('+rgb+',.14)');g.addColorStop(1,'rgba('+rgb+',0)');c.fillStyle=g;c.fillRect(0,0,512,512);return canvas;});
+ }
+ if(!cachedNebulaLayers)return;
+ const c=drawingContext,t=skyClock*.00008;c.save();c.globalAlpha=.25;
+ for(let i=0;i<cachedNebulaLayers.length;i++){c.save();c.translate(width*(.18+i*.30)+Math.sin(t+i*2)*32,height*(.35+i*.08)+Math.cos(t*.7+i)*18);c.rotate(t*(i%2?-.15:.12));const size=Math.min(width,height)*(1.15+i*.12);c.drawImage(cachedNebulaLayers[i],-size/2,-size*.20,size,size*.40);c.restore();}
+ c.restore();
 }

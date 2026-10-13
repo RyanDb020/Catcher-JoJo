@@ -1,0 +1,112 @@
+[
+  {
+    "key": "star",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 416316,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  },
+  {
+    "key": "world",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 420922,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  },
+  {
+    "key": "experience",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 425174,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  },
+  {
+    "key": "hand",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 428604,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  },
+  {
+    "key": "tusk",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 522124,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  },
+  {
+    "key": "cmoon",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 300968,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  },
+  {
+    "key": "crimson",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 375592,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  },
+  {
+    "key": "dio",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 339604,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  },
+  {
+    "key": "jotaro",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 269468,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  },
+  {
+    "key": "heaven",
+    "width": 1536,
+    "height": 1024,
+    "poses": 6,
+    "columns": 3,
+    "rows": 2,
+    "bytes": 508484,
+    "source": "Original generated artwork, built-in imagegen",
+    "alpha": true
+  }
+]

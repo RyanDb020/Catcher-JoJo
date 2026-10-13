@@ -113,7 +113,7 @@ async function waitState(page, predicate, label, timeout = 12000) {
     await waitState(page, state => state.gameStarted, 'game start');
 
     // ZA WARUDO: start, shouted climax, and freeze/release boundary.
-    await page.keyboard.press('t');
+    await page.keyboard.press('1');
     await delay(1050); screenshots.push(await shot(page,'time-stop-start'));
     await delay(1250); screenshots.push(await shot(page,'time-stop-climax'));
     await waitState(page, state => state.timeStop === 'freeze', 'Time Stop frozen composition');
@@ -122,7 +122,7 @@ async function waitState(page, predicate, label, timeout = 12000) {
 
     // Road Roller: visible descent, the 1.39 s contact frame, and the sustained
     // ground-wave aftermath. G is deliberately the existing test energy refill.
-    await page.keyboard.press('g'); await page.keyboard.press('e');
+    await page.keyboard.press('g'); await page.keyboard.press('3');
     await waitState(page, state => state.roadRoller, 'Road Roller start');
     await delay(280); screenshots.push(await shot(page,'road-roller-descent'));
     await delay(1110); screenshots.push(await shot(page,'road-roller-landing'));
@@ -131,7 +131,7 @@ async function waitState(page, predicate, label, timeout = 12000) {
 
     // ORA ORA: opening, middle barrage, and final punch/recovery.
     await waitState(page, state => state.timeStop === 'idle', 'Time Stop cleanup before ORA', 18000);
-    await page.keyboard.press('g'); await page.keyboard.press('q');
+    await page.keyboard.press('g'); await page.keyboard.press('2');
     await waitState(page, state => state.ora, 'ORA start');
     for(const [progress,name] of [[.07,'ora-reveal'],[.22,'ora-start'],[.52,'ora-middle'],[.77,'ora-overdrive'],[.915,'ora-finish'],[.975,'ora-recovery']]){await waitState(page,s=>s.ora&&s.oraProgress>=progress,'ORA '+name);screenshots.push(await shot(page,name));}
     await waitState(page, state => !state.ora, 'ORA completion', 8000);

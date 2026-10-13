@@ -1,3 +1,7 @@
+## Illustrated Stand pose atlases
+
+Ten original generated fan-art sprite sheets (six poses per sheet) were created with the built-in imagegen tool for this personal game. Subjects: Star Platinum, The World, Gold Experience, The Hand, Tusk, C-Moon, King Crimson, DIO, Jotaro and Pucci/Made in Heaven. Full prompt set and production metadata are in assets/stand-art/prompts.json and manifest.json. Production WebP files preserve transparency and were compressed from the generated PNGs using FFmpeg. No external anime frame, downloaded sprite or stock artwork was copied. These are not official JoJo assets and no franchise licence or CC0 grant is claimed. Supplied audio and existing CC0 recordings remain credited below.
+
 ## Uploaded JoJo audio pack (personal version)
 
 All 17 recordings from the user-provided `all jojo mp3.zip` are local MP3 files in `assets/jojo/`. Source filenames, measured durations and candidate character names are in `JOJO_AUDIO_PACK.json`. Identification is based on filenames; voices have not been independently identified by listening. The user asked for personal use and integration. No licence grant or creator attribution was provided; these recordings are not claimed CC0 or cleared for redistribution. The original archive was preserved. Derived clips use FFmpeg loudness normalization (-19 LUFS, -2 dB true peak), 15 ms fade-in, stereo 44.1 kHz MP3; duration preserved. Existing Kenney effects remain separately credited below.

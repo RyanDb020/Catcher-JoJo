@@ -1,3 +1,5 @@
+Current controls and illustrated character implementation are documented in [CONTROLS_VISUAL_STATUS.md](CONTROLS_VISUAL_STATUS.md). The controls and prototype graphics described below are the previous checkpoint.
+
 # JoJo audio pack integration
 
 17 supplied clips are now bundled locally, with loudness normalization and source mapping in JOJO_AUDIO_PACK.json. All 17 are playable in Options; 17 have a gameplay trigger or selectable game audio role. Preview uses a separate audio instance and never rewinds the paused gameplay clip. Space cancels extra attacks without refunding energy.

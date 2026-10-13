@@ -20,8 +20,8 @@ async function launch(browser,address,missing=false){
 }
 async function missingRoute(browser,address){
  const {page,errors}=await launch(browser,address,true);
- await page.keyboard.press('t');await wait(page,x=>x.timeStop==='freeze','silent freeze',9000);await wait(page,x=>x.timeStop==='idle','silent resume',25000);
- await page.keyboard.press('g');await page.keyboard.press('q');await wait(page,x=>x.ora,'silent ORA');await wait(page,x=>!x.ora,'silent ORA recovery',15000);
+ await page.keyboard.press('1');await wait(page,x=>x.timeStop==='freeze','silent freeze',9000);await wait(page,x=>x.timeStop==='idle','silent resume',25000);
+ await page.keyboard.press('g');await page.keyboard.press('2');await wait(page,x=>x.ora,'silent ORA');await wait(page,x=>!x.ora,'silent ORA recovery',15000);
  await page.keyboard.press('r');await wait(page,x=>x.universeReset,'silent Rewind');await wait(page,x=>!x.universeReset,'silent Rewind recovery',45000);
  await page.keyboard.press('r');await wait(page,x=>x.universeReset,'skip start');await page.keyboard.press('Space');const state=await wait(page,x=>!x.universeReset,'skip cleanup',5000);
  if(state.score!==0||state.lives!==3)throw Error('Reset state invalid '+JSON.stringify(state));
@@ -31,7 +31,7 @@ async function longRoute(browser,address){
  const {page,errors}=await launch(browser,address);
  await page.keyboard.press('o');await page.locator('[data-voice="ora"]').setInputFiles(path.join(__dirname,'fixtures/long-ora.mp3'));
  await wait(page,x=>x.clips?.ora.duration>=14,'local clip metadata');await page.locator('#close-options').click();
- await page.keyboard.press('g');await page.keyboard.press('q');await wait(page,x=>x.ora&&x.oraProgress>.22,'long ORA active');
+ await page.keyboard.press('g');await page.keyboard.press('2');await wait(page,x=>x.ora&&x.oraProgress>.22,'long ORA active');
  await page.keyboard.press('o');const paused=await wait(page,x=>x.paused,'ORA pause');await sleep(500);const still=await page.evaluate(()=>window.__JOJO_QA_STATE__);
  if(still.gameMillis!==paused.gameMillis||Math.abs(still.clips.ora.currentTime-paused.clips.ora.currentTime)>.05||!still.clips.ora.paused)throw Error('Pause desynchronized cinematic '+JSON.stringify({paused,still}));
  await page.locator('#close-options').click();const afterOldEnd=await wait(page,x=>x.ora&&x.clips.ora.currentTime>9.6,'long clip passes old cutoff',20000);
