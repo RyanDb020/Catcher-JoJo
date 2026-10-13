@@ -270,7 +270,7 @@ test('held keys cannot repeatedly extend a Time Stop',()=>{
 test('long DIO uses its full clip and snapshot despite selection changes',()=>{
  run('resetGame();gameStarted=true;var originalDio=jojoVoiceClips.dio;jojoVoiceClips.dio={duration:12.3,currentTime:0,paused:true,ended:false,pause(){this.paused=true},play(){this.paused=false;return Promise.resolve()}};packTimeVoice="dio";startTimeStop(10,10);packTimeVoice="starstop";jojoVoiceClips.dio.currentTime=6;gameClock=timeStop.phaseStart+13000;updateTimeStop()');
  assert.equal(run('timeStop.voiceName'),'dio');assert.equal(run('timeStop.phase'),'intro');assert.equal(run('stopIntroDuration()'),12300);assert(Math.abs(run('timeStopSceneProgress()')-6/12.3)<.001);
- run('jojoVoiceClips.dio.currentTime=12.3;jojoVoiceClips.dio.ended=true;updateTimeStop()');assert.equal(run('timeStop.phase'),'freeze');run('jojoVoiceClips.dio=originalDio;packTimeVoice="classic";resetGame()');
+ run('jojoVoiceClips.dio.currentTime=12.3;jojoVoiceClips.dio.ended=true;updateTimeStop()');assert.equal(run('timeStop.phase'),'freeze');assert.equal(run('jojoVoiceClips.dio.currentTime'),12.3);run('jojoVoiceClips.dio=originalDio;packTimeVoice="classic";resetGame()');
 });
 test('late clip metadata extends every move and a single Hand strike stays single',()=>{
  run('resetGame();gameStarted=true;standEnergy=100;var originalHand=jojoVoiceClips.hand;jojoVoiceClips.hand={duration:NaN,currentTime:0,paused:true,ended:false,pause(){this.paused=true},play(){this.paused=false;return Promise.resolve()}};startPackMove("hand");jojoVoiceClips.hand.duration=6;jojoVoiceClips.hand.currentTime=.8;gameClock=packMove.start+1000;updatePackMove()');assert.equal(run('packMove.end-packMove.start'),6000);assert.equal(run('packMove.hit'),true);

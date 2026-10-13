@@ -1,0 +1,33 @@
+{
+  "recovered_main": "8e28a3b9a5d79497c9d232c1c3466201a56e2dc6",
+  "art_source_commit": "681025efadad51eb699e240c5189ed0e10091296",
+  "natural_end_fix": "2594eddbfd42d7b9a665f571c0b5004e4ee436d8",
+  "framing_commit": "1bce965dcc55879f25b3c7e5da66796001e1ff1c",
+  "baseline_run": 38393528187,
+  "baseline_successful_steps": [
+    "Node regressions",
+    "3D Combat browser smoke",
+    "Arcade cinematic and local audio",
+    "missing-audio and long ORA pause/recovery"
+  ],
+  "baseline_overall": "failed in added complete-native-ending test; not claimed green",
+  "complete_audio_pass_run": 38394652102,
+  "complete_audio_pass": "all jobs success",
+  "before_image": {
+    "source": "user upload 20261013-1115-17.8033542.mp4",
+    "time_seconds": 55,
+    "viewport": [
+      2556,
+      1396
+    ]
+  },
+  "comparison": "same viewport and Giorno ability; different round, score, catcher position and attack progress; images scaled equally for comparison",
+  "audio_listening": "No subjective speaker/headphone listening. Native playback, actual media end positions and decoding verified.",
+  "framing_pass_run": 38394920117,
+  "framing_pass": "all jobs success",
+  "atlas_isolation_commit": "070233d2b057bc24af743c192fa0986ca989be15",
+  "final_source_pass_run": 38397347518,
+  "final_source_pass": "all enabled Node and browser jobs success",
+  "final_source_commit": "f39d924b2fa8b9b66291d9a2847f57e814ce09de",
+  "pages_deployment": "38397346448 completed success"
+}
