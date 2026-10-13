@@ -655,7 +655,7 @@
     c.restore();
     tint(c,w*.61,h*.54,w*.25,'161,216,242',.15*manifest);
     // Pucci remains distinct in front-left; Stand manifests in full side silhouette.
-    c.save();if(root.JoJoVFX)c.transform(1,Math.sin((settings.elapsed||0)*3)*.012,Math.sin((settings.elapsed||0)*2)*.012,1,Math.sin((settings.elapsed||0)*3)*w*.006,Math.cos((settings.elapsed||0)*4)*h*.004);
+    c.save();if(root.JoJoVFX&&!root.JoJoVFX.diagnostics.settings().reduced)c.transform(1,Math.sin((settings.elapsed||0)*3)*.012,Math.sin((settings.elapsed||0)*2)*.012,1,Math.sin((settings.elapsed||0)*3)*w*.006,Math.cos((settings.elapsed||0)*4)*h*.004);
     const painted=actor(c,'heaven',w,h,.52,.52,.80,t<.18?0:t<.5?1:t<.8?2+Math.floor((settings.elapsed||t*8.664)*3)%2:4,{alpha:entry,appear:Math.min(1,t*7),materialize:manifest,glow:'#bacef3'});
     c.restore();
     if(!painted)figure(c,w,h,cc=>pucci(cc,Math.min(t, .64)*3),{x:.31-(1-entry)*.12,y:.63,zoom:.83+pull*.05});
@@ -716,7 +716,7 @@
     const rootX=phase===4?.53:.51,rootY=phase===4?.45:.46;
     if(!actor(c,'jotaro',w,h,.24,.58,.36,phase===5?5:phase<2?1:3))figure(c,w,h,cc=>jotaro(cc,age),{x:.25,y:.60,zoom:.47});
     const zoom=[.50,.61,.68,.74,.93,.58][phase];
-    c.save();if(root.JoJoVFX)c.transform(1,Math.sin(age*9)*.025,Math.sin(age*11)*.025,1,Math.sin(age*8)*w*.009,Math.cos(age*6)*h*.009);c.translate((phase>=1&&phase<=3?Math.sin(age*(phase===3?32:17))*w*.004:0),0);
+    c.save();if(root.JoJoVFX&&!root.JoJoVFX.diagnostics.settings().reduced)c.transform(1,Math.sin(age*9)*.025,Math.sin(age*11)*.025,1,Math.sin(age*8)*w*.009,Math.cos(age*6)*h*.009);c.translate((phase>=1&&phase<=3?Math.sin(age*(phase===3?32:17))*w*.004:0),0);
     const painted=actor(c,'star',w,h,rootX,rootY,.53+(phase===4?.12:phase===3?.05:0),phase===0?0:phase===5?1:phase===4?5:phase===1?1:2+Math.floor(age*(phase===3?16:11))%3,{appear:Math.min(1,t*10),glow:'#ad7ced'});
     if(!painted)figure(c,w,h,cc=>starFigure(cc,age,phase),{x:rootX,y:rootY,zoom});c.restore();
     if(phase>=1&&phase<=3){

@@ -1222,7 +1222,7 @@ function beginGameOver() {
 }
 function drawGameOverWorld() {
   if(timeStop.phase==='intro'||timeStop.phase==='freeze'||timeStop.phase==='release')updateTimeStop();
-  updateJoJoAttacks();updateJoJoParticles();updateKingCrimsonScene();
+  updateJoJoAttacks();if(getTimeSpeed()>0)updateJoJoParticles();updateKingCrimsonScene();
   if(queuedReset&&!standRush.active&&!roadRoller.active&&!packMove.kind&&!kingCrimson.visualActive&&timeStop.phase==='idle'){queuedReset=false;startUniverseReset();return;}
   push();drawSpaceBackground(0);drawBackdropDetails();
   for(const ball of balls)drawOrb(ball.x,ball.y,BALL_SIZE,ball.kind==='bomb'?'bomb':ball.gold?'gold':'normal');
@@ -1268,13 +1268,15 @@ function draw() {
   const speedFactor = roadRoller.active || freezePhysics || gameMillis()<rushHitStopUntil ? 0 : getTimeSpeed();
   const shake = OVERHAUL_AUDIO.shake&&!OVERHAUL_AUDIO.reduced ? min(15, getCameraShake() + jojoShake) : 0;
   push();
-  const zoom = getCinematicCameraScale();
+  const zoom = OVERHAUL_AUDIO.reduced?1:getCinematicCameraScale();
   if (zoom !== 1) {
     translate(width / 2, height / 2);
     scale(zoom);
     translate(-width / 2, -height / 2);
   }
   if (shake > 0) translate(random(-shake, shake), random(-shake, shake));
+  const desaturation=timeStop.phase==='idle'?0:timeStop.phase==='intro'?min(1,timeStopSceneProgress()*1.7):timeStop.phase==='release'?1-timeStopSceneProgress():1;
+  drawingContext.filter=desaturation>0?'grayscale('+floor(desaturation*100)+'%)':'none';
   drawSpaceBackground(gameStarted && !gameOver ? speedFactor : 1);
   drawBackdropDetails();
   if (!gameStarted) { pop(); drawStartScreen(); return; }
@@ -1300,6 +1302,7 @@ function draw() {
   if (awakening.active) drawAwakeningAura();
   drawCatcherGhostTrail();
   drawBucket(catcherX, catcherY);
+  drawingContext.filter='none';
   drawStandPunches();
   drawPackMove();
   pop();
