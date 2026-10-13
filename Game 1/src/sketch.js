@@ -44,7 +44,7 @@ function publishQaState() {
       universeReset: universeReset.active,
       universePhase: universeReset.active ? universeReset.phase : 'idle', gameMillis: gameClock,
       oraProgress:standRush.active?oraProgress():0,oraDuration:oraDuration(),paused:optionsVisible,
-      universeProgress:universeReset.active?constrain((gameMillis()-universeReset.phaseStart)/universePhaseDuration(universeReset.phase),0,1):0,
+      universeProgress:universeReset.active?constrain((universeReset.visualPhase===universeReset.phase?universeReset.visualAge:gameMillis()-universeReset.phaseStart)/universePhaseDuration(universeReset.phase),0,1):0,
       clips:Object.fromEntries(Object.entries(jojoVoiceClips).map(([name,a])=>[name,{duration:Number.isFinite(a.duration)?a.duration:0,paused:a.paused,currentTime:a.currentTime||0}])),
       director:directorVoice?{name:directorVoice.name,playing:!!directorVoice.audio&&!directorVoice.audio.paused,currentTime:directorVoice.audio?.currentTime||0,duration:directorVoice.duration}:null
     };
@@ -278,13 +278,14 @@ const CINEMATIC_CUES=['time-freeze','time-resume','acceleration','collapse','gen
 let pausedHtmlAudio=[];
 function stopCinematicEffects(){for(const name of CINEMATIC_CUES){const a=soundEffects[name];if(a&&a.sound&&a.ready)try{a.sound.stop();}catch(_){}}}
 function cinematicDuration(name,base){const a=jojoVoiceClips[name];return a&&Number.isFinite(a.duration)&&a.duration>0?Math.max(base,a.duration*1000):base;}
+function sceneClockFinished(audio,elapsed,duration,base=0){return !!(audio&&audio.ended&&Number.isFinite(audio.duration)&&audio.duration*1000>=base-50)||elapsed>=duration;}
 function stopIntroDuration(){return timeStop.introDuration||TIME_STOP_INTRO_MS;}
 function stopReleaseDuration(){return timeStop.releaseDuration||TIME_STOP_RELEASE_MS;}
 function universePhaseDuration(phase){
  return phase==='reveal'?cinematicDuration('pucci',HEAVEN_REVEAL_MS):phase==='rewind'?cinematicDuration('accelerate',REWIND_MS):phase==='accelerate'?ACCELERATE_MS:phase==='collapse'?SINGULARITY_MS:REBIRTH_MS;
 }
 function oraDuration(){return Math.max(ORA_RUSH_DURATION_MS,standRush.duration||0);}
-function oraProgress(){return directorVoice&&directorVoice.name==='ora'?directorAudioProgress(oraDuration()):constrain((gameMillis()-standRush.start)/oraDuration(),0,1);}
+function oraProgress(){if(standRush.voiceFinished&&jojoVoiceClips.ora?.ended&&jojoVoiceClips.ora.duration*1000>=ORA_RUSH_DURATION_MS-50)return 1;return directorVoice&&directorVoice.name==='ora'?directorAudioProgress(oraDuration()):constrain((gameMillis()-standRush.start)/oraDuration(),0,1);}
 
 
 // JOJO TIME STOP: instellingen
@@ -753,7 +754,7 @@ function updateTimeStop() {
       timeStop.freezePlayed = true;
       playTimeSound("freeze");
     }
-    if (elapsed >= stopIntroDuration()&&!sceneMediaAlive(timeStop,jojoVoiceClips[timeStop.voiceName])) {
+    if (sceneClockFinished(jojoVoiceClips[timeStop.voiceName],elapsed,stopIntroDuration(),TIME_STOP_INTRO_MS)&&!sceneMediaAlive(timeStop,jojoVoiceClips[timeStop.voiceName])) {
       timeStop.phase = "freeze";
       stopJoJoVoices();if(timeStopSoundLoaded)timeStopSound.stop();
       timeStop.phaseStart = gameMillis();
@@ -771,7 +772,7 @@ function updateTimeStop() {
     slowPowerUpEnd = 0;
     beginTimeResumeAudio();
     updateMusicVolume(true);
-  } else if (timeStop.phase === "release" && elapsed >= stopReleaseDuration()&&!sceneMediaAlive(timeStop,resumeAudio)) {
+  } else if (timeStop.phase === "release" && sceneClockFinished(resumeAudio,elapsed,stopReleaseDuration(),TIME_STOP_RELEASE_MS)&&!sceneMediaAlive(timeStop,resumeAudio)) {
     timeStop.phase = "idle";
     timeStop.particles = [];
     stopTimeResumeAudio();
@@ -1497,7 +1498,7 @@ function updateJoJoAttacks() {
     const interval=p<.12?100000:p<.38?250:p<.72?135:p<.88?80:100000;
     if(!gameOver&&now-standRush.lastPunch>=interval){standRush.lastPunch=now;punchDangerousBall();}
     if(p>.88&&!standRush.finisher){standRush.finisher=true;punchDangerousBall();playCue('finisher',.88);rushHitStopUntil=Math.max(rushHitStopUntil,now+80);jojoShake=19;mangaPulse=now+620;}
-    if((standRush.voiceFinished&&now-standRush.start>=oraDuration())||(now-standRush.start>oraDuration()+1500&&!sceneMediaAlive(standRush,directorVoice?.audio))){cancelDirectorVoice();standRush.active=false;}
+    if((standRush.voiceFinished&&sceneClockFinished(jojoVoiceClips.ora,now-standRush.start,oraDuration(),ORA_RUSH_DURATION_MS))||(now-standRush.start>oraDuration()+1500&&!sceneMediaAlive(standRush,directorVoice?.audio))){cancelDirectorVoice();standRush.active=false;}
   }
   if (roadRoller.active) {
     const elapsed = now - roadRoller.start;
@@ -1506,7 +1507,7 @@ function updateJoJoAttacks() {
       slamRoadRoller();
     }
     roadRoller.duration=Math.max(roadRoller.duration||0,roadRollerDuration());
-    if (elapsed >= roadRoller.duration&&!sceneMediaAlive(roadRoller,jojoVoiceClips.roller||jojoVoiceClips.wryyy)) roadRoller.active = false;
+    if (elapsed>=ROAD_ROLLER_LAND_MS&&sceneClockFinished(jojoVoiceClips.roller||jojoVoiceClips.wryyy,elapsed,roadRoller.duration,jojoVoiceClips.roller?ROAD_ROLLER_DURATION_MS:ROAD_ROLLER_DURATION_MS-ROAD_ROLLER_LAND_MS)&&!sceneMediaAlive(roadRoller,jojoVoiceClips.roller||jojoVoiceClips.wryyy)) roadRoller.active = false;
   }
   resolvePunches();
   if(roadRollerImpact.active&&now-roadRollerImpact.at>ROAD_ROLLER_IMPACT_MS)roadRollerImpact.active=false;
@@ -1831,7 +1832,7 @@ function recordUniverseFrame() {
   if (gameMillis() - lastHistoryCapture < 16) return;
   lastHistoryCapture = gameMillis();
   universeHistory.push({
-    at: gameMillis(), catcherX, catcherWidth, score, lives, combo,
+    at: gameMillis(),width,height,catcherX, catcherWidth, score, lives, combo,
     balls: balls.map(ball => ({x: ball.x, y: ball.y, gold: ball.gold, kind: ball.kind})),
     powerUps: powerUps.map(p => ({x: p.x, y: p.y, type: p.type}))
   });
@@ -1869,8 +1870,9 @@ function commitNewUniverse() {
   updateMusicVolume(true);
 }
 
+function universeVisualAge(u){if(u.visualPhase!==u.phase){u.visualPhase=u.phase;u.visualAge=Math.max(0,gameMillis()-u.phaseStart);}else u.visualAge+=Math.min(250,Math.max(0,deltaTime));return u.visualAge;}
 function drawUniverseReset() {
- const u=universeReset,phase=u.phase,age=gameMillis()-u.phaseStart;
+ const u=universeReset,phase=u.phase,age=universeVisualAge(u);
  const d=universePhaseDuration(phase);
  const t=(phase==='reveal'||phase==='rewind')&&directorVoice?directorAudioProgress(d):constrain(age/d,0,1);
  if(phase==='reveal'){
@@ -1906,7 +1908,7 @@ function drawUniverseReset() {
  }
  if(phase==='reveal'){
   // A default 6-second legacy clip does not shorten the new 8.664-second intro.
-  if(age>=d && (u.introVoiceDone || (age>=d+1800&&!sceneMediaAlive(u,directorVoice?.audio)))){
+  if(sceneClockFinished(jojoVoiceClips.pucci,age,d,HEAVEN_REVEAL_MS) && (u.introVoiceDone || (age>=d+1800&&!sceneMediaAlive(u,directorVoice?.audio)))){
    cancelDirectorVoice();
    u.phase='rewind';u.phaseStart=gameMillis();
    beginDirectorVoice('accelerate',()=>{
@@ -1916,7 +1918,7 @@ function drawUniverseReset() {
   return;
  }
  if(phase==='rewind'){
-  if(age>=d && (u.rewindVoiceDone || (age>=d+1800&&!sceneMediaAlive(u,directorVoice?.audio)))){
+  if(sceneClockFinished(jojoVoiceClips.accelerate,age,d,REWIND_MS) && (u.rewindVoiceDone || (age>=d+1800&&!sceneMediaAlive(u,directorVoice?.audio)))){
    cancelDirectorVoice();u.phase='accelerate';u.phaseStart=gameMillis();
    playUniverseSound('speed');
   }
@@ -2072,7 +2074,7 @@ function drawUniverseCollapse(t) {
     window.JoJoCosmicDirector.collapse(drawingContext,width,height,t,
       universeReset.source,Number(OVERHAUL_AUDIO.quality)||0);
     if(t<.22)drawUniverseHeader('REALITY FRACTURE','THE OLD WORLD BREAKS APART','#e9c5ff');
-    else if(t>.36&&t<.64)drawUniverseHeader('SINGULARITY','EVERYTHING IS FALLING IN','#ffe2c4');
+    else if(t>.36&&t<.64){const c=drawingContext;c.save();c.fillStyle='#ead6ff';c.font='bold 16px Arial';c.textAlign='center';c.fillText('SINGULARITY',width*.5,height*.085);c.restore();}
     return;
   }
   push();
@@ -2386,7 +2388,7 @@ function drawCinematicDirector() {
   }
   if (standRush.active) {
     if(window.JoJoCharacterDirector) window.JoJoCharacterDirector.ora(drawingContext,width,height,
-      oraProgress(),{elapsed:(gameMillis()-standRush.start)/1000,duration:oraDuration()/1000});
+      oraProgress(),{elapsed:directorVoice?.audio?.currentTime>0?directorVoice.audio.currentTime:(gameMillis()-standRush.start)/1000,duration:oraDuration()/1000});
     else drawOraRebuild();
     const t=constrain((gameMillis()-standRush.start)/ORA_RUSH_DURATION_MS,0,1);
     const alpha = 90*(1-t);
@@ -2703,7 +2705,7 @@ function drawOraRebuild(){
 function drawTimeStopRebuild(){
  if(window.JoJoCharacterDirector && timeStop.phase!=='idle'){
   window.JoJoCharacterDirector.world(drawingContext,width,height,timeStop.phase,
-    timeStopSceneProgress(),{character:timeStop.voiceCharacter||'dio',elapsed:(gameMillis()-timeStop.phaseStart)/1000,duration:stopIntroDuration()/1000,balls,backdrop:visualAtlas.space,remaining:timeStop.phase==='freeze'?max(0,(TIME_STOP_FREEZE_MS-(gameMillis()-timeStop.phaseStart))/1000):max(0,(slowPowerUpEnd-gameMillis())/1000)});
+    timeStopSceneProgress(),{character:timeStop.voiceCharacter||'dio',elapsed:timeStop.phase==='intro'&&jojoVoiceClips[timeStop.voiceName]?.currentTime>0?jojoVoiceClips[timeStop.voiceName].currentTime:(gameMillis()-timeStop.phaseStart)/1000,duration:stopIntroDuration()/1000,balls,backdrop:visualAtlas.space,remaining:timeStop.phase==='freeze'?max(0,(TIME_STOP_FREEZE_MS-(gameMillis()-timeStop.phaseStart))/1000):max(0,(slowPowerUpEnd-gameMillis())/1000)});
   return;
  }
  if(timeStop.phase==='idle'||timeStop.phase==='slow')return;
@@ -2798,7 +2800,7 @@ function updatePackMove(){
   if(progress>.16&&progress<.87&&gameMillis()-p.lastShot>(progress>.72?100:220)){p.lastShot=gameMillis();punchDangerousBall();}
   if(progress>=.87&&!p.finisher){p.finisher=true;p.lastShot=gameMillis();punchDangerousBall();playCue('finisher',.8);jojoShake=Math.max(jojoShake,12);rushHitStopUntil=Math.max(rushHitStopUntil,gameMillis()+75);}
  }
- if(gameMillis()>=p.end&&!sceneMediaAlive(p,jojoVoiceClips[p.kind])){for(const nail of p.shots)nail.target.targeted=false;packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;updateMusicVolume(true);}
+ if((p.kind!=='cmoon'||gameMillis()-p.start>=4000)&&sceneClockFinished(jojoVoiceClips[p.kind],gameMillis()-p.start,p.end-p.start,packMoveBaseDuration(p.kind))&&!sceneMediaAlive(p,jojoVoiceClips[p.kind])){for(const nail of p.shots)nail.target.targeted=false;packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;updateMusicVolume(true);}
 }
 function drawPackMove(){
  const p=packMove;if(!p.kind)return;const c=drawingContext,age=gameMillis()-p.start,t=sceneAudioProgress(p,jojoVoiceClips[p.kind],p.start,p.end-p.start),x=catcherX+catcherWidth/2,y=catcherY-110;
@@ -2854,7 +2856,7 @@ function updateKingCrimsonScene(){
  if(!kingCrimson.visualActive)return;
  kingCrimson.duration=Math.max(kingCrimson.duration||KING_CRIMSON_MS,cinematicDuration('crimson',KING_CRIMSON_MS));
  sceneMediaAlive(kingCrimson,jojoVoiceClips.crimson);
- if(gameMillis()-kingCrimson.start>=kingCrimson.duration&&!sceneMediaAlive(kingCrimson,jojoVoiceClips.crimson))kingCrimson.visualActive=false;
+ if(gameMillis()-kingCrimson.start>=KING_CRIMSON_MS&&sceneClockFinished(jojoVoiceClips.crimson,gameMillis()-kingCrimson.start,kingCrimson.duration,KING_CRIMSON_MS)&&!sceneMediaAlive(kingCrimson,jojoVoiceClips.crimson))kingCrimson.visualActive=false;
 }
 
 const DEFAULT_ARCADE_BINDINGS=Object.freeze({stop:'1',ora:'2',roller:'3',crimson:'4',hand:'5',tusk:'6',cmoon:'7',muda:'8',giorno:'9'});

@@ -286,3 +286,5 @@ test('pooled particles reuse retired objects and stay bounded through repeated b
  run('resetGame();jojoParticlePool=[];OVERHAUL_AUDIO.particles=true;burstJoJoParticles(1,2,"#fff",90);var originals=new Set(jojoParticles);jojoParticles.forEach(p=>p.life=0);updateJoJoParticles();burstJoJoParticles(3,4,"#fff",90)');assert(run('jojoParticles.every(p=>originals.has(p))'));
  for(let i=0;i<8;i++)run('burstJoJoParticles(3,4,"#fff",90)');assert(run('jojoParticles.length+jojoParticlePool.length')<=run('MAX_PARTICLES'));run('resetGame()');
 });
+
+test("native scene completion does not wait for a lagging physics clock",()=>{assert.equal(run("sceneClockFinished({ended:true,duration:14.2},2000,14200,8359)"),true);assert.equal(run("sceneClockFinished({ended:false,duration:14.2},2000,14200,8359)"),false);assert.equal(run("sceneClockFinished({ended:true,duration:3},2000,4500,4500)"),false);run("resetGame();var visualTest={phase:\"collapse\",phaseStart:gameMillis()}");run("universeVisualAge(visualTest)");context.deltaTime=100;assert.equal(run("universeVisualAge(visualTest)"),100);context.deltaTime=16.6667;run("resetGame()");});
