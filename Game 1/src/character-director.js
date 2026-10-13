@@ -699,7 +699,7 @@
     const close=extended&&t>.32&&t<.72?Math.sin((t-.32)/.4*PI):0;
     const poseTime=extended?elapsed:t*2;
     stage(c,w,h,settings.character==='jotaro'?'136,90,210':'211,162,74',t,.63);
-    timeDial(c,w,h,Math.min(t/.82,1),t>.82);
+    c.save();c.translate(w*.90,h*.18);c.scale(.16,.16);c.translate(-w*.5,-h*.49);timeDial(c,w,h,Math.min(t/.82,1),t>.82);c.restore();
     if(!actor(c,settings.character==='jotaro'?'jotaro':'dio',w,h,.24,.56,.39,t<.22?0:t<.5?1:t<.76?3:4,{appear:Math.min(1,t*8),glow:'#f5cb79'}))figure(c,w,h,cc=>settings.character==='jotaro'?jotaro(cc,t):dioFigure(cc,t),{x:.24,y:.59,zoom:.65});
     // The Stand arrives from behind DIO, then locks into the final outstretched pose.
     c.save();c.translate(w*.018*Math.sin(t*PI)*(1-lock),0);
