@@ -716,7 +716,7 @@
     const rootX=phase===4?.53:.51,rootY=phase===4?.45:.46;
     if(!actor(c,'jotaro',w,h,.24,.58,.36,phase===5?5:phase<2?1:3))figure(c,w,h,cc=>jotaro(cc,age),{x:.25,y:.60,zoom:.47});
     const zoom=[.50,.61,.68,.74,.93,.58][phase];
-    c.save();if(root.JoJoVFX&&!root.JoJoVFX.diagnostics.settings().reduced)c.transform(1,Math.sin(age*9)*.025,Math.sin(age*11)*.025,1,Math.sin(age*8)*w*.009,Math.cos(age*6)*h*.009);c.translate((phase>=1&&phase<=3?Math.sin(age*(phase===3?32:17))*w*.004:0),0);
+    c.save();if(root.JoJoVFX&&!root.JoJoVFX.diagnostics.settings().reduced)c.transform(1,Math.sin(age*9)*.025*power,Math.sin(age*11)*.025*power,1,Math.sin(age*8)*w*.009*power,Math.cos(age*6)*h*.009*power);c.translate((phase>=1&&phase<=3?Math.sin(age*(phase===3?32:17))*w*.004:0),0);
     const painted=actor(c,'star',w,h,rootX,rootY,.53+(phase===4?.12:phase===3?.05:0),phase===0?0:phase===5?1:phase===4?5:phase===1?1:2+Math.floor(age*(phase===3?16:11))%3,{appear:Math.min(1,t*10),glow:'#ad7ced'});
     if(!painted)figure(c,w,h,cc=>starFigure(cc,age,phase),{x:rootX,y:rootY,zoom});c.restore();
     if(phase>=1&&phase<=3){

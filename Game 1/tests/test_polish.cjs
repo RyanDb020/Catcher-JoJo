@@ -48,7 +48,7 @@ test('fatal catch lets ORA and punches finish without post-game scoring',()=>{
  assert(run('gameOverRevealAt')>=run('standRush.start')+run('ORA_RUSH_DURATION_MS')+420);
  assert(run('gameOverRevealAt')>=run('standPunches[0].start')+run('standPunches[0].duration')+470);
  run('gameClock=Math.max(gameOverRevealAt+1,standRush.start+oraDuration()+1800);updateJoJoAttacks()');
- assert.equal(run('score'),before);assert.equal(run('standRush.active'),false);
+ assert.equal(run('score'),before);assert.equal(run('standRush.active'),true);run('gameClock+=700;updateJoJoAttacks()');assert.equal(run('standRush.active'),false);
  assert.equal(run('standPunches.some(p=>p.target.targeted)'),false);
 });
 test('Game Over panel and TBC banner stay inside responsive layouts',()=>{
@@ -216,7 +216,7 @@ test('catch collision matches the bucket rim rather than its full sidewall',()=>
 test('long local ORA clip is not cut at the old fixed end time',()=>{
  run("resetGame();gameStarted=true;var savedOra=jojoVoiceClips.ora;jojoVoiceClips.ora={duration:14.2,currentTime:0,paused:true,play(){this.paused=false;return Promise.resolve()},pause(){this.paused=true}};standEnergy=100;startStandRush();gameClock=standRush.start+9700;jojoVoiceClips.ora.currentTime=9.7;updateJoJoAttacks()");
  assert(run('standRush.active'));assert(run('oraDuration()')>=14200);
- run('gameClock=standRush.start+14210;finishDirectorVoice(directorVoice.token);updateJoJoAttacks()');assert(!run('standRush.active'));
+ run('gameClock=standRush.start+14210;finishDirectorVoice(directorVoice.token);updateJoJoAttacks()');assert(run('standRush.active'));assert.equal(run('oraProgress()'),1);run('gameClock+=700;updateJoJoAttacks()');assert(!run('standRush.active'));
  run('jojoVoiceClips.ora=savedOra');
 });
 test('reset cancels a retained director and missing clips never strand Rewind',()=>{

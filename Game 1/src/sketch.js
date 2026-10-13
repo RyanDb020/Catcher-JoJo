@@ -285,7 +285,7 @@ function universePhaseDuration(phase){
  return phase==='reveal'?cinematicDuration('pucci',HEAVEN_REVEAL_MS):phase==='rewind'?cinematicDuration('accelerate',REWIND_MS):phase==='accelerate'?ACCELERATE_MS:phase==='collapse'?SINGULARITY_MS:REBIRTH_MS;
 }
 function oraDuration(){return Math.max(ORA_RUSH_DURATION_MS,standRush.duration||0);}
-function oraProgress(){if(standRush.voiceFinished&&jojoVoiceClips.ora?.ended&&jojoVoiceClips.ora.duration*1000>=ORA_RUSH_DURATION_MS-50)return 1;return directorVoice&&directorVoice.name==='ora'?directorAudioProgress(oraDuration()):constrain((gameMillis()-standRush.start)/oraDuration(),0,1);}
+function oraProgress(){if(standRush.recoveryStart!==undefined)return 1;if(standRush.voiceFinished&&jojoVoiceClips.ora?.ended&&jojoVoiceClips.ora.duration*1000>=ORA_RUSH_DURATION_MS-50)return 1;return directorVoice&&directorVoice.name==='ora'?directorAudioProgress(oraDuration()):constrain((gameMillis()-standRush.start)/oraDuration(),0,1);}
 
 
 // JOJO TIME STOP: instellingen
@@ -1211,7 +1211,7 @@ function beginGameOver() {
   gameOver=true;gameOverAt=gameMillis();gameOverBannerPlayed=false;
   if(packMove.kind){for(const nail of packMove.shots)nail.target.targeted=false;packMove={kind:null,start:0,end:0,shots:[]};stopJoJoVoices();packVoiceUntil=0;}
   const now=gameMillis();let revealAt=now+850;
-  if(standRush.active) revealAt=max(revealAt,standRush.start+oraDuration()+420);
+  if(standRush.active) revealAt=max(revealAt,standRush.start+oraDuration()+1020);
   for(const punch of standPunches) revealAt=max(revealAt,punch.start+(punch.duration||180)+470);
   if(roadRoller.active) revealAt=max(revealAt,roadRoller.start+roadRollerDuration()+400);
   if(roadRollerImpact.active) revealAt=max(revealAt,roadRollerImpact.at+ROAD_ROLLER_IMPACT_MS);
@@ -1498,7 +1498,7 @@ function updateJoJoAttacks() {
     const interval=p<.12?100000:p<.38?250:p<.72?135:p<.88?80:100000;
     if(!gameOver&&now-standRush.lastPunch>=interval){standRush.lastPunch=now;punchDangerousBall();}
     if(p>.88&&!standRush.finisher){standRush.finisher=true;punchDangerousBall();playCue('finisher',.88);rushHitStopUntil=Math.max(rushHitStopUntil,now+80);jojoShake=19;mangaPulse=now+620;}
-    if((standRush.voiceFinished&&sceneClockFinished(jojoVoiceClips.ora,now-standRush.start,oraDuration(),ORA_RUSH_DURATION_MS))||(now-standRush.start>oraDuration()+1500&&!sceneMediaAlive(standRush,directorVoice?.audio))){cancelDirectorVoice();standRush.active=false;}
+    if((standRush.voiceFinished&&sceneClockFinished(jojoVoiceClips.ora,now-standRush.start,oraDuration(),ORA_RUSH_DURATION_MS))||(now-standRush.start>oraDuration()+1500&&!sceneMediaAlive(standRush,directorVoice?.audio))){if(standRush.recoveryStart===undefined)standRush.recoveryStart=now;if(now-standRush.recoveryStart>=600){cancelDirectorVoice();standRush.active=false;}}
   }
   if (roadRoller.active) {
     const elapsed = now - roadRoller.start;
@@ -1511,7 +1511,7 @@ function updateJoJoAttacks() {
   }
   resolvePunches();
   if(roadRollerImpact.active&&now-roadRollerImpact.at>ROAD_ROLLER_IMPACT_MS)roadRollerImpact.active=false;
-  jojoShake *= 0.78;
+  jojoShake *= Math.pow(.78,Math.max(0,frameStep));
   if (jojoShake < 0.18) jojoShake = 0;
 }
 
@@ -1782,7 +1782,7 @@ function drawStandPunches() {
       ctx.save(); const q=Math.max(0,t-i*.075);
       ctx.translate(lerp(punch.sx,punch.tx,q),lerp(punch.sy,punch.ty,q));ctx.rotate(angle);
       ctx.globalAlpha=(1-age)*(i? .12:1); const z=(punch.finisher?1.35:.9)+t*.32;
-      ctx.scale(z,z);if(!window.JoJoStandArt?.fist(ctx,punch.artKey||'star',0,0,punch.finisher?72:48,0,1))ctx.drawImage(visualAtlas.fist,-28,-28,56,132);ctx.restore();
+      ctx.scale(z,z);if(!(window.JoJoVFX?.fist(ctx,punch.artKey||'star',0,0,punch.finisher?72:48,punch.side)||window.JoJoStandArt?.fist(ctx,punch.artKey||'star',0,0,punch.finisher?72:48,0,1)))ctx.drawImage(visualAtlas.fist,-28,-28,56,132);ctx.restore();
     }
     if(punch.impacted) {
       ctx.translate(x,y);ctx.rotate(angle);ctx.strokeStyle='#ffedb5';ctx.lineWidth=2;
@@ -1832,7 +1832,7 @@ function recordUniverseFrame() {
   if (gameMillis() - lastHistoryCapture < 16) return;
   lastHistoryCapture = gameMillis();
   universeHistory.push({
-    at: gameMillis(),width,height,catcherX, catcherWidth, score, lives, combo,
+    at: gameMillis(),width,height,catcherX,catcherY,catcherWidth,catcherHeight,score,lives,combo,
     balls: balls.map(ball => ({x: ball.x, y: ball.y, gold: ball.gold, kind: ball.kind})),
     powerUps: powerUps.map(p => ({x: p.x, y: p.y, type: p.type}))
   });
@@ -1886,14 +1886,14 @@ function drawUniverseReset() {
     directorAudioProgress(REWIND_MS):t;
   const pos=(1-easeInOutCubic(playback))*Math.max(0,h.length-1);
   const i=max(0,floor(pos)),a=h[i]||null,b=h[min(h.length-1,i+1)]||a;
-  if(a&&b){
+  if(a&&b&&!window.JoJoVFX){
    const k=pos-i;
    const snap={...a,catcherX:lerp(a.catcherX,b.catcherX,k),
     catcherWidth:lerp(a.catcherWidth,b.catcherWidth,k),
     balls:a.balls.map((ball,j)=>{const q=b.balls[j]||ball;return {...ball,
       x:lerp(ball.x,q.x,k),y:lerp(ball.y,q.y,k)}})};
    drawUniverseSnapshot(snap,-1,t,h[max(0,i-9)]);
-  }else drawUniverseSnapshot(null,-1,t);
+  }else if(!window.JoJoVFX)drawUniverseSnapshot(null,-1,t);
   if(window.JoJoCharacterDirector)window.JoJoCharacterDirector.heavenEcho(drawingContext,width,height,t);
   drawRewindOverlay(t);
  }else if(phase==='accelerate'){
@@ -2004,7 +2004,7 @@ function rewindStreakY(index, t, canvasHeight = height) {
 }
 function drawRewindOverlay(t) {
   if(window.JoJoCosmicDirector?.rewind){
-    window.JoJoCosmicDirector.rewind(drawingContext,width,height,t,universeReset.source,Number(OVERHAUL_AUDIO.quality)||0);
+    window.JoJoCosmicDirector.rewind(drawingContext,width,height,t,universeReset.source,Number(OVERHAUL_AUDIO.quality)||0,{catcher:visualAtlas.catcher,normal:visualAtlas.normal,gold:visualAtlas.gold,bomb:visualAtlas.bomb,space:visualAtlas.space});
     const c=drawingContext;c.save();c.font='bold '+min(26,width*.042)+'px Arial';c.textAlign='center';c.fillStyle='#eee2ff';c.fillText('REWIND · REALITY RETRACES ITS STEPS',width*.5,height*.085);c.restore();
     return;
   }

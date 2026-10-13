@@ -277,8 +277,8 @@ function clockwork(c,x,y,r,t,reverse=true){
  }
  ellipse(c,0,0,r*.034,r*.034,'#fbebc7');c.restore();
 }
-function rewind(c,w,h,t,history=[],quality=2){
- if(root.JoJoVFX)return root.JoJoVFX.rewind(c,w,h,t,history);
+function rewind(c,w,h,t,history=[],quality=2,assets={}){
+ if(root.JoJoVFX)return root.JoJoVFX.rewind(c,w,h,t,history,assets);
  c.save();fill(c,w,h,'rgba(12,11,30,.35)');
  const count=history.length,progress=1-smooth(t),index=Math.floor(progress*Math.max(0,count-1));
  const r=Math.min(w,h)*.265,cy=h*.43;
