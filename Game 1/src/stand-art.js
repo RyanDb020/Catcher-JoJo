@@ -13,6 +13,9 @@
   c.globalAlpha*=options.alpha??1;
   if(options.glow){c.shadowColor=options.glow;c.shadowBlur=Math.min(20,size*.035);}
   if(Number.isFinite(options.appear)&&options.appear<1){const p=Math.max(0,options.appear);c.beginPath();c.rect(-w/2,h/2-h*p,w,h*p);c.clip();}
+  // The overdrive atlas cell has neighbouring boots crossing its lower side margins.
+  // Clip only those margins; retain the full upper-body strike and main feet.
+  if(key==='world'&&f===4){c.beginPath();c.rect(-w/2,-h/2,w,h*.70);c.rect(-w*.415,h*.20,w*.83,h*.30);c.clip();}
   c.drawImage(img,(f%3)*sw,Math.floor(f/3)*sh,sw,sh,-w/2,-h/2,w,h);c.restore();return true;
  }
  function phasePose(t,seconds,kind){
