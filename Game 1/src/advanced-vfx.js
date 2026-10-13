@@ -138,6 +138,8 @@ function singularity(c,w,h,t,seconds){
   if(p>.92)glow(c,x,y,20,'249,204,255',.65*(1-(p-.92)/.08));
  }
  c.globalCompositeOperation='source-over';disk(c,cx,cy,r,'#000009');
+ const jet=Math.sin(t*Math.PI)**2;
+ if(jet>.1){c.save();c.globalCompositeOperation='screen';for(const side of [-1,1]){const pts=[];for(let j=0;j<18;j++){const q=j/17;pts.push([cx+Math.sin(q*8-seconds*7)*r*.07*q,cy+side*q*r*(3.5+jet*2)]);}stroke(c,pts,`rgba(164,139,255,${jet*.20})`,r*.22);stroke(c,pts,`rgba(231,216,255,${jet*.65})`,r*.035);for(let k=0;k<4;k++){const q=fract(seconds*.7+k/4);glow(c,cx,cy+side*q*r*4.5,r*.15,'234,211,255',jet*(1-q)*.5);}}c.restore();}
  // Lensed star arcs visibly bend around the event horizon.
  for(let i=0;i<5;i++){c.beginPath();c.ellipse(cx,cy,r*(1.07+i*.11),r*(1.06+i*.08),seconds*.10,Math.PI*.05,Math.PI*.85);c.strokeStyle=`rgba(225,212,255,${.65-i*.1})`;c.lineWidth=1.5;c.stroke();}
  shock(c,w,h,cx,cy,fract(seconds*.45),.45,'173,138,249');c.restore();
@@ -167,7 +169,7 @@ function rebirth(c,w,h,t){
  c.restore();
 }
 function arm(c,shoulder,elbow,wrist,width,color){stroke(c,[shoulder,elbow,wrist],'#302543',width+6);stroke(c,[shoulder,elbow,wrist],color,width);stroke(c,[[shoulder[0]-3,shoulder[1]-3],[elbow[0]-3,elbow[1]-3],[wrist[0]-3,wrist[1]-3]],'#c8a7ed',Math.max(2,width*.2));disk(c,...elbow,width*.53,'#9880c3');}
-function gauntlet(c,x,y,r,side,kind){c.save();c.translate(x,y);c.rotate(side*.13);polygon(c,[[-r*.7,-r*.45],[-r*.45,-r*.85],[r*.5,-r*.85],[r*.85,-r*.35],[r*.65,r*.60],[-r*.55,r*.7]],kind==='star'?'#9978c5':'#deb556','#e8d2f4');polygon(c,[[r*.58,-r*.6],[r*.85,-r*.35],[r*.65,r*.60],[r*.4,r*.38]],kind==='star'?'#513d72':'#84672b');for(let i=0;i<4;i++){disk(c,-r*.48+i*r*.30,-r*.35,r*.22,kind==='star'?'#bf9ce7':'#f5d479');stroke(c,[[-r*.48+i*r*.3,-r*.12],[-r*.5+i*r*.3,r*.30]],'#665080',Math.max(1,r*.03));}disk(c,-r*.58,r*.30,r*.24,kind==='star'?'#a383cb':'#d1a443');if(kind==='experience')disk(c,0,0,r*.18,'#bf638b');c.restore();}
+function gauntlet(c,x,y,r,side,kind){c.save();c.translate(x,y);c.rotate(side*.13);const sheen=c.createLinearGradient(-r,-r,r,r);sheen.addColorStop(0,kind==='star'?'#e7d1ff':'#fff4ba');sheen.addColorStop(.32,kind==='star'?'#b191d7':'#edc867');sheen.addColorStop(.65,kind==='star'?'#70518f':'#96712f');sheen.addColorStop(1,'#211b35');polygon(c,[[-r*.7,-r*.45],[-r*.45,-r*.85],[r*.5,-r*.85],[r*.85,-r*.35],[r*.65,r*.60],[-r*.55,r*.7]],sheen,'#e8d2f4');polygon(c,[[r*.58,-r*.6],[r*.85,-r*.35],[r*.65,r*.60],[r*.4,r*.38]],kind==='star'?'#513d72':'#84672b');for(let i=0;i<4;i++){disk(c,-r*.48+i*r*.30,-r*.35,r*.22,sheen);stroke(c,[[-r*.58+i*r*.3,-r*.48],[-r*.40+i*r*.3,-r*.52]],'#fff3db',Math.max(1,r*.035));stroke(c,[[-r*.48+i*r*.3,-r*.12],[-r*.5+i*r*.3,r*.30]],'#665080',Math.max(1,r*.03));}disk(c,-r*.58,r*.30,r*.24,kind==='star'?'#a383cb':'#d1a443');if(kind==='experience')disk(c,0,0,r*.18,'#bf638b');c.restore();}
 // A strike is a continuous trajectory, with a separately timed contact and aftermath.
 function strikePose(cycle,seed,finish=false){
  const side=seed%2?1:-1,angle=(hash(seed+31)-.5)*1.7;

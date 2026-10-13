@@ -687,7 +687,7 @@
     c.save();
     if(phase==='release'){
       const release=ease(t);stage(c,w,h,'83,173,193',t,.12*(1-release));
-      for(let j=0;j<3;j++){const q=clamp((t-j*.09)/.65),r=ease(q)*Math.max(w,h);oval(c,w*.5,h*.48,r,r*.67,'rgba(0,0,0,0)','rgba(183,235,241,'+(.56*(1-q))+')',2+6*(1-q));}
+      // The VFX renderer owns the release front and per-object chain reactions.
       // The broken rim peels outward; the arena is visible throughout.
       for(let i=0;i<24;i++){const a=i*TAU/24,r=Math.min(w,h)*(.25+release*.6);c.save();c.translate(w*.5+Math.cos(a)*r,h*.48+Math.sin(a)*r*.7);c.rotate(a+t*2);line(c,[[-6,-13],[3,9],[10,14]],'rgba(246,222,158,'+(.6*(1-t))+')',2);c.restore();}
       root.JoJoVFX?.timeStop(c,w,h,phase,t,settings.elapsed||0,settings.balls||[],true,settings.backdrop);
@@ -705,7 +705,7 @@
     c.save();c.translate(w*.018*Math.sin(t*PI)*(1-lock),0);
     if(!actor(c,settings.character==='jotaro'?'star':'world',w,h,.56+(1-p)*.1-close*.03,.50,.57+close*.10,t<.30?0:t<.64?1:t<.90?4:5,{alpha:p,appear:Math.min(1,p*1.7),glow:'#ffdf86'}))figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,poseTime,0):worldFigure(cc,poseTime,t>.90),{x:.56+(1-p)*.13-close*.035,y:.53-close*.02,zoom:.57+.26*p+close*.13});c.restore();
     if(p>.65&&t<.64){c.save();c.globalAlpha*=p;root.JoJoVFX?.gesture(c,w*(.56+(1-p)*.1-close*.03)+w*.018*Math.sin(t*PI)*(1-lock),h*.50,Math.min(w*(.57+close*.10),h*.82),elapsed,settings.character==='jotaro'?'star':'world');c.restore();}
-    if(t>.72&&t<.97){const q=clamp((t-.72)/.25),r=ease(q)*Math.max(w,h);oval(c,w*.52,h*.46,r,r*.66,'rgba(0,0,0,0)','rgba(235,222,178,'+(.75*(1-q))+')',4+6*(1-q));}
+    // A single advancing light front replaces the old decorative outer ring.
     root.JoJoVFX?.timeStop(c,w,h,phase,t,settings.elapsed||0,settings.balls||[],true,settings.backdrop);
     border(c,w,h,t<.22?(settings.character==='jotaro'?'JOTARO / STAR PLATINUM':'DIO / THE WORLD'):t<.76?(settings.character==='jotaro'?'STAR PLATINUM / CHRONOSTASIS':'THE WORLD / CHRONOSTASIS'):'ZA WARUDO / REALITY LOCK',extended?(t<.32?'REVEAL / THE COMMAND':t<.56?'STAND / CLOSE-UP':t<.80?'TIME PRESSURE / BUILD-UP':'REALITY LOCK / ACTIVATION'):'SPACE TO SKIP THE REVEAL','#ead29a');
     c.restore();
@@ -742,6 +742,6 @@
     c.restore();
   }
 
-  root.JoJoCharacterDirector=Object.freeze({heaven,heavenEcho,ora,world,version:'5.0-scene-rebuild'});
+  root.JoJoCharacterDirector=Object.freeze({heaven,heavenEcho,ora,world,version:'6.0-impact'});
 })(typeof window!=='undefined'?window:globalThis);
 
