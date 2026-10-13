@@ -1043,7 +1043,8 @@ function drawBalls(speedFactor) {
     ball.y += ball.speed * speedFactor * frameStep * getDifficultyScale() * (packMove.kind==='cmoon'&&gameMillis()-packMove.start<4000?-0.72:1);
     if(speedFactor>0&&packMove.kind==='cmoon'&&gameMillis()-packMove.start<4000&&ball.y<-BALL_SIZE)ball.y=-BALL_SIZE;
     if(OVERHAUL_AUDIO.quality>0&&(ball.gold||ball.kind==='bomb')){const c=drawingContext;c.save();c.strokeStyle=ball.gold?'rgba(255,221,134,.30)':'rgba(218,142,250,.26)';c.lineWidth=2;c.beginPath();c.moveTo(ball.x,ball.y-6);c.lineTo(ball.x,ball.y-Math.min(55,ball.speed*8));c.stroke();c.restore();}
-    drawOrb(ball.x, ball.y, BALL_SIZE, ball.kind === 'bomb' ? 'bomb' : ball.gold ? 'gold' : 'normal');
+    const visualOffset=timeStop.phase==='intro'?(window.JoJoVFX?.timeObjectOffset(width,height,timeStopSceneProgress(),(gameMillis()-timeStop.phaseStart)/1000,ball)||0):0;
+    drawOrb(ball.x, ball.y+visualOffset, BALL_SIZE, ball.kind === 'bomb' ? 'bomb' : ball.gold ? 'gold' : 'normal');
 
     // Niet scoren of verliezen in de filmische intro
     if (speedFactor === 0 || gameMillis() < rushHitStopUntil) continue;

@@ -68,3 +68,28 @@ jobs:
           path: Game 1/tests/artifacts/
           if-no-files-found: ignore
 
+
+  browser-vfx:
+    name: VFX 6 muted cinematic acceptance
+    if: contains(github.event.head_commit.message, '[vfx-qa]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        working-directory: 'Game 1'
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Verify full muted cinematics
+        working-directory: 'Game 1'
+        run: node tests/test_vfx_browser.cjs
+      - name: Upload muted video and scene captures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vfx6-acceptance
+          path: Game 1/tests/artifacts/
