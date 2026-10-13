@@ -680,6 +680,7 @@
       c.save();c.fillStyle='rgba(10,35,49,.23)';c.fillRect(0,0,w,h);
       c.save();c.translate(w*.5,h*.28);c.scale(.30,.30);c.translate(-w*.5,-h*.49);timeDial(c,w,h,1,true);c.restore();
       if(!actor(c,settings.character==='jotaro'?'star':'world',w,h,.84,.58,.25,1))figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,1,5):worldFigure(cc,1,true),{x:.84,y:.58,zoom:.29});
+      root.JoJoVFX?.gesture(c,w*.84,h*.58,Math.min(w*.25,h*.82),settings.elapsed||0,settings.character==='jotaro'?'star':'world');
       root.JoJoVFX?.timeStop(c,w,h,phase,t,settings.elapsed||0,settings.balls||[],true,settings.backdrop);
       border(c,w,h,'ZA WARUDO / TIME LOCK',Number.isFinite(settings.remaining)?settings.remaining.toFixed(1)+' s REMAINING':'REALITY IS FROZEN','#a9e3e5');c.restore();return;
     }
@@ -703,6 +704,7 @@
     // The Stand arrives from behind DIO, then locks into the final outstretched pose.
     c.save();c.translate(w*.018*Math.sin(t*PI)*(1-lock),0);
     if(!actor(c,settings.character==='jotaro'?'star':'world',w,h,.56+(1-p)*.1-close*.03,.50,.57+close*.10,t<.30?0:t<.64?1:t<.90?4:5,{alpha:p,appear:Math.min(1,p*1.7),glow:'#ffdf86'}))figure(c,w,h,cc=>settings.character==='jotaro'?starFigure(cc,poseTime,0):worldFigure(cc,poseTime,t>.90),{x:.56+(1-p)*.13-close*.035,y:.53-close*.02,zoom:.57+.26*p+close*.13});c.restore();
+    if(p>.65&&t<.64){c.save();c.globalAlpha*=p;root.JoJoVFX?.gesture(c,w*(.56+(1-p)*.1-close*.03)+w*.018*Math.sin(t*PI)*(1-lock),h*.50,Math.min(w*(.57+close*.10),h*.82),elapsed,settings.character==='jotaro'?'star':'world');c.restore();}
     if(t>.72&&t<.97){const q=clamp((t-.72)/.25),r=ease(q)*Math.max(w,h);oval(c,w*.52,h*.46,r,r*.66,'rgba(0,0,0,0)','rgba(235,222,178,'+(.75*(1-q))+')',4+6*(1-q));}
     root.JoJoVFX?.timeStop(c,w,h,phase,t,settings.elapsed||0,settings.balls||[],true,settings.backdrop);
     border(c,w,h,t<.22?(settings.character==='jotaro'?'JOTARO / STAR PLATINUM':'DIO / THE WORLD'):t<.76?(settings.character==='jotaro'?'STAR PLATINUM / CHRONOSTASIS':'THE WORLD / CHRONOSTASIS'):'ZA WARUDO / REALITY LOCK',extended?(t<.32?'REVEAL / THE COMMAND':t<.56?'STAND / CLOSE-UP':t<.80?'TIME PRESSURE / BUILD-UP':'REALITY LOCK / ACTIVATION'):'SPACE TO SKIP THE REVEAL','#ead29a');
