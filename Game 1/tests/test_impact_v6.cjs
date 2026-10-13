@@ -14,4 +14,6 @@ v.configure({quality:2,reduced:false});assert.notEqual(draw('intro',.6),draw('in
 assert.equal(draw('freeze',.2),draw('freeze',.8),'gold shards freeze across elapsed time');
 assert.notEqual(draw('release',.2),draw('release',.8),'release disperses shards');
 v.configure({quality:2,particles:true});ops=[];v.diagnostics.reaction(c,1280,720,400,350,.2,7,1,'200,180,255');const early=JSON.stringify(ops);ops=[];v.diagnostics.reaction(c,1280,720,400,350,.7,7,1,'200,180,255');assert.notEqual(JSON.stringify(ops),early,'debris follows inertia and gravity');assert.equal(depth,0);
+assert.notEqual(v.timeObjectOffset(1280,720,.4,2,{x:50,y:100}),v.timeObjectOffset(1280,720,.4,3,{x:50,y:100}));
+assert.equal(v.timeObjectOffset(1280,720,1,3,{x:50,y:100}),0,'object motion stops when wave passes');
 console.log('PASS VFX6 anticipation/extension/contact/recoil, direction diversity, travelling freeze front, fixed shards, chain release and ballistic debris');

@@ -214,6 +214,12 @@ function punches(c,w,h,t,seconds,kind='star'){
  if(finish){const q=(t-.932)/.053;if(q>=0){shock(c,w,h,cx,h*.65,q,.95,color);reaction(c,w,h,cx,h*.65,q,99,2.5,color);}}
  c.restore();
 }
+// Render-only residual motion: physics/scoring remain safely paused during the reveal.
+function timeObjectOffset(w,h,t,seconds,b){
+ if(config.reduced)return 0;
+ const wave=out((t-.55)/.35),arrival=Math.max(.01,Math.hypot(b.x-w*.56,b.y-h*.49)/(Math.hypot(w,h)*.72)),settle=1-smooth(wave/arrival);
+ return Math.sin(seconds*3+b.x*.01)*Math.min(34,h*.04)*settle;
+}
 function timeStop(c,w,h,phase,t,seconds,balls=[],front=false,backdrop=null){
  const release=phase==='release',held=phase==='freeze'||phase==='slow',
  wave=release?out(t):held?1:out((t-.55)/.35),cx=w*.56,cy=h*.49,maxR=Math.hypot(w,h)*.72,r=wave*maxR;
@@ -253,5 +259,5 @@ function clear(){hits=[];lastHitClock=null;lastFlashAt=-1000;}
 function drawHits(c,w,h,now,frozen=false){const dt=lastHitClock===null?0:Math.max(0,Math.min(50,now-lastHitClock));lastHitClock=now;for(let i=hits.length-1;i>=0;i--){const hit=hits[i];if(!frozen)hit.age+=dt;if(hit.age>700){hits.splice(i,1);continue;}impact(c,w,h,hit.x,hit.y,hit.age/700,hit.power,hit.color,!frozen);}}
 function gesture(c,x,y,size,seconds,kind='world'){const motion=config.reduced?.2:1;c.save();for(const side of [-1,1]){const bend=Math.sin(seconds*2+side)*motion;const shoulder=[x+side*size*.19,y-size*.26],elbow=[x+side*size*(.27+.025*bend),y-size*(.07+.02*bend)],wrist=[x+side*size*(.10+.02*bend),y-size*(.23+.035*bend)];arm(c,shoulder,elbow,wrist,size*.054,kind==='star'?'#8263aa':'#c99c46');gauntlet(c,wrist[0],wrist[1],size*.065,side,kind);}c.restore();}
 function fist(c,kind,x,y,size,side=1){gauntlet(c,x,y,size*.5,side,kind);return true;}
-root.JoJoVFX=Object.freeze({gesture,fist,configure,emitHit,drawHits,clear,manifestation,rewind,collapse,rebirth,singularity,punches,timeStop,attack,sky,camera,version:'6.0',diagnostics:{strikePose,reaction,history:sample,hitCount:()=>hits.length,glowTextures:()=>glowCache.size,blockCount:blocks.length,starCount:stars.length,settings:()=>({...config}),strikeRate:t=>t<.37?4:t<.70?8:12}});
+root.JoJoVFX=Object.freeze({timeObjectOffset,gesture,fist,configure,emitHit,drawHits,clear,manifestation,rewind,collapse,rebirth,singularity,punches,timeStop,attack,sky,camera,version:'6.0',diagnostics:{strikePose,reaction,history:sample,hitCount:()=>hits.length,glowTextures:()=>glowCache.size,blockCount:blocks.length,starCount:stars.length,settings:()=>({...config}),strikeRate:t=>t<.37?4:t<.70?8:12}});
 })(typeof window!=='undefined'?window:globalThis);
