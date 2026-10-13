@@ -656,7 +656,7 @@
     tint(c,w*.61,h*.54,w*.25,'161,216,242',.15*manifest);
     // Pucci remains distinct in front-left; Stand manifests in full side silhouette.
     c.save();if(root.JoJoVFX)c.transform(1,Math.sin((settings.elapsed||0)*3)*.012,Math.sin((settings.elapsed||0)*2)*.012,1,Math.sin((settings.elapsed||0)*3)*w*.006,Math.cos((settings.elapsed||0)*4)*h*.004);
-    const painted=actor(c,'heaven',w,h,.52,.52,.80,t<.18?0:t<.5?1:t<.8?2+Math.floor((settings.elapsed||t*8.664)*3)%2:4,{alpha:entry,appear:Math.min(1,t*7),glow:'#bacef3'});
+    const painted=actor(c,'heaven',w,h,.52,.52,.80,t<.18?0:t<.5?1:t<.8?2+Math.floor((settings.elapsed||t*8.664)*3)%2:4,{alpha:entry,appear:Math.min(1,t*7),materialize:manifest,glow:'#bacef3'});
     c.restore();
     if(!painted)figure(c,w,h,cc=>pucci(cc,Math.min(t, .64)*3),{x:.31-(1-entry)*.12,y:.63,zoom:.83+pull*.05});
     c.save();c.globalAlpha=manifest;

@@ -2785,10 +2785,10 @@ function updatePackMove(){
  const age=gameMillis()-p.start,x=catcherX+catcherWidth/2;
  if(p.kind==='hand'&&age>340&&!p.hit){
   p.hit=true;for(const ball of balls)if(ball.y>catcherY-210&&ball.y<catcherY&&Math.abs(ball.x-x)<125){burstJoJoParticles(ball.x,ball.y,'#7cd5ff',12);respawnBall(ball);}
-  jojoShake=Math.max(jojoShake,8);playCue('impact',.6);
+  window.JoJoVFX?.emitHit(x,catcherY-80,.8,'149,218,255');jojoShake=Math.max(jojoShake,8);playCue('impact',.6);
  }
  if(p.kind==='tusk'&&!p.hit){p.hit=true;const target=balls.filter(b=>b.y>0&&b.y<catcherY&&!b.targeted).sort((a,b)=>b.y-a.y)[0];if(target){target.targeted=true;p.shots.push({x,y:catcherY-15,target});}}
- for(const nail of p.shots){const d=Math.hypot(nail.target.x-nail.x,nail.target.y-nail.y),step=17*frameStep;if(d<=step+12){if(!gameOver&&nail.target.targeted){scoreBall(nail.target,true);respawnBall(nail.target);}nail.done=true;}else{nail.x+=(nail.target.x-nail.x)/d*step;nail.y+=(nail.target.y-nail.y)/d*step;}}
+ for(const nail of p.shots){const d=Math.hypot(nail.target.x-nail.x,nail.target.y-nail.y),step=17*frameStep;if(d<=step+12){if(!gameOver&&nail.target.targeted){window.JoJoVFX?.emitHit(nail.target.x,nail.target.y,.7,'249,162,217');scoreBall(nail.target,true);respawnBall(nail.target);}nail.done=true;}else{nail.x+=(nail.target.x-nail.x)/d*step;nail.y+=(nail.target.y-nail.y)/d*step;}}
  p.shots=p.shots.filter(n=>!n.done);
  if(p.kind==='muda'||p.kind==='giorno'){
   const progress=sceneAudioProgress(p,jojoVoiceClips[p.kind],p.start,p.end-p.start);
@@ -2804,7 +2804,8 @@ function drawPackMove(){
  if(p.kind==='cmoon'&&age<4000){
   c.strokeStyle='#a8ed86';c.lineWidth=2;for(let i=0;i<5;i++){const gy=catcherY-60-i*55-(age*.06%55);c.beginPath();c.moveTo(x-140,gy+15);c.lineTo(x-140,gy);c.lineTo(x-148,gy+8);c.moveTo(x+140,gy+15);c.lineTo(x+140,gy);c.lineTo(x+148,gy+8);c.stroke();}
  }
- if(window.JoJoStandArt?.pack(c,width,height,x,catcherY,p.kind,t,age/1000,OVERHAUL_AUDIO.quality)){window.JoJoVFX?.attack(c,width,height,p.kind,t,age/1000,x,catcherY-140);c.restore();push();fill('#ead9ff');noStroke();textSize(14);textAlign(CENTER);text(p.kind.toUpperCase()+' · '+Math.max(0,(p.end-gameMillis())/1000).toFixed(1)+'s',width*.5,height*.18);pop();return;}
+ const poseT=p.kind==='hand'?Math.min(1,age/1050):p.kind==='tusk'?Math.min(1,age/1650):p.kind==='cmoon'?Math.min(1,age/4700):t;
+ if(window.JoJoStandArt?.pack(c,width,height,x,catcherY,p.kind,poseT,age/1000,OVERHAUL_AUDIO.quality)){window.JoJoVFX?.attack(c,width,height,p.kind,t,age/1000,x,catcherY-140);c.restore();push();fill('#ead9ff');noStroke();textSize(14);textAlign(CENTER);text(p.kind.toUpperCase()+' · '+Math.max(0,(p.end-gameMillis())/1000).toFixed(1)+'s',width*.5,height*.18);pop();return;}
  c.translate(x,y);const scaleV=Math.min(1.1,width/850);c.scale(scaleV,scaleV);
  const col=p.kind==='hand'?'#68baff':p.kind==='cmoon'?'#b8d87a':p.kind==='tusk'?'#f2b3da':p.kind==='giorno'?'#e5c56b':'#d0af55';
  c.fillStyle=col;c.strokeStyle='#241b39';c.lineWidth=3;

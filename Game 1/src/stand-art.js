@@ -17,6 +17,7 @@
   // Clip only those margins; retain the full upper-body strike and main feet.
   if(key==='heaven'&&f<=1){c.beginPath();c.rect(-w*.43,-h/2,w*.93,h*.93);c.rect(-w*.43,h*.43,w*.53,h*.07);c.rect(w*.34,h*.43,w*.16,h*.07);c.clip();}
   if(key==='world'&&f===4){c.beginPath();c.rect(-w/2,-h/2,w,h*.70);c.rect(-w*.415,h*.20,w*.83,h*.30);c.clip();}
+  if(Number.isFinite(options.materialize)&&options.materialize<1){const p=Math.max(0,options.materialize);c.beginPath();c.rect(-w/2,-h/2,w*.52,h);for(let j=0;j<3;j++){const q=Math.max(0,Math.min(1,p*1.4-j*.12));c.rect(w*.02,-h/2+j*h/3,w*.48,h/3*q);}c.clip();}
   c.drawImage(img,(f%3)*sw,Math.floor(f/3)*sh,sw,sh,-w/2,-h/2,w,h);c.restore();return true;
  }
  function phasePose(t,seconds,kind){
