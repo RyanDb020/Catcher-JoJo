@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "game1",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["tools/serve.py", "5518"],
+      "port": 5518
+    }
+  ]
+}

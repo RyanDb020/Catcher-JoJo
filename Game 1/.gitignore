@@ -4,3 +4,6 @@ dist/
 *.log
 
 build/audio-source/
+
+# Werkmappen van Claude Code-sessies
+.claude/worktrees/

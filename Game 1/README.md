@@ -1,196 +1,158 @@
-# Catcher Game
+# JoJo Catcher — Stand Overdrive
 
-## Beschrijving
+Een arcade-vanggame in de stijl van **JoJo's Bizarre Adventure**, gemaakt met **JavaScript en p5.js**.
 
-Catcher Game is een game gemaakt met JavaScript en p5.js.
+Je bestuurt een catcher onderaan het scherm en vangt de vallende orbs. Elke vangst geeft punten en Stand Energy. Als je zonder missen doorvangt, bouw je een combo op (tot x5 punten). Met je Stand Energy laat je **Star Platinum**, **The World** en **DIO** los. Na elke golf kies je een Stand-kaart. Elke vijfde golf vecht je tegen de eindbaas: **Enrico Pucci met Made in Heaven**. Versla hem en het universum begint opnieuw, alleen sneller.
 
-De speler bestuurt een catcher onderaan het scherm en moet vallende rode ballen opvangen. Voor elke gevangen bal krijg je een punt. Als je een bal mist, verlies je een leven. Je begint met 3 levens.
+## Spelen
 
-De game heeft ook een startscherm met spelregels, een bewegende sterrenachtergrond en een Game Over-geluid.
+1. Open de map `Game 1` in VS Code.
+2. Rechtsklik op `index.html` → **Open with Live Server**.
+3. Klik op **SPELEN** of druk op **ENTER**.
 
-## Controls
+Zonder Live Server kan het ook. Start vanuit deze map de meegeleverde webserver (zonder cache, dus je ziet wijzigingen meteen) en open daarna http://localhost:8000:
 
-- `←` Beweeg naar links
-- `→` Beweeg naar rechts
-- `ENTER` Start het spel
-- `R` Start het spel opnieuw
+```bash
+python tools/serve.py
+```
 
-## Hoe start je de game?
+> Werkt het niet? Open de console (F12). De game heeft geen internet nodig: p5.js staat in `vendor/`.
 
-1. Open het project in Visual Studio Code.
-2. Open `index.html`.
-3. Start de pagina met Live Server.
-4. Druk op `ENTER` om het spel te starten.
+## Besturing
 
-## Credits
+| Toets | Actie |
+|---|---|
+| ← → of A D | Bewegen (de muis of je vinger werkt ook) |
+| 1 of Q | **ORA ORA** (1 energiebalk) |
+| 2 of W | **ZA WARUDO** (2 energiebalken) |
+| 3 of E | **ROAD ROLLER DA!** (3 energiebalken) |
+| P of ESC | Pauze |
+| M | Geluid aan/uit |
+| O | Instellingen |
+| H | Uitleg ("Hoe speel je?") |
+| ENTER / R | Opnieuw na Game Over |
+| SPATIE | Overgang naar een nieuw universum overslaan |
 
-- Gemaakt met p5.js
-- p5.sound gebruikt voor het Game Over-geluid
-- Game Over-geluid:(https://www.myinstants.com/en/instant/jixaw-metal-pipe-falling-sound-28270/)
-- ChatGPT gebruikt voor uitleg, debugging en hulp bij het structureren van code en documentatie
+Op een telefoon of tablet sleep je met je vinger. Rechts in beeld verschijnen dan knoppen voor de drie aanvallen.
+
+## Wat valt er naar beneden?
+
+| | Wat | Wat moet je doen? |
+|---|---|---|
+| 🔮 | **Roze orb** | Vangen. Mis je er één, dan verlies je een leven. |
+| 🟡 | **Gouden orb** | 50 punten. Missen kost niets. |
+| 💣 | **Bom van Killer Queen** | **Niet** vangen, dat kost een leven. |
+| 🐞 | **Lieveheersbeestje** (Gold Experience) | +1 leven (maximaal 5). |
+| 🏹 | **Stand Arrow** | Meteen een volle energiebalk. |
+| ↔️ | **Breed** | Je catcher is 10 seconden breder. |
+| 💿 | **DISC** (alleen bij de eindbaas) | Niet vangen: je Stand is dan 6 seconden geblokkeerd. |
+
+Een **PERFECT** krijg je door precies in het midden van de catcher te vangen. Dat geeft extra punten en energie.
+
+## Stand-aanvallen
+
+- **ORA ORA** — Star Platinum verschijnt boven je catcher. Hij slaat elke orb op het scherm in je bak en ramt de bommen kapot.
+- **ZA WARUDO** — De bekende kleuren-omkeer-bol, daarna staat de tijd stil en is alles grijs. Alleen jij kan bewegen. The World slaat de bommen kapot en die ontploffen zodra de tijd weer gaat lopen. Daarna volgt slow-motion met **dubbele punten**.
+- **ROAD ROLLER DA!** — DIO laat de wals vallen. De schokgolf verzamelt alles op het scherm. Daarna krijg je 8 seconden **OVERDRIVE** (dubbele punten).
+
+## Stand-kaarten
+
+Na elke golf kies je 1 van 3 kaarten. Ze werken de rest van je potje en sommige kun je vaker kiezen:
+
+Gold Experience (extra leven) · The Hand (wist bommen) · Tusk (nagels schieten) · C-Moon (magneet) · King Crimson (fout uitwissen) · Star Platinum (bredere catcher) · The World (langere tijdstop) · Made in Heaven (meer punten, sneller) · Yare Yare Daze (sneller opladen) · Vampier (levens terug bij combo's).
+
+## Golven en de eindbaas
+
+| Golf | Nieuw |
+|---|---|
+| 1 | Roze orbs — leer bewegen |
+| 2 | Gouden orbs en power-ups |
+| 3 | Bommen van Killer Queen |
+| 4 | Slingerende orbs en patronen (trap, goudregen) |
+| 5 | **Eindbaas: Enrico Pucci** |
+
+Elke gevangen orb schiet een ster naar Pucci en je Stand-aanvallen doen extra schade. Pucci gooit gouden orbs, Whitesnake-discs en **versnelt de tijd**. Als je hem verslaat begint een nieuw universum: alles valt sneller, je krijgt een leven terug en je Stand-kaarten blijven. Vanaf golf 6 komen er ook bommenmuren met één opening.
+
+De game is **eerlijk**: de golf-regisseur (`src/waves.js`) rekent uit waar je catcher kan komen. Hij laat nooit twee roze orbs vallen die je onmogelijk allebei kunt vangen.
+
+## Hoe de code in elkaar zit
+
+Alle code staat in `src/`. Elk bestand heeft één taak en bovenaan staat uitleg in het Nederlands.
+
+| Bestand | Wat doet het? |
+|---|---|
+| `config.js` | **Alle instelbare getallen** (snelheid, punten, levens, golven). Begin hier als je iets wilt aanpassen. |
+| `sketch.js` | Het startpunt voor p5.js: `setup()`, `draw()`, toetsenbord en muis |
+| `game.js` | Het hart van de game: score, levens, combo, vangen/missen, golven, game over |
+| `catcher.js` | De catcher (beweging met optrekken/afremmen, squash, nabeelden) |
+| `objects.js` | Alles wat valt (`Faller`-class) |
+| `waves.js` | De golf-regisseur: wat valt er wanneer en waar (eerlijk!) |
+| `stands.js` | ORA ORA, ZA WARUDO en ROAD ROLLER |
+| `cards.js` | Stand-kaarten en het kaart-kies-scherm |
+| `boss.js` | De eindbaas Pucci |
+| `cinematics.js` | Cut-ins, overgang naar een nieuw universum, de TO BE CONTINUED-pijl |
+| `hud.js` | Score, levens, energiebalk, combo |
+| `screens.js` | Titelscherm, uitleg, pauzemenu, Game Over |
+| `effects.js` | Deeltjes, zwevende tekst, schermschudden, flitsen, hit-stop |
+| `background.js` | Sterren, nevel, planeet, klok en vloer |
+| `assets.js` | Stand-plaatjes laden en sprites tekenen (orbs, bom, vuist, Road Roller) |
+| `audio.js` | Geluid, stemmen en muziek (Web Audio) |
+| `ui.js`, `view.js`, `input.js`, `utils.js`, `storage.js`, `settings.js` | Hulpcode: tekst en knoppen, schermschaal, besturing, wiskunde, opslaan, instellingen |
+
+Belangrijk om te weten:
+
+- **Tijd-gebaseerd**: alle beweging gebruikt `deltaTime`. De game is daardoor op een 60 Hz- en een 165 Hz-scherm even snel.
+- **Vaste speelveldhoogte**: het veld is altijd 720 "game-pixels" hoog en schaalt mee met je scherm. Dat werkt van telefoon tot ultrawide.
+- **Snel tekenen**: sprites worden één keer getekend en daarna steeds gekopieerd. Zware dingen gebeuren niet in `draw()`.
+
+## Tests
+
+```bash
+npm test
+```
+
+Dit draait `tests/test_game.cjs` (21 tests voor de spelregels: vangen, missen, combo's, golven, de eerlijkheid van de regisseur, alle Stand-aanvallen, de eindbaas, game over en opslaan) en `tests/test_3d.cjs` (de 3D-modus). Je hebt alleen Node.js nodig. De tests draaien ook automatisch op GitHub bij elke push.
+
+Voor testen in de browser kun je `?debug=1` achter de URL zetten. Dan werken de testtoetsen: **G** = volle energie, **N** = volgende golf, **B** = naar de eindbaas, **L** = extra leven.
+
+## 3D Combat Mode (experimenteel)
+
+Via **3D COMBAT MODE** in het hoofdmenu (`combat.html`) speel je een losse 3D-arena-missie met Three.js. Deze modus heeft internet nodig voor Three.js en staat los van de arcade-game.
+
+## User stories
+
+- [x] Als speler wil ik een speelveld zien, zodat ik weet waar het spel zich afspeelt. *(Het veld vult het venster en schaalt mee.)*
+- [x] Als speler wil ik eerst de spelregels en besturing zien, zodat ik weet hoe ik moet spelen. *(Titelscherm + "Hoe speel je?" + uitleg tijdens de eerste golf.)*
+- [x] Als speler wil ik het spel met ENTER starten, zodat ik eerst de uitleg kan lezen. *(Er valt niets voordat je start.)*
+- [x] Als speler wil ik een catcher onderaan zien die ik met ← en → bestuur. *(Hij stopt als je loslaat.)*
+- [x] Als speler wil ik dat de catcher binnen het speelveld blijft.
+- [x] Als speler wil ik vallende orbs zien die ik moet vangen. *(Ze hebben een lichte rand en gloed, zodat je ze goed ziet.)*
+- [x] Als speler wil ik meerdere orbs tegelijk, op verschillende plekken.
+- [x] Als speler wil ik punten krijgen als ik een orb vang en mijn score linksboven zien.
+- [x] Als speler wil ik levens verliezen als ik een orb mis en mijn levens zien. *(Je begint met 3 levens.)*
+- [x] Als speler wil ik dat een gevangen of gemiste orb verdwijnt.
+- [x] Als speler wil ik een bewegende sterrenachtergrond, zodat het spel een ruimte-thema heeft.
+- [x] Als speler wil ik dat het spel stopt als mijn levens op zijn, met een duidelijke Game Over-melding en een geluid. *(TO BE CONTINUED + metal pipe, één keer per Game Over.)*
+- [x] Als speler wil ik opnieuw kunnen starten. *(ENTER of R. Score en levens worden teruggezet.)*
+- [x] Als speler wil ik combo's, power-ups, Stand-aanvallen, Stand-kaarten en een eindbaas, zodat het spel steeds spannender wordt.
+- [x] Als speler wil ik dat mijn record bewaard blijft. *(In de browser, via localStorage.)*
+- [x] Als speler wil ik geluid, schermschudden en flitsen kunnen instellen. *(Instellingen, toets O.)*
 
 ## Peer-review checklist
 
 - [x] De demo werkt zonder console-errors.
-- [x] De besturing werkt zoals bedoeld.
-- [x] Variabelen, loops, functies, arrays en if-statements zijn aanwezig en werken.
-- [x] De code is leesbaar en bevat geen onnodige duplicatie.
-- [x] De game heeft geen onnodig zware berekeningen in `draw()`.
+- [x] De besturing werkt zoals bedoeld (toetsenbord, muis en touch).
+- [x] Variabelen, loops, functies, arrays, if-statements en classes zijn aanwezig en werken.
+- [x] De code is leesbaar, opgesplitst in bestanden en heeft duidelijke comments.
+- [x] Geen onnodig zware berekeningen in `draw()` (sprites en achtergrond worden vooraf getekend).
 - [x] De README is compleet en externe assets zijn vermeld.
 
-# User Stories – Catcher
+## Credits
 
-- [x] **Als speler wil ik een speelveld zien zodat ik weet waar het spel zich afspeelt.**
-  - Het speelveld is zichtbaar wanneer het spel start.
-  - Het speelveld vult het browservenster.
-
-- [x] **Als speler wil ik eerst de spelregels en besturing zien zodat ik weet hoe ik het spel moet spelen.**
-  - Voor de start verschijnt een vak met uitleg over de besturing.
-  - In het vak staat dat ik met de pijltjestoetsen beweeg, met R reset en met ENTER start.
-
-- [x] **Als speler wil ik het spel met ENTER kunnen starten zodat ik eerst de uitleg kan lezen.**
-  - Het spel begint pas nadat ik op ENTER druk.
-  - Voor het starten bewegen de ballen nog niet.
-
-- [x] **Als speler wil ik een catcher onderaan het speelveld zien zodat ik weet welk object ik bestuur.**
-  - De catcher staat onderaan het speelveld.
-  - De catcher is duidelijk zichtbaar.
-
-- [x] **Als speler wil ik de catcher naar links kunnen bewegen zodat ik vallende ballen kan opvangen.**
-  - De catcher beweegt naar links wanneer ik de linkerpijltjestoets indruk.
-  - De catcher stopt met bewegen wanneer ik de toets loslaat.
-
-- [x] **Als speler wil ik de catcher naar rechts kunnen bewegen zodat ik vallende ballen kan opvangen.**
-  - De catcher beweegt naar rechts wanneer ik de rechterpijltjestoets indruk.
-  - De catcher stopt met bewegen wanneer ik de toets loslaat.
-
-- [x] **Als speler wil ik dat de catcher binnen het speelveld blijft zodat ik hem niet buiten beeld kan bewegen.**
-  - De catcher kan niet voorbij de linkerrand van het speelveld.
-  - De catcher kan niet voorbij de rechterrand van het speelveld.
-
-- [x] **Als speler wil ik rode ballen zien zodat ik weet welke objecten ik moet vangen.**
-  - De ballen zijn rood.
-  - De ballen hebben een witte rand zodat ze duidelijk zichtbaar zijn.
-
-- [x] **Als speler wil ik dat de rode ballen naar beneden vallen zodat ik ze met de catcher kan proberen te vangen.**
-  - De ballen bewegen automatisch naar beneden.
-  - De ballen blijven bewegen totdat ze gevangen of gemist zijn.
-
-- [x] **Als speler wil ik meerdere ballen tijdens het spel krijgen zodat ik steeds iets nieuws moet proberen te vangen.**
-  - Er zijn meerdere ballen tegelijk actief.
-  - Nieuwe ballen verschijnen op verschillende plekken boven het speelveld.
-
-- [x] **Als speler wil ik punten krijgen wanneer ik een bal vang zodat mijn score omhooggaat.**
-  - De score wordt hoger wanneer een bal wordt gevangen.
-  - Een gemiste bal geeft geen punten.
-
-- [x] **Als speler wil ik mijn score linksboven in het speelveld kunnen zien zodat ik weet hoeveel punten ik heb.**
-  - De score is zichtbaar tijdens het spelen.
-  - De score wordt direct aangepast wanneer ik een bal vang.
-
-- [x] **Als speler wil ik levens verliezen wanneer ik een bal mis zodat fouten gevolgen hebben.**
-  - Bij een gemiste bal gaat er één leven af.
-  - Bij een gevangen bal gaat er geen leven af.
-
-- [x] **Als speler wil ik mijn aantal levens linksboven in het speelveld kunnen zien zodat ik weet hoeveel kansen ik nog heb.**
-  - Het aantal levens is zichtbaar tijdens het spelen.
-  - Het aantal levens wordt aangepast wanneer ik een bal mis.
-
-- [x] **Als speler wil ik met drie levens beginnen zodat ik meerdere kansen heb om ballen te missen.**
-  - Het spel begint met 3 levens.
-  - Het aantal levens staat bij de start op `3/3`.
-
-- [x] **Als speler wil ik dat een gevangen bal verdwijnt zodat duidelijk is dat ik hem heb gevangen.**
-  - Een bal verdwijnt zodra hij de catcher raakt.
-  - Na het vangen verschijnt de bal opnieuw boven het speelveld.
-
-- [x] **Als speler wil ik dat een gemiste bal verdwijnt zodat het speelveld verder kan met nieuwe ballen.**
-  - Een bal verdwijnt wanneer hij onderaan het speelveld komt.
-  - Na het missen verschijnt de bal opnieuw boven het speelveld.
-
-- [x] **Als speler wil ik een bewegende sterrenachtergrond zien zodat het spel een ruimte-thema heeft.**
-  - Er zijn sterren zichtbaar op de achtergrond.
-  - De sterren bewegen tijdens het spel en verschijnen opnieuw bovenaan.
-
-- [x] **Als speler wil ik dat het spel stopt wanneer mijn levens op zijn zodat ik weet dat het spel voorbij is.**
-  - Het spel stopt wanneer het aantal levens 0 is.
-  - Er vallen geen nieuwe ballen meer wanneer het spel voorbij is.
-
-- [x] **Als speler wil ik een Game Over melding zien zodat duidelijk is dat het spel afgelopen is.**
-  - De tekst `Game Over` verschijnt wanneer mijn levens op zijn.
-  - De melding is duidelijk zichtbaar op het scherm.
-
-- [x] **Als speler wil ik een geluid horen wanneer het spel voorbij is zodat Game Over duidelijker wordt.**
-  - Het Game Over geluid speelt af wanneer mijn levens 0 zijn.
-  - Het geluid wordt maar één keer afgespeeld per Game Over.
-
-- [x] **Als speler wil ik het spel met R opnieuw kunnen starten zodat ik nog een keer kan spelen.**
-  - De score wordt teruggezet naar 0.
-  - De levens worden teruggezet naar 3.
-  - De ballen worden opnieuw boven het speelveld geplaatst.
-
-## Cinematic rebuild — 9 oktober 2026
-
-De game gebruikt voor Game 1 de volgende lokale bestanden in `assets/`:
-
-- `giorno-theme.mp3` — achtergrondmuziek, looping na ENTER
-- `made-in-heaven.mp3` — Made in Heaven-intro, ±6,008 s
-- `time-accelerate.mp3` — begint na het einde van de intro, ±8,882 s
-- `ora-ora.mp3` — ORA-reveal, barrage en finisher, ±8,359 s
-
-De vier bestanden zitten in het meegeleverde `JoJo_Cinematic_Audio_Assets.zip`-pakket. Pak de inhoud uit zodat de bestanden in `Game 1/assets/` staan; de JS-code en de bestanden moeten in **dezelfde** Game 1-map staan. Dit pakket is vanwege publicatierechten niet automatisch naar GitHub geüpload.
-
-**Belangrijk:** De bronopnames zijn niet automatisch vrij te herpubliceren. Gebruik GitHub Pages met deze audio alleen als je daarvoor de nodige toestemming of rechten hebt. De game heeft getimede fallbacks als de audio ontbreekt, maar de bedoelde auditieve ervaring vereist de lokale MP3's.
-
-De echte Rewind begint op het `ended`-event van Made in Heaven; de volgende fase op het `ended`-event van Time Accelerate. Tussenfasen worden getekend vanuit gameplayhistorie (circa 9 seconden bij 60 Hz). ORA duurt zolang als het bijbehorende MP3-fragment plus afloopfase; de gameplay stopt tijdens universe reset. 
-
-Nog vereist voor volledige acceptatie: nieuwe regressietests voor de gewijzigde timing, een echte browser-run, audioluistertest en beoordeling van opname-/publicatierechten.
-
-
----
-
-## Shattered Universe — 3D Combat Mission 1.0
-
-**New preview:** Open [3D Combat Mode](./combat.html) or click the new **3D COMBAT MODE** button in the existing Arcade game.
-
-The current \`index.html\` still runs the original p5.js Catcher; it has **not** been replaced.
-\`combat.html\` is an independent, finite 3D combat mission using pinned Three.js 0.180.0 ES modules from jsDelivr. Internet is required for this CDN dependency. This 1.0 scope is one complete arena mission, separate from the larger open-world RPG idea.
-
-### Play
-
-Click **ENTER THE ARENA** on a desktop browser with WebGL support. Mouse look uses pointer lock where available; if blocked, hold the mouse button and drag the view. The level can still be played using the keyboard.
-
-| Control | Action |
-| --- | --- |
-| WASD / arrow keys | Move |
-| Mouse | Third-person camera |
-| Left mouse | Three-hit light combo |
-| Right mouse | Heavy strike; interrupts regular enemies and breaks the Iron Guard |
-| Shift | Dodge with temporary invulnerability |
-| Q | Star Platinum ORA ORA, costs 55 Stand Energy |
-| T | ZA WARUDO: freeze enemies for 3.2 s, costs 40 energy |
-| F | Disable a nearby Time Anchor |
-| 1 / 2 / 3 | Choose a mission upgrade between waves |
-| Esc | Pause / mouse unlock |
-
-**Included:** One upgrade choice after each of the first four waves (stacking damage, health/recovery, or Time Stop duration). Chrono Shade adds a locked Time Lance and wide sweep across its three phases; dodge the marked areas and counter during recovery. Repeated heavy hits cannot interrupt its windup. 3D arena with clock tower, follow camera and obstacle avoidance, stylized player and articulated procedural Star Platinum, four different enemy roles, a larger 420 HP Chrono Shade boss, readable enemy attack warnings, knockback effects, credited recorded foley plus existing generated ambience/music, Stand Energy, XP and level-ups, Time Stop, game-over, mission victory and replay. Wave 05 ends the mission instead of spawning an endless loop.
-
-**Outside this mission release:** imported rigged Blender models, the full Universe Rebirth 3.0, permanent saves, persistent mastery progression, and an open world. The arena uses original procedural geometry and is not the full 3D RPG. No copyrighted anime audio was added to 3D Combat Mode.
-
-### Test & QA
-
-Run `npm test` from \`Game 1\` to execute the Arcade and 3D regression suites. The Node suite covers mission waves and boss stats, attack direction/range, movement boundaries, enemy telegraph/freeze/death, XP and required page files. Test real 3D graphics separately in a browser: Node tests are not proof of WebGL rendering.
-
-**Release strategy:** Keep \`index.html\` as the original Arcade entry and open the complete 3D mission from its separate Combat Mode link. This preserves the existing game and its controls.
-
-### Optional real-browser smoke test
-
-Run `npm install`, `npx playwright install chromium`, then `npm run qa:3d`. This requires a browser download and access to the pinned Three.js CDN. The runner checks real WebGL draws, wide/portrait layouts, movement and joints, audio lifecycle, anchors, Time Stop, five waves, upgrade selection, victory and replay. It then tests Canvas2D with WebGL disabled. `--smoke-only` skips the complete mission.
-
-The earlier full mission and Arcade cinematic route passed in [run 38312201430](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38312201430); recorded audio updates passed in [run 38313253786](https://github.com/RyanDb020/Catcher-JoJo/actions/runs/38313253786). Current results, screenshots and remaining release work are recorded in [the polish checkpoint](POLISH_STATUS_2026_10_12.md).
-
-Browser downloads in the local workspace are truncated, so actual Chromium/SwiftShader verification runs through GitHub Actions. Node tests alone do not establish WebGL graphics, GPU performance or subjective combat/audio quality.
-
-## Arcade cinematic rebuild — 13 October 2026
-
-Time Stop now stages DIO and The World, ORA has six compositions with a finishing fist, and Made in Heaven uses an equine silhouette beside Pucci. Rewind reverses a geared clock and reconstructs recorded gameplay states; collapse/rebirth return to the actual reset arena. Public defaults use recorded Kenney CC0 scores. Custom clips stay in browser-local file inputs. See [implementation and verification](CINEMATIC_REBUILD_STATUS.md) and [audio sources](ASSET_CREDITS.md).
+- Gemaakt met [p5.js](https://p5js.org) (LGPL, zie `THIRD_PARTY_NOTICES.md`).
+- Stand-illustraties in `assets/stand-art/`: gegenereerde fan-art, geen officiële JoJo-art (zie `ASSET_CREDITS.md`).
+- Geluidseffecten: [Kenney](https://kenney.nl) Impact Sounds en RPG Audio (CC0), plus daarvan afgeleide mixen in `assets/cinematic/`.
+- JoJo-stemmen en -muziek (`assets/jojo/`, `za-warudo…mp3`, `ora-ora.mp3`, `made-in-heaven.mp3`, `giorno-theme.mp3`): zelf aangeleverd, alleen voor persoonlijk/schoolgebruik. Zie `JOJO_AUDIO_PACK.json`.
+- Game Over-geluid: [metal pipe falling sound](https://www.myinstants.com/en/instant/jixaw-metal-pipe-falling-sound-28270/).
+- JoJo's Bizarre Adventure is van Hirohiko Araki / Shueisha. Dit is een niet-commercieel fanproject voor school.
+- AI (ChatGPT, Codex en Claude) gebruikt bij het schrijven en structureren van code en documentatie.

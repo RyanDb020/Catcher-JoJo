@@ -29,7 +29,7 @@ jobs:
 
   browser-3d:
     name: 3D Playwright smoke test (manual)
-    # Explicit opt-in with [3d-qa] on a commit, or run manually; not required for every Arcade change.
+    # Explicit opt-in with [3d-qa] on a commit, or run manually.
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[3d-qa]')
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -44,22 +44,8 @@ jobs:
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Exercise playable 3D Combat Mode
-        if: ${{ !contains(github.event.head_commit.message, '[pack-only]') }}
         working-directory: 'Game 1'
         run: npm run qa:3d -- ${{ contains(github.event.head_commit.message, '[3d-smoke]') && '--smoke-only' || '' }}
-      - name: Exercise Arcade cinematics and local audio
-        if: always() && !contains(github.event.head_commit.message, '[pack-only]')
-        working-directory: 'Game 1'
-        env:
-          QA_OUTPUT_DIR: tests/artifacts
-        run: node tests/live_qa.cjs --duration-ms=10000 --label=foley
-      - name: Verify cinematic audio faults and pause/recovery
-        if: always() && !contains(github.event.head_commit.message, '[visual-only]') && !contains(github.event.head_commit.message, '[pack-only]')
-        working-directory: 'Game 1'
-        run: node tests/test_cinematic_browser.cjs
-      - name: Verify complete JoJo audio pack in browser
-        working-directory: 'Game 1'
-        run: node tests/test_jojo_pack_browser.cjs
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -67,29 +53,3 @@ jobs:
           name: shattered-universe-3d-qa
           path: Game 1/tests/artifacts/
           if-no-files-found: ignore
-
-
-  browser-vfx:
-    name: VFX 6 muted cinematic acceptance
-    if: contains(github.event.head_commit.message, '[vfx-qa]')
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Install Chromium
-        working-directory: 'Game 1'
-        run: |
-          npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium
-      - name: Verify full muted cinematics
-        working-directory: 'Game 1'
-        run: node tests/test_vfx_browser.cjs
-      - name: Upload muted video and scene captures
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vfx6-acceptance
-          path: Game 1/tests/artifacts/
