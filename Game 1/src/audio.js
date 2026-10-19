@@ -35,6 +35,8 @@ const SOUND_FILES = {
   accel: 'assets/cinematic/acceleration.mp3',
   collapse: 'assets/cinematic/collapse.mp3',
   genesis: 'assets/cinematic/genesis.mp3',
+  reveal: 'assets/cinematic/reveal.mp3',
+  rewindFx: 'assets/cinematic/rewind.mp3',
   defeat: 'assets/cinematic/defeat.mp3',
   pipe: 'assets/jixaw-metal-pipe-falling-sound.mp3',
   teleport: 'assets/jojo/teleport.mp3',

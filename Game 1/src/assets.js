@@ -91,6 +91,24 @@ const Art = {
     return result;
   },
 
+  // Een scherp silhouet in één kleur (voor een geheimzinnige schaduw-figuur).
+  silhouette(key, index, color) {
+    const id = 'sil' + key + index + color;
+    if (this.glows[id]) return this.glows[id];
+    const base = this.pose(key, index);
+    if (!base) return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = base.width;
+    canvas.height = base.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(base, 0, 0);
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    this.glows[id] = canvas;
+    return canvas;
+  },
+
   // Tekent een pose. (cx, bottom) = midden-onder van het plaatje.
   draw(key, index, cx, bottom, height, options = {}) {
     const canvas = this.pose(key, index);

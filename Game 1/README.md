@@ -30,8 +30,9 @@ python tools/serve.py
 | M | Geluid aan/uit |
 | O | Instellingen |
 | H | Uitleg ("Hoe speel je?") |
-| ENTER / R | Opnieuw na Game Over |
-| SPATIE | Overgang naar een nieuw universum overslaan |
+| ENTER | Snel opnieuw na Game Over |
+| R | **MADE IN HEAVEN** — Pucci reset het universum (bij pauze of Game Over) |
+| SPATIE | De Made in Heaven-scène overslaan |
 
 Op een telefoon of tablet sleep je met je vinger. Rechts in beeld verschijnen dan knoppen voor de drie aanvallen.
 
@@ -73,6 +74,19 @@ Gold Experience (extra leven) · The Hand (wist bommen) · Tusk (nagels schieten
 
 Elke gevangen orb schiet een ster naar Pucci en je Stand-aanvallen doen extra schade. Pucci gooit gouden orbs, Whitesnake-discs en **versnelt de tijd**. Als je hem verslaat begint een nieuw universum: alles valt sneller, je krijgt een leven terug en je Stand-kaarten blijven. Vanaf golf 6 komen er ook bommenmuren met één opening.
 
+## MADE IN HEAVEN — de universum-reset
+
+Na het verslaan van Pucci, of als je bij pauze of Game Over op **R** drukt, speelt een filmscène van ongeveer 22 seconden. Met **spatie** sla je hem over.
+
+1. **The Final Prayer** — Pucci staat als silhouet te bidden en spreekt de 14 woorden uit (*Spiral staircase… Rhinoceros beetle… Secret emperor*).
+2. **Manifestation** — Made in Heaven onthult zich: flits, schokgolven, veren, draaiende klokken en bliksem. *TIME HAS NO LIMIT.*
+3. **Rewind** — **jouw eigen laatste 9 seconden gameplay** spoelen terug, met een VHS-effect: kleuren die uit elkaar trekken, glitch-strepen en een tijdcode die terugtelt.
+4. **Time Accelerates** — zon en maan razen rond, dag en nacht flitsen voorbij en Pucci staat stil terwijl alles langs hem raast.
+5. **Singularity** — het hele scherm wordt in een draaikolk naar één punt gezogen.
+6. **Rebirth** — een oerknal, en het nieuwe universum begint.
+
+De game neemt tijdens het spelen steeds "foto's" van het speelveld op (`Game.recordHistory` in `game.js`). Die worden in deel 3 achterstevoren afgespeeld.
+
 De game is **eerlijk**: de golf-regisseur (`src/waves.js`) rekent uit waar je catcher kan komen. Hij laat nooit twee roze orbs vallen die je onmogelijk allebei kunt vangen.
 
 ## Hoe de code in elkaar zit
@@ -90,7 +104,8 @@ Alle code staat in `src/`. Elk bestand heeft één taak en bovenaan staat uitleg
 | `stands.js` | ORA ORA, ZA WARUDO en ROAD ROLLER |
 | `cards.js` | Stand-kaarten en het kaart-kies-scherm |
 | `boss.js` | De eindbaas Pucci |
-| `cinematics.js` | Cut-ins, overgang naar een nieuw universum, de TO BE CONTINUED-pijl |
+| `cinematics.js` | Cut-ins en de TO BE CONTINUED-pijl |
+| `heaven.js` | De MADE IN HEAVEN-filmscène (universum-reset) |
 | `hud.js` | Score, levens, energiebalk, combo |
 | `screens.js` | Titelscherm, uitleg, pauzemenu, Game Over |
 | `effects.js` | Deeltjes, zwevende tekst, schermschudden, flitsen, hit-stop |
@@ -111,7 +126,7 @@ Belangrijk om te weten:
 npm test
 ```
 
-Dit draait `tests/test_game.cjs` (21 tests voor de spelregels: vangen, missen, combo's, golven, de eerlijkheid van de regisseur, alle Stand-aanvallen, de eindbaas, game over en opslaan) en `tests/test_3d.cjs` (de 3D-modus). Je hebt alleen Node.js nodig. De tests draaien ook automatisch op GitHub bij elke push.
+Dit draait `tests/test_game.cjs` (23 tests voor de spelregels: vangen, missen, combo's, golven, de eerlijkheid van de regisseur, alle Stand-aanvallen, de eindbaas, de Made in Heaven-reset, game over en opslaan) en `tests/test_3d.cjs` (de 3D-modus). Je hebt alleen Node.js nodig. De tests draaien ook automatisch op GitHub bij elke push.
 
 Voor testen in de browser kun je `?debug=1` achter de URL zetten. Dan werken de testtoetsen: **G** = volle energie, **N** = volgende golf, **B** = naar de eindbaas, **L** = extra leven.
 
@@ -133,7 +148,7 @@ Via **3D COMBAT MODE** in het hoofdmenu (`combat.html`) speel je een losse 3D-ar
 - [x] Als speler wil ik dat een gevangen of gemiste orb verdwijnt.
 - [x] Als speler wil ik een bewegende sterrenachtergrond, zodat het spel een ruimte-thema heeft.
 - [x] Als speler wil ik dat het spel stopt als mijn levens op zijn, met een duidelijke Game Over-melding en een geluid. *(TO BE CONTINUED + metal pipe, één keer per Game Over.)*
-- [x] Als speler wil ik opnieuw kunnen starten. *(ENTER of R. Score en levens worden teruggezet.)*
+- [x] Als speler wil ik opnieuw kunnen starten. *(ENTER = snel opnieuw, R = Made in Heaven-reset. Score en levens worden teruggezet.)*
 - [x] Als speler wil ik combo's, power-ups, Stand-aanvallen, Stand-kaarten en een eindbaas, zodat het spel steeds spannender wordt.
 - [x] Als speler wil ik dat mijn record bewaard blijft. *(In de browser, via localStorage.)*
 - [x] Als speler wil ik geluid, schermschudden en flitsen kunnen instellen. *(Instellingen, toets O.)*

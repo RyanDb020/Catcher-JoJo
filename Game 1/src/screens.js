@@ -167,6 +167,7 @@ const HelpScreen = {
         '← → of A D  —  bewegen (of muis / vinger)',
         '1 · 2 · 3  (of Q W E)  —  Stand-aanvallen',
         'P of ESC  —  pauze      ·      M  —  geluid aan/uit',
+        'R (pauze / Game Over)  —  MADE IN HEAVEN-reset',
       ]],
       ['STAND-AANVALLEN', [
         '1  ORA ORA — 1 balk: alles in je catcher',
@@ -214,7 +215,8 @@ const PauseMenu = {
     this.selected = 0;
     this.buttons = [
       new Button('DOORGAAN', () => Game.resume(), { primary: true, hint: 'ESC' }),
-      new Button('OPNIEUW', () => Game.startRun(), { hint: 'R' }),
+      new Button('OPNIEUW', () => Game.startRun()),
+      new Button('MADE IN HEAVEN', () => Game.heavenRestart(), { hint: 'R' }),
       new Button('INSTELLINGEN', () => Settings.open(), { hint: 'O' }),
       new Button('HOE SPEEL JE?', () => HelpScreen.open(), { hint: 'H' }),
       new Button('HOOFDMENU', () => Game.toTitle(), { hint: 'Q' }),
@@ -225,7 +227,7 @@ const PauseMenu = {
     if (code === ENTER || key === ' ') this.buttons[this.selected].action();
     else if (code === UP_ARROW || key === 'w' || key === 'W') this.move(-1);
     else if (code === DOWN_ARROW || key === 's' || key === 'S') this.move(1);
-    else if (key === 'r' || key === 'R') Game.startRun();
+    else if (key === 'r' || key === 'R') Game.heavenRestart();
     else if (key === 'q' || key === 'Q') Game.toTitle();
     else if (key === 'h' || key === 'H') HelpScreen.open();
   },
@@ -260,10 +262,10 @@ const PauseMenu = {
     ctx.fillStyle = `rgba(6, 2, 16, ${0.7 * fade})`;
     ctx.fillRect(-2000, -2000, W + 4000, H + 4000);
     ctx.restore();
-    drawJoJoTitle('PAUZE', W / 2, 150, 64, { alpha: fade });
-    const bw = Math.min(320, W * 0.8), bh = 48;
+    drawJoJoTitle('PAUZE', W / 2, 130, 64, { alpha: fade });
+    const bw = Math.min(320, W * 0.8), bh = 46;
     this.buttons.forEach((button, i) => {
-      button.place(W / 2 - bw / 2, 220 + i * (bh + 12), bw, bh);
+      button.place(W / 2 - bw / 2, 190 + i * (bh + 11), bw, bh);
       button.draw(fade);
     });
   },
@@ -284,6 +286,7 @@ const GameOverScreen = {
     this.selected = 0;
     this.buttons = [
       new Button('OPNIEUW', () => Game.startRun(), { primary: true, hint: 'ENTER' }),
+      new Button('MADE IN HEAVEN', () => Game.heavenRestart(), { hint: 'R' }),
       new Button('HOOFDMENU', () => Game.toTitle(), { hint: 'ESC' }),
     ];
   },
@@ -298,10 +301,11 @@ const GameOverScreen = {
       return;
     }
     if (code === ENTER || key === ' ') this.buttons[this.selected].action();
-    else if (key === 'r' || key === 'R') Game.startRun();
+    else if (key === 'r' || key === 'R') Game.heavenRestart();
     else if (code === ESCAPE || key === 'q' || key === 'Q') Game.toTitle();
     else if (code === LEFT_ARROW || code === UP_ARROW || code === RIGHT_ARROW || code === DOWN_ARROW) {
-      this.selected = 1 - this.selected;
+      const step = code === LEFT_ARROW || code === UP_ARROW ? -1 : 1;
+      this.selected = (this.selected + step + this.buttons.length) % this.buttons.length;
       Sound.play('catch', { volume: 0.35, rate: 0.8 });
     }
   },
@@ -348,7 +352,7 @@ const GameOverScreen = {
 
     if (t < 1.2) return;
     const fade = easeOutCubic(clamp((t - 1.2) / 0.4, 0, 1));
-    const pw = Math.min(460, W - 30), ph = 372;
+    const pw = Math.min(460, W - 30), ph = 420;
     const px = (W - pw) / 2, py = 70;
     drawPanel(px, py + (1 - fade) * 30, pw, ph, { alpha: fade, fill: 'rgba(24, 12, 46, 0.95)', glow: 'rgba(120, 60, 220, 0.5)' });
     const top = py + (1 - fade) * 30;
@@ -371,10 +375,11 @@ const GameOverScreen = {
       drawText(label, sx, sy, { size: 11, color: COLORS.violet, spacing: 2, alpha: fade });
       drawText(value, sx, sy + 20, { size: 19, font: FONT_TITLE, weight: '400', color: '#ffffff', alpha: fade });
     });
-    const bw = (pw - 60) / 2 - 6, bh = 46;
-    this.buttons.forEach((button, i) => {
-      button.place(px + 30 + i * (bw + 12), top + ph - 72, bw, bh);
-      button.draw(fade);
-    });
+    // bovenaan OPNIEUW over de hele breedte, daaronder MADE IN HEAVEN en HOOFDMENU
+    const fullW = pw - 60, halfW = (fullW - 12) / 2, bh = 44;
+    this.buttons[0].place(px + 30, top + ph - 116, fullW, bh);
+    this.buttons[1].place(px + 30, top + ph - 62, halfW, bh);
+    this.buttons[2].place(px + 30 + halfW + 12, top + ph - 62, halfW, bh);
+    this.buttons.forEach(button => button.draw(fade));
   },
 };

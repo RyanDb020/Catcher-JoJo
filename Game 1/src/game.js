@@ -44,6 +44,8 @@ const Game = {
   hints: null,
   lastRunVoice: -999,
   voicedThisWave: {},
+  history: [],        // "foto's" van het speelveld voor de Made in Heaven-rewind
+  historyTimer: 0,
 
   init() {
     this.catcher = new Catcher();
@@ -60,7 +62,15 @@ const Game = {
 
   // ---------- een nieuw potje ----------
   startRun() {
+    this.resetRun();
     this.state = 'playing';
+    Sound.stopVoice(0.05);
+    Sound.playMusic(Save.settings.soundtrack);
+    this.startWave(1);
+  },
+
+  // Zet alles terug naar het begin (score, levens, kaarten...).
+  resetRun() {
     this.objects = [];
     this.nails = [];
     this.boss = null;
@@ -82,9 +92,11 @@ const Game = {
     this.lastRunVoice = -999;
     this.stats = { caught: 0, perfects: 0, bombs: 0, abilities: 0, missed: 0 };
     this.hints = { movedDistance: 0, movement: true, bars: 0 };
+    this.history = [];
+    this.historyTimer = 0;
+    this.banner = null;
     Stands.reset();
     CutIn.current = null;
-    UniverseReset.active = false;
     FX.clear();
     HUD.reset();
     HelpScreen.close();
@@ -93,9 +105,44 @@ const Game = {
     // De catcher begint in het midden en beweegt pas als jij iets doet.
     Input.pointerActive = false;
     Input.pointerX = this.fieldW / 2;
-    Sound.stopVoice(0.05);
-    Sound.playMusic(Save.settings.soundtrack);
-    this.startWave(1);
+  },
+
+  // R: Made in Heaven! Pucci reset het universum en je begint opnieuw.
+  heavenRestart() {
+    if (this.state === 'playing' || this.state === 'paused') {
+      Save.recordRun(this.score, waveLevel(this.universe, this.waves.wave) + 1, this.maxCombo);
+    }
+    Stands.reset();
+    CutIn.current = null;
+    HelpScreen.close();
+    this.gameOverPending = false;
+    this.state = 'reset';
+    HeavenReset.start({
+      universe: 1,
+      history: this.history,
+      subtitle: 'Een nieuw universum · een nieuw begin',
+      onCommit: () => this.resetRun(),
+      onDone: () => {
+        this.state = 'playing';
+        this.startWave(1);
+      },
+    });
+  },
+
+  // Neemt elke 1/30 seconde een "foto" van het speelveld op (voor het terugspoelen
+  // in de Made in Heaven-scène). We bewaren de laatste 9 seconden.
+  recordHistory(dt) {
+    this.historyTimer -= dt;
+    if (this.historyTimer > 0) return;
+    this.historyTimer = 1 / 30;
+    const objects = [];
+    for (const object of this.objects) {
+      if (object.state === 'dead') continue;
+      objects.push([SNAPSHOT_TYPES.indexOf(object.type), object.x, object.y, object.rot]);
+    }
+    const boss = this.boss && this.boss.state !== 'dead' ? [this.boss.x, this.boss.y, this.boss.pose] : null;
+    this.history.push({ cx: this.catcher.x, tilt: this.catcher.tilt, width: this.catcher.width, objects, boss, score: this.score });
+    if (this.history.length > 270) this.history.shift();
   },
 
   startWave(wave) {
@@ -122,7 +169,7 @@ const Game = {
     this.boss = null;
     Stands.reset();
     CutIn.current = null;
-    UniverseReset.active = false;
+    HeavenReset.active = false;
     FX.clear();
     Sound.stopVoice();
     TitleScreen.open();
@@ -216,11 +263,12 @@ const Game = {
       return;
     }
     if (this.state === 'reset') {
-      UniverseReset.update(dt);
+      HeavenReset.update(dt);
       FX.update(dt, dt);
       HUD.update(dt, this);
-      Background.update(dt, 1 + UniverseReset.warp * 4, UniverseReset.warp);
-      Sound.update(dt, 1 + UniverseReset.warp * 0.25, 0.8);
+      Background.update(dt, HeavenReset.timeScale, HeavenReset.warp);
+      // de muziek gaat bijna uit: de stem van Pucci is de ster van deze scène
+      Sound.update(dt, 1, HeavenReset.active && !HeavenReset.committed ? 0.1 : 0.8);
       return;
     }
     if (this.state === 'gameover') {
@@ -270,6 +318,7 @@ const Game = {
     this.updateObjects(worldDt, dt);
     this.updateNails(dt);
     this.updatePerks(worldDt);
+    this.recordHistory(dt);
 
     this.discLock = Math.max(0, this.discLock - dt);
     this.graceTime = Math.max(0, this.graceTime - dt);
@@ -674,19 +723,27 @@ const Game = {
     this.objects = [];
     FX.texts.length = 0;
     Sound.stopVoice();
-    UniverseReset.start(this.universe + 1, () => {
-      // het nieuwe universum begint
-      this.universe++;
-      this.lives = Math.min(this.maxLives, this.lives + 1);
-      this.objects = [];
-      this.nails = [];
-      this.boss = null;
-      Stands.reset();
-      CutIn.current = null;
-      this.catcher.reset(this.fieldW);
-    }, () => {
-      this.state = 'playing';
-      this.openCards(`UNIVERSUM ${this.universe}`, `Pucci verslagen! +${formatScore(bonus)} · kies een beloning`, () => this.startWave(1));
+    // Pucci's laatste daad: Made in Heaven reset het universum.
+    HeavenReset.start({
+      universe: this.universe + 1,
+      history: this.history,
+      subtitle: 'Pucci verslagen!  ·  +1 leven  ·  alles valt sneller  ·  je kaarten blijven',
+      onCommit: () => {
+        // het nieuwe universum begint
+        this.universe++;
+        this.lives = Math.min(this.maxLives, this.lives + 1);
+        this.objects = [];
+        this.nails = [];
+        this.boss = null;
+        this.history = [];
+        Stands.reset();
+        CutIn.current = null;
+        this.catcher.reset(this.fieldW);
+      },
+      onDone: () => {
+        this.state = 'playing';
+        this.openCards(`UNIVERSUM ${this.universe}`, `Pucci verslagen! +${formatScore(bonus)} · kies een beloning`, () => this.startWave(1));
+      },
     });
   },
 
@@ -760,7 +817,7 @@ const Game = {
         CardScreen.onKey(key, code);
         break;
       case 'reset':
-        if (code === ENTER || key === ' ' || code === ESCAPE) UniverseReset.skip();
+        if (code === ENTER || key === ' ' || code === ESCAPE) HeavenReset.skip();
         break;
       case 'gameover':
         GameOverScreen.onKey(key, code);
@@ -781,7 +838,7 @@ const Game = {
       case 'paused': PauseMenu.onPointer(x, y, clicked); return clicked;
       case 'cards': CardScreen.onPointer(x, y, clicked); return clicked;
       case 'gameover': GameOverScreen.onPointer(x, y, clicked); return clicked;
-      case 'reset': if (clicked) UniverseReset.skip(); return clicked;
+      case 'reset': if (clicked) HeavenReset.skip(); return clicked;
       case 'playing':
         if (clicked && isTouch) {
           const kind = HUD.touchAbilityAt(x, y);
@@ -824,6 +881,13 @@ const Game = {
       return;
     }
 
+    // De Made in Heaven-scène neemt het hele scherm over.
+    if (this.state === 'reset') {
+      HeavenReset.draw(W, H);
+      FX.drawFlash(ctx.canvas.width, ctx.canvas.height);
+      return;
+    }
+
     // 1. de wereld (wordt grijs tijdens Time Stop)
     View.begin(FX.shakeX, FX.shakeY);
     this.drawFieldEdges();
@@ -838,10 +902,8 @@ const Game = {
 
     // 2. jij en je Stand blijven in kleur ("alleen jij kan bewegen in de stilstaande tijd")
     View.begin(FX.shakeX, FX.shakeY);
-    if (this.state !== 'reset' || !UniverseReset.committed) {
-      Stands.drawBehind(this, time);
-      this.catcher.draw(this.energyBars(), time);
-    }
+    Stands.drawBehind(this, time);
+    this.catcher.draw(this.energyBars(), time);
     for (const object of this.objects) if (object.state === 'home') object.draw(time);
     if (this.boss) this.boss.drawShots();
     for (const nail of this.nails) drawSprite(Sprites.nail, nail.x, nail.y, 16, (nail.angle || 0) + Math.PI / 2);
@@ -870,7 +932,6 @@ const Game = {
     View.end();
 
     CutIn.draw(W, H);
-    UniverseReset.draw(W, H);
   },
 
   // Op een heel breed scherm: lichte randjes waar het speelveld stopt.

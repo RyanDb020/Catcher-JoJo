@@ -185,8 +185,9 @@ const Background = {
           star.x = 0.5 + randRange(-0.08, 0.08);
           star.y = 0.5 + randRange(-0.08, 0.08);
         } else {
+          // bij terugspoelen (negatieve tijd) komen nieuwe sterren van onderen
           star.x = rand();
-          star.y = -0.01;
+          star.y = worldDt < 0 ? 1.01 : -0.01;
         }
       }
       if (timeScale > 0) star.twinkle += dt * 3 * star.z;

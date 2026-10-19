@@ -15,7 +15,7 @@ const assert = require('assert');
 const ROOT = path.join(__dirname, '..');
 const SCRIPTS = [
   'config', 'utils', 'storage', 'ui', 'view', 'input', 'audio', 'assets', 'effects', 'background',
-  'catcher', 'objects', 'waves', 'cinematics', 'stands', 'cards', 'boss', 'hud', 'screens', 'settings', 'game',
+  'catcher', 'objects', 'waves', 'cinematics', 'heaven', 'stands', 'cards', 'boss', 'hud', 'screens', 'settings', 'game',
 ];
 
 // Maakt een nieuwe, schone game-omgeving.
@@ -267,11 +267,40 @@ test('Pucci verschijnt in golf 5 en verslaan start een nieuw universum', () => {
   assert.ok(run('Game.boss.hp') < hp, 'gevangen orbs moeten de baas raken');
   run('Game.boss.damage(9999, Game); simulate(3);');
   assert.strictEqual(run('Game.state'), 'reset');
-  run('UniverseReset.skip(); UniverseReset.skip(); simulate(0.2);');
+  run('HeavenReset.skip(); HeavenReset.skip(); simulate(0.2);');
   assert.strictEqual(run('Game.universe'), 2);
   run('simulate(2)');
   assert.strictEqual(run('Game.waves.wave'), 1);
   assert.strictEqual(run('Game.waves.universe'), 2);
+});
+
+test('Made in Heaven (R) speelt de reset en start daarna een nieuw potje', () => {
+  const { run } = createGame(13);
+  run(BOT);
+  run('Game.startRun(); simulate(12);');
+  assert.ok(run('Game.history.length') > 100, 'de gameplay moet opgenomen zijn voor het terugspoelen');
+  run('Game.lives = 1; Game.score = 777; Game.catcher.x = 100; Game.spawn(new Faller("orb", 1100, 600, 400)); for (let i = 0; i < 200; i++) Game.update(1 / 60);');
+  assert.strictEqual(run('Game.state'), 'gameover');
+  run('GameOverScreen.time = 2; GameOverScreen.onKey("r", 82);');
+  assert.strictEqual(run('Game.state'), 'reset');
+  assert.ok(run('HeavenReset.history.length') > 100, 'de scène krijgt de opgenomen gameplay mee');
+  // alle zes de fasen lopen zonder fouten
+  const phases = run('const seen = []; for (let i = 0; i < 60 * 30 && Game.state === "reset"; i++) { if (!seen.includes(HeavenReset.phase)) seen.push(HeavenReset.phase); Game.update(1 / 60); } seen.join(",")');
+  assert.strictEqual(phases, 'prayer,manifest,rewind,accelerate,collapse,rebirth');
+  assert.strictEqual(run('Game.state'), 'playing');
+  assert.strictEqual(run('Game.score'), 0);
+  assert.strictEqual(run('Game.lives'), run('LIVES.start'));
+  assert.strictEqual(run('Game.waves.wave'), 1);
+});
+
+test('Made in Heaven overslaan met spatie gaat meteen naar het nieuwe universum', () => {
+  const { run } = createGame(14);
+  run('Game.startRun(); Game.pause(); PauseMenu.onKey("r", 82);');
+  assert.strictEqual(run('Game.state'), 'reset');
+  run('Game.update(1 / 60); Game.onKey(" ", 32);');
+  assert.strictEqual(run('HeavenReset.committed'), true);
+  run('Game.onKey(" ", 32);');
+  assert.strictEqual(run('Game.state'), 'playing');
 });
 
 test('een DISC blokkeert je Stand', () => {
