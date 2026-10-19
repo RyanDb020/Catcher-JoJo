@@ -4,8 +4,8 @@
     {
       "name": "game1",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["tools/serve.py", "5518"],
-      "port": 5518
+      "runtimeArgs": ["tools/serve.py", "5520"],
+      "port": 5520
     }
   ]
 }

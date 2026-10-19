@@ -227,6 +227,12 @@ const Game = {
     this.objects.push(object);
   },
 
+  // Anime-impact-frame + camera-kick op een plek in het speelveld.
+  impactAt(x, y, duration = 0.07, zoom = 0.05) {
+    PostFX.impact(duration, View.toScreenX(x) / width, View.toScreenY(y) / height);
+    Camera.kick(zoom, x, y);
+  },
+
   // Tekst midden in beeld (bijv. "GOUDREGEN!"). Meerdere tegelijk komen onder elkaar.
   announce(text, color = COLORS.gold) {
     const slot = this.announceCount % 3;
@@ -238,6 +244,8 @@ const Game = {
   // ---------- elk frame ----------
   update(dt) {
     this.time += dt;
+    Camera.update(dt);
+    PostFX.update(dt);
     HelpScreen.update(dt);
     this.announceTimer -= dt;
     if (this.announceTimer <= 0) this.announceCount = 0;
@@ -333,7 +341,8 @@ const Game = {
     const bossRate = this.boss && this.boss.alive ? clamp(this.boss.timeFactor(), 1, 1.25) : 1;
     Sound.update(dt, Stands.musicRate() * bossRate * (this.gameOverPending ? 0.8 : 1), Stands.musicLevel() * (this.gameOverPending ? 0.4 : 1));
     const bossWarp = this.boss && this.boss.accelTime > 0 ? 0.45 : 0;
-    Background.update(dt, timeScale, bossWarp, this.lives === 1 && !this.gameOverPending ? 1 : 0);
+    const parallax = (this.catcher.x / this.fieldW - 0.5) * 2;
+    Background.update(dt, timeScale, bossWarp, this.lives === 1 && !this.gameOverPending ? 1 : 0, parallax);
 
     if (this.gameOverPending) {
       this.gameOverTime += dt;
@@ -404,6 +413,7 @@ const Game = {
         const colors = gold ? ['#fff3b0', '#ffd25e', '#ffffff'] : ['#ffc2e0', '#ff5fa8', '#ffffff'];
         FX.burst(x, y, { count: perfect || gold ? 16 : 9, colors, speed: [90, 300], angle: -Math.PI / 2, spread: 2.2, size: [1.5, 3.5], life: [0.25, 0.55], gravity: 500, shape: 'spark' });
         FX.text(x, y - 26, '+' + gained, { size: gold ? 26 : 20, color: gold ? COLORS.gold : '#ffd6ec', life: 0.7, rise: 46 });
+        FX.pillar(x, y, perfect ? '190,240,255' : gold ? '255,206,90' : '255,95,168', gold || perfect ? 58 : 44);
         if (perfect) {
           Sound.play('perfect', { volume: 0.35, rate: 1.2 + Math.min(this.combo, 30) * 0.01 });
           FX.text(x, y - 56, 'PERFECT', { size: 18, color: COLORS.cyan, life: 0.7, rise: 40 });
@@ -437,6 +447,7 @@ const Game = {
           FX.text(x, y - 40, '+' + this.addScore(POINTS.fullLife), { size: 26, color: COLORS.green, life: 1 });
         }
         Sound.play('power', { volume: 0.8 });
+        FX.pillar(x, y, '120,255,170', 70);
         FX.burst(x, y, { count: 22, colors: ['#9dffbe', '#59e38c', '#ffd25e'], speed: [80, 260], size: [2, 4], life: [0.4, 0.8], shape: 'star', angle: -Math.PI / 2, spread: 2.6 });
         catcher.bump(1, '89,227,140');
         break;
@@ -445,6 +456,7 @@ const Game = {
         FX.text(x, y - 40, 'STAND ARROW!', { size: 26, color: COLORS.gold, life: 1 });
         Sound.play('power', { volume: 0.8 });
         Sound.play('bell', { volume: 0.5, rate: 1.4 });
+        FX.pillar(x, y, '255,220,120', 80);
         FX.burst(x, y, { count: 24, colors: ['#fff3b0', '#ffd25e', '#c79bff'], speed: [80, 300], size: [2, 4], life: [0.4, 0.9], shape: 'star', angle: -Math.PI / 2, spread: 2.6 });
         catcher.bump(1, '255,206,90');
         break;
@@ -488,6 +500,8 @@ const Game = {
     this.announce(label, tier && tier.mult >= 4 ? '#ff9de0' : COLORS.gold);
     Sound.play('perfect', { volume: 0.6, rate: 1.5 });
     FX.burst(this.catcher.x, this.catcher.rimY, { count: 30, colors: ['#ffd25e', '#ff5fa8', '#c79bff', '#ffffff'], speed: [150, 450], size: [2, 4], life: [0.4, 0.9], shape: 'star', real: true });
+    FX.ring(this.catcher.x, this.catcher.rimY, { color: '255,210,94', from: 20, to: 260, life: 0.6, width: 6, real: true });
+    Camera.kick(0.035, this.catcher.x, this.catcher.rimY);
     if (this.combo === 50 && !Sound.isVoicePlaying()) Sound.playVoice('vYes', { duration: 3.6, fadeOut: 0.5 });
   },
 
@@ -496,6 +510,7 @@ const Game = {
     if (object.mustCatch) {
       this.stats.missed++;
       FX.burst(object.x, FLOOR_Y, { count: 14, colors: ['#ff5fa8', '#ff4057', '#ffffff'], speed: [60, 240], angle: -Math.PI / 2, spread: 1.6, size: [2, 4], life: [0.3, 0.6], gravity: 600, shape: 'shard', glow: false });
+      FX.ring(object.x, FLOOR_Y, { color: '255,64,87', from: 6, to: 110, life: 0.5, width: 5, flat: true });
       if (this.graceTime > 0) return; // net een leven verloren: deze telt niet
       if (this.useCrimsonShield(object.x, object.y)) return;
       this.loseLife(object.x, 'MIS!');
@@ -516,6 +531,7 @@ const Game = {
     Sound.play('heavy', { volume: 0.8 });
     FX.shake(0.6);
     FX.hitStop(0.07);
+    this.impactAt(x, y, 0.06, 0.05);
     if (this.useCrimsonShield(x, y)) return;
     this.loseLife(x, 'BOEM!');
   },
@@ -553,6 +569,7 @@ const Game = {
     this.combo = 0;
     this.catcher.hurt();
     HUD.lifePulse = 1;
+    Camera.kick(0.025, x, this.catcher.rimY);
     FX.shake(0.55);
     FX.flash('255,40,70', 0.3, 3);
     FX.text(x, this.catcher.rimY - 60, label, { size: 30, color: COLORS.red, life: 0.9 });
@@ -875,6 +892,11 @@ const Game = {
       View.begin();
       FX.drawParticles();
       TitleScreen.draw(View.w);
+      View.end();
+      PostFX.bloom();
+      PostFX.drawVignette(W, H);
+      View.begin();
+      TitleScreen.drawMenu(View.w);
       HelpScreen.draw(View.w);
       View.end();
       FX.drawFlash(ctx.canvas.width, ctx.canvas.height);
@@ -889,7 +911,7 @@ const Game = {
     }
 
     // 1. de wereld (wordt grijs tijdens Time Stop)
-    View.begin(FX.shakeX, FX.shakeY);
+    View.begin(FX.shakeX, FX.shakeY, true);
     this.drawFieldEdges();
     Background.drawFloor(this.fieldW);
     if (this.boss) this.boss.draw(time);
@@ -901,7 +923,7 @@ const Game = {
     if (desaturation > 0) this.drawDesaturation(desaturation);
 
     // 2. jij en je Stand blijven in kleur ("alleen jij kan bewegen in de stilstaande tijd")
-    View.begin(FX.shakeX, FX.shakeY);
+    View.begin(FX.shakeX, FX.shakeY, true);
     Stands.drawBehind(this, time);
     this.catcher.draw(this.energyBars(), time);
     for (const object of this.objects) if (object.state === 'home') object.draw(time);
@@ -912,12 +934,17 @@ const Game = {
     if (this.hints && this.hints.movement && this.state === 'playing') this.drawMovementHint(time);
     View.end();
 
+    // nabewerking: lichtgloed (vóór het omkeren van de kleuren, anders wordt alles wit)
+    PostFX.bloom();
     const inversion = Stands.inversion();
     if (inversion > 0) this.drawInversion(inversion);
     if (this.gameOverPending || this.state === 'gameover') {
       GameOverScreen.drawSepia(this.gameOverPending ? Math.min(1, this.gameOverTime / 0.9) : 1);
     }
+    // anime-impact-frames en donkere randen
+    PostFX.drawImpact();
     FX.drawFlash(ctx.canvas.width, ctx.canvas.height);
+    PostFX.drawVignette(W, H);
 
     // 3. HUD en menu's
     View.begin();
@@ -977,6 +1004,18 @@ const Game = {
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, TAU);
       ctx.fill();
+      // een scherpe lichtrand aan de buitenkant van de bol
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 6 * View.scale;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, TAU);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(160, 220, 255, 0.5)';
+      ctx.lineWidth = 18 * View.scale;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius + 14 * View.scale, 0, TAU);
+      ctx.stroke();
     } else {
       ctx.strokeStyle = 'rgba(255,255,255,0.6)';
       ctx.lineWidth = 6;

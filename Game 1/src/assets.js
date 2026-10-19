@@ -195,6 +195,17 @@ const Sprites = {
     this.nail = this.makeNail();
     this.halftone = this.makeHalftone();
     this.spark = this.makeSpark();
+    this.smoke = this.makeSmoke();
+  },
+
+  // Zachte grijze rookwolk (voor stof van de Road Roller).
+  makeSmoke() {
+    const { canvas, ctx } = makeSpriteCanvas(64, 64);
+    for (const [x, y, r] of [[32, 34, 26], [22, 28, 16], [42, 26, 18], [30, 42, 18]]) {
+      ctx.fillStyle = radial(ctx, x, y, 0, x, y, r, [[0, 'rgba(220, 205, 230, 0.55)'], [0.6, 'rgba(160, 140, 180, 0.25)'], [1, 'rgba(120, 100, 140, 0)']]);
+      ctx.fillRect(0, 0, 64, 64);
+    }
+    return canvas;
   },
 
   // Zachte, ronde gloed (voor licht-effecten).

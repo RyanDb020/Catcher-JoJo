@@ -130,10 +130,19 @@ class Faller {
       // lichtspoor tijdens het vliegen
       drawGlowSprite(this.type === 'gold' ? Sprites.glowGold : Sprites.glowPink, this.x, this.y, 56, 0.7);
     }
+    this.drawPortal();
     for (let i = 0; i < this.trail.length; i++) {
       const point = this.trail[i];
       drawSprite(Sprites.orb, point.x, point.y, 40 * (i + 1) / this.trail.length, 0, 0.12 * (i + 1) / this.trail.length);
     }
+    // bewegingsspoor: een paar vage kopieën boven de orb (hoe sneller, hoe langer)
+    if (this.state === 'fall' && (this.type === 'orb' || this.type === 'gold') && Game.timeScale() > 0.05) {
+      const sprite = this.type === 'gold' ? Sprites.gold : Sprites.orb;
+      const stretch = this.vy * 0.045;
+      for (let i = 1; i <= 3; i++) drawSprite(sprite, this.x, this.y - stretch * i, 60 - i * 8, this.rot * 0.25, 0.16 - i * 0.04);
+    }
+    if (this.type === 'life' || this.type === 'arrow') this.drawSunburst(time, bob);
+    if (this.type === 'bomb' && this.state === 'fall') this.drawDanger(time);
     switch (this.type) {
       case 'orb':
         drawSprite(Sprites.orb, this.x, this.y, 60, this.rot * 0.25);
@@ -178,6 +187,76 @@ class Faller {
         size: 10, align: 'center', baseline: 'middle', color: '#fff2c6', stroke: COLORS.ink, strokeWidth: 3, spacing: 1,
       });
     }
+  }
+
+  // Een klein portaal bovenin het scherm waar het object uit komt.
+  drawPortal() {
+    if (this.state !== 'fall' || this.age > 0.6 || this.bonus) return;
+    const t = this.age / 0.6;
+    const colors = { orb: '255,95,168', gold: '255,206,90', bomb: '255,64,87', disc: '200,180,255' };
+    const color = colors[this.type] || '94,231,255';
+    const ctx = drawingContext;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(${color}, ${0.8 * (1 - t)})`;
+    ctx.lineWidth = 3 * (1 - t) + 1;
+    ctx.beginPath();
+    ctx.ellipse(this.x, 4, 14 + t * 30, 4 + t * 6, 0, 0, TAU);
+    ctx.stroke();
+    ctx.globalAlpha = 1 - t;
+    ctx.drawImage(Sprites.spark, this.x - 18, -14, 36, 36);
+    ctx.restore();
+  }
+
+  // Draaiende lichtstralen achter een power-up (zodat je hem niet mist).
+  drawSunburst(time, bob) {
+    const ctx = drawingContext;
+    const color = this.type === 'life' ? '120, 255, 170' : '255, 220, 120';
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(this.x, this.y + bob);
+    ctx.rotate(time * 0.8);
+    for (let i = 0; i < 8; i++) {
+      ctx.rotate(TAU / 8);
+      const gradient = ctx.createLinearGradient(0, 0, 0, -48);
+      gradient.addColorStop(0, `rgba(${color}, 0.35)`);
+      gradient.addColorStop(1, `rgba(${color}, 0)`);
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(-3, 0);
+      ctx.lineTo(3, 0);
+      ctx.lineTo(9, -48);
+      ctx.lineTo(-9, -48);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Rode waarschuwingsring als een bom vlak boven je catcher hangt.
+  drawDanger(time) {
+    const catcher = Game.catcher;
+    const above = catcher.rimY - this.y;
+    if (above < 0 || above > 230 || Math.abs(this.x - catcher.x) > catcher.halfWidth + 60) return;
+    const close = 1 - above / 230;
+    const pulse = 0.5 + 0.5 * Math.sin(time * 18);
+    const ctx = drawingContext;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(255, 64, 87, ${(0.35 + pulse * 0.45) * close})`;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y + 2, 28 + pulse * 6, 0, TAU);
+    ctx.stroke();
+    // rode gloed op de vloer, precies waar hij gaat landen
+    const glow = ctx.createRadialGradient(this.x, FLOOR_Y, 0, this.x, FLOOR_Y, 70);
+    glow.addColorStop(0, `rgba(255, 50, 80, ${0.35 * close})`);
+    glow.addColorStop(1, 'rgba(255, 50, 80, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.ellipse(this.x, FLOOR_Y, 70, 14, 0, 0, TAU);
+    ctx.fill();
+    ctx.restore();
   }
 
   // Barsten op een bom die door The World is geraakt.

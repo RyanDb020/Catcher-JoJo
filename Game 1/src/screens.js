@@ -53,53 +53,126 @@ const TitleScreen = {
     FX.menacing(View.w, dt * 3);
   },
 
+  // Waar staan het logo en de held? (Ook gebruikt door drawMenu.)
+  layout(W) {
+    const narrow = W < 820;
+    const logoSize = Math.min(narrow ? W * 0.15 : 96, 96);
+    return {
+      narrow,
+      heroX: narrow ? W * 0.5 : W * 0.27,
+      logoX: narrow ? W / 2 : W * 0.68,
+      logoY: 104,
+      logoSize,
+      menuY: 104 + logoSize * 1.42 + 52,
+    };
+  },
+
+  // De achtergrond van het titelscherm: Jotaro, Star Platinum en het logo.
+  // (Dit krijgt bloom; de knoppen tekenen we daarna scherp met drawMenu.)
   draw(W) {
     const H = FIELD.height;
     const t = this.time;
-    const narrow = W < 820;
+    const L = this.layout(W);
+    const ctx = drawingContext;
+    Background.drawFloor(W);
 
-    // Jotaro met Star Platinum achter zich
-    const heroX = narrow ? W * 0.5 : W * 0.27;
-    const heroAlpha = (narrow ? 0.32 : 1) * Math.min(1, t / 0.6);
+    // lichtstralen die langzaam ronddraaien achter Star Platinum
+    const heroAlpha = (L.narrow ? 0.35 : 1) * Math.min(1, t / 0.6);
     const float = Math.sin(t * 1.4) * 6;
-    Art.drawGlow('star', 0, heroX + 30, H - 60 + float, 560, 'rgb(140, 90, 255)', 0.55 * heroAlpha);
-    Art.draw('star', 0, heroX + 30, H - 60 + float, 560, { alpha: 0.55 * heroAlpha });
-    Art.draw('jotaro', 0, heroX - 10, H + 10, 470, { alpha: heroAlpha });
+    const rayX = L.heroX + 30, rayY = H - 330 + float;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(rayX, rayY);
+    ctx.rotate(t * 0.12);
+    for (let i = 0; i < 14; i++) {
+      ctx.rotate(TAU / 14);
+      const gradient = ctx.createLinearGradient(0, 0, 0, -620);
+      gradient.addColorStop(0, `rgba(${i % 2 ? '180, 120, 255' : '255, 210, 120'}, ${0.12 * heroAlpha})`);
+      gradient.addColorStop(1, 'rgba(180, 120, 255, 0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(-12, 0);
+      ctx.lineTo(12, 0);
+      ctx.lineTo(70, -620);
+      ctx.lineTo(-70, -620);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
 
-    // logo
-    const logoX = narrow ? W / 2 : W * 0.68;
+    // Star Platinum met een kloppende aura, Jotaro ervoor
+    const pulse = 0.5 + 0.5 * Math.sin(t * 2.2);
+    Art.drawGlow('star', 0, L.heroX + 30, H - 60 + float, 600, 'rgb(150, 90, 255)', (0.35 + pulse * 0.3) * heroAlpha);
+    Art.drawGlow('star', 0, L.heroX + 30, H - 60 + float, 560, 'rgb(120, 200, 255)', 0.35 * heroAlpha);
+    Art.draw('star', 0, L.heroX + 30, H - 60 + float, 560, { alpha: 0.6 * heroAlpha });
+    Art.drawGlow('jotaro', 0, L.heroX - 10, H + 10, 470, 'rgb(255, 210, 140)', 0.25 * heroAlpha);
+    Art.draw('jotaro', 0, L.heroX - 10, H + 10, 470, { alpha: heroAlpha });
+
+    // opstijgende vonken rond de held
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 26; i++) {
+      const seed = (i * 0.618) % 1;
+      const life = (t * (0.18 + seed * 0.2) + seed) % 1;
+      const x = L.heroX + Math.sin(i * 7.3 + t * 0.8) * 220 * (0.4 + seed);
+      const y = H - 40 - life * 560;
+      const size = (2 + seed * 3) * (1 - life);
+      ctx.globalAlpha = (1 - life) * 0.8 * heroAlpha;
+      ctx.drawImage(i % 3 ? Sprites.glowPurple : Sprites.glowGold, x - size * 4, y - size * 4, size * 8, size * 8);
+    }
+    ctx.restore();
+
+    // logo met een gloed erachter
     const appear = easeOutBack(clamp(t / 0.6, 0, 1));
-    const logoSize = Math.min(narrow ? W * 0.15 : 96, 96);
-    drawText("JOJO'S BIZARRE", logoX, 104, {
-      size: Math.round(logoSize * 0.26), align: 'center', baseline: 'middle', color: COLORS.violet, spacing: 6, alpha: appear,
+    drawGlowSprite(Sprites.glowGold, L.logoX, L.logoY + L.logoSize * 0.72, L.logoSize * 5.5, 0.18 + pulse * 0.08);
+    drawText("JOJO'S BIZARRE", L.logoX, L.logoY, {
+      size: Math.round(L.logoSize * 0.26), align: 'center', baseline: 'middle', color: COLORS.violet, spacing: 6, alpha: appear,
       stroke: COLORS.ink, strokeWidth: 3,
     });
-    drawJoJoTitle('CATCHER', logoX, 104 + logoSize * 0.72, logoSize * mix(1.6, 1, appear), { alpha: Math.min(1, t * 3) });
-    drawJoJoTitle('STAND OVERDRIVE', logoX, 104 + logoSize * 1.42, logoSize * 0.34, { color: '#ffffff', shadow: 'rgba(255, 95, 168, 0.85)', alpha: Math.min(1, t * 2) });
+    const titleSize = L.logoSize * mix(1.6, 1, appear);
+    drawJoJoTitle('CATCHER', L.logoX, L.logoY + L.logoSize * 0.72, titleSize, { alpha: Math.min(1, t * 3) });
+    // glans die elke paar seconden over de letters trekt
+    const sweep = ((t - 0.8) % 3.4) / 1.1;
+    if (t > 0.8 && sweep < 1) {
+      const half = L.logoSize * 2.4;
+      const x = mix(-half * 1.2, half * 1.2, sweep);
+      const shine = ctx.createLinearGradient(x - 60, 0, x + 60, 0);
+      shine.addColorStop(0, 'rgba(255,255,255,0)');
+      shine.addColorStop(0.5, 'rgba(255,255,255,0.95)');
+      shine.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      drawText('CATCHER', L.logoX, L.logoY + L.logoSize * 0.72, { size: titleSize, font: FONT_TITLE, weight: '400', align: 'center', baseline: 'middle', color: shine, skew: -0.18 });
+      ctx.restore();
+    }
+    drawJoJoTitle('STAND OVERDRIVE', L.logoX, L.logoY + L.logoSize * 1.42, L.logoSize * 0.34, { color: '#ffffff', shadow: 'rgba(255, 95, 168, 0.85)', alpha: Math.min(1, t * 2) });
+  },
 
-    // knoppen
+  // Knoppen en teksten (scherp, zonder bloom).
+  drawMenu(W) {
+    const H = FIELD.height;
+    const t = this.time;
+    const L = this.layout(W);
     const bw = Math.min(330, W * 0.78), bh = 50;
-    const startY = 104 + logoSize * 1.42 + 52;
     this.buttons.forEach((button, i) => {
       const slide = easeOutCubic(clamp((t - 0.25 - i * 0.07) / 0.4, 0, 1));
-      button.place(logoX - bw / 2 + (1 - slide) * 60, startY + i * (bh + 12), bw, bh);
+      button.place(L.logoX - bw / 2 + (1 - slide) * 60, L.menuY + i * (bh + 12), bw, bh);
       button.draw(slide);
     });
 
-    // records
-    const recordY = startY + this.buttons.length * (bh + 12) + 26;
+    const recordY = L.menuY + this.buttons.length * (bh + 12) + 26;
     const best = Save.data.best;
     if (best > 0) {
-      drawText(`RECORD ${formatScore(best)}   ·   LANGSTE COMBO ${Save.data.bestCombo}`, logoX, recordY, {
+      drawText(`RECORD ${formatScore(best)}   ·   LANGSTE COMBO ${Save.data.bestCombo}`, L.logoX, recordY, {
         size: 13, align: 'center', baseline: 'middle', color: COLORS.gold, spacing: 1.5, alpha: Math.min(1, t * 2),
       });
     } else {
-      drawText('Vang de orbs · bouw combo\'s · laat je Stand los', logoX, recordY, {
+      drawText("Vang de orbs · bouw combo's · laat je Stand los", L.logoX, recordY, {
         size: 14, align: 'center', baseline: 'middle', color: '#e9dcff', alpha: Math.min(1, t * 2),
       });
     }
     if (Art.progress < 1) {
-      drawText(`Plaatjes laden... ${Math.round(Art.progress * 100)}%`, logoX, recordY + 24, { size: 11, align: 'center', color: 'rgba(255,255,255,0.5)' });
+      drawText(`Plaatjes laden... ${Math.round(Art.progress * 100)}%`, L.logoX, recordY + 24, { size: 11, align: 'center', color: 'rgba(255,255,255,0.5)' });
     }
     drawText(Input.touchMode ? 'Tik op SPELEN' : 'ENTER = spelen   ·   ↑ ↓ = kiezen   ·   O = instellingen', W / 2, H - 18, {
       size: 12, align: 'center', baseline: 'middle', color: 'rgba(240,225,255,0.6)',

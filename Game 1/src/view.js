@@ -34,10 +34,17 @@ const View = {
   toScreenY(fieldY) { return this.offY + fieldY * this.scale; },
 
   // Alles wat hierna getekend wordt, staat in speelveld-coördinaten.
-  begin(shakeX = 0, shakeY = 0) {
-    drawingContext.save();
-    drawingContext.translate(this.offX + shakeX * this.scale, this.offY + shakeY * this.scale);
-    drawingContext.scale(this.scale, this.scale);
+  // Met useCamera zoomt het beeld een beetje mee bij grote momenten.
+  begin(shakeX = 0, shakeY = 0, useCamera = false) {
+    const ctx = drawingContext;
+    ctx.save();
+    ctx.translate(this.offX + shakeX * this.scale, this.offY + shakeY * this.scale);
+    ctx.scale(this.scale, this.scale);
+    if (useCamera && Camera.zoom !== 1) {
+      ctx.translate(Camera.focusX, Camera.focusY);
+      ctx.scale(Camera.zoom, Camera.zoom);
+      ctx.translate(-Camera.focusX, -Camera.focusY);
+    }
   },
 
   end() {

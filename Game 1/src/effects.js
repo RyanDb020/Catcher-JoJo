@@ -8,6 +8,7 @@ const FX = {
   particles: [],
   texts: [],
   rings: [],
+  pillars: [],      // lichtzuilen bij een vangst
   trauma: 0,        // hoe hard het scherm schudt (0..1)
   hitStopTime: 0,   // zolang dit > 0 is, staat het spel heel even stil
   flashColor: '255,255,255',
@@ -21,6 +22,7 @@ const FX = {
     this.particles.length = 0;
     this.texts.length = 0;
     this.rings.length = 0;
+    this.pillars.length = 0;
     this.trauma = 0;
     this.hitStopTime = 0;
     this.flashAlpha = 0;
@@ -57,10 +59,16 @@ const FX = {
     }
   },
 
-  // Een uitdijende ring (schokgolf).
+  // Een uitdijende ring (schokgolf). flat = plat ovaal (op de vloer).
   ring(x, y, options = {}) {
-    const { color = '255,255,255', from = 10, to = 90, life = 0.45, width = 4, real = false } = options;
-    this.rings.push({ x, y, from, to, life, maxLife: life, color, width, real });
+    const { color = '255,255,255', from = 10, to = 90, life = 0.45, width = 4, real = false, flat = false } = options;
+    this.rings.push({ x, y, from, to, life, maxLife: life, color, width, real, flat });
+  },
+
+  // Een lichtzuil die vanuit de catcher omhoog schiet.
+  pillar(x, y, color = '255,95,168', width = 46) {
+    if (this.pillars.length > 12) this.pillars.shift();
+    this.pillars.push({ x, y, color, width, life: 0.38, maxLife: 0.38 });
   },
 
   // Zwevende tekst, bijvoorbeeld "+20" of "PERFECT!".
@@ -120,6 +128,10 @@ const FX = {
       ring.life -= ring.real ? dt : worldDt;
       if (ring.life <= 0) this.rings.splice(i, 1);
     }
+    for (let i = this.pillars.length - 1; i >= 0; i--) {
+      this.pillars[i].life -= dt;
+      if (this.pillars[i].life <= 0) this.pillars.splice(i, 1);
+    }
     for (let i = this.texts.length - 1; i >= 0; i--) {
       const text = this.texts[i];
       text.life -= text.real ? dt : worldDt;
@@ -158,6 +170,11 @@ const FX = {
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot * 0.2);
         ctx.drawImage(Sprites.spark, -s / 2, -s / 2, s, s);
+      } else if (p.shape === 'smoke') {
+        // zachte rookwolk die groter wordt
+        const s = p.size * (2.2 - t * 1.2) * 6;
+        ctx.globalAlpha = Math.min(1, t * 1.4) * 0.45;
+        ctx.drawImage(Sprites.smoke, p.x - s / 2, p.y - s / 2, s, s);
       } else if (p.shape === 'shard') {
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot);
@@ -185,8 +202,26 @@ const FX = {
       ctx.strokeStyle = `rgba(${ring.color},${(1 - t) * 0.9})`;
       ctx.lineWidth = ring.width * (1 - t * 0.6);
       ctx.beginPath();
-      ctx.arc(ring.x, ring.y, radius, 0, TAU);
+      if (ring.flat) ctx.ellipse(ring.x, ring.y, radius, radius * 0.18, 0, 0, TAU);
+      else ctx.arc(ring.x, ring.y, radius, 0, TAU);
       ctx.stroke();
+      ctx.restore();
+    }
+    // lichtzuilen: een felle straal die snel smaller wordt
+    for (const pillar of this.pillars) {
+      const t = 1 - pillar.life / pillar.maxLife;
+      const w = pillar.width * (1 - easeOutCubic(t) * 0.85);
+      const top = pillar.y - 520 * easeOutCubic(Math.min(1, t * 3));
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const gradient = ctx.createLinearGradient(0, pillar.y, 0, top);
+      gradient.addColorStop(0, `rgba(${pillar.color}, ${0.55 * (1 - t)})`);
+      gradient.addColorStop(0.4, `rgba(${pillar.color}, ${0.25 * (1 - t)})`);
+      gradient.addColorStop(1, `rgba(${pillar.color}, 0)`);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(pillar.x - w / 2, top, w, pillar.y - top);
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.5 * (1 - t)})`;
+      ctx.fillRect(pillar.x - w * 0.12, top + (pillar.y - top) * 0.3, w * 0.24, (pillar.y - top) * 0.7);
       ctx.restore();
     }
   },

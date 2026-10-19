@@ -155,6 +155,7 @@ const DEFAULT_SETTINGS = {
   voice: 0.9,
   sfx: 0.8,
   muted: false,           // M zet al het geluid aan/uit
+  quality: 'auto',        // 'auto', 'ultra' (4K), 'high' of 'fast'
   shake: true,
   flashes: true,
   particles: true,

@@ -360,7 +360,8 @@ const HeavenReset = {
     this.drawBolts(W, H);
     ctx.restore();
 
-    // nabewerking: kleuren uit elkaar trekken en VHS-glitches
+    // nabewerking: lichtgloed, kleuren uit elkaar trekken en VHS-glitches
+    PostFX.bloom();
     this.chromaticSplit(this.chroma);
     if (phase === 'rewind' || phase === 'collapse') this.glitchBands(phase === 'rewind' ? 5 : 9, phase === 'rewind' ? 26 : 50);
 

@@ -162,6 +162,7 @@ const Stands = {
       Sound.play('heavy', { volume: 1 });
       FX.shake(0.45);
       FX.text(origin.x, origin.y - 60, 'ORAAA!', { size: 46, color: COLORS.gold, life: 1 });
+      game.impactAt(target.x, target.y, 0.08, 0.06);
     }
     if (a.time >= rushEnd + 0.55 && this.fists.length === 0) this.active = null;
   },
@@ -232,6 +233,8 @@ const Stands = {
     const alpha = fadeIn * fadeOut;
     const x = game.catcher.x;
     const bottom = game.catcher.rimY + 40 + Math.sin(time * 6) * 4;
+    // manga-snelheidslijnen rond Star Platinum
+    drawRadialLines(drawingContext, x, bottom - 200, 150, 1500, 60, '#e6d4ff', 0.18 * alpha, Math.floor(time * 24));
     const pose = a.time > ORA_TIMING.cutIn + ORA_TIMING.rush ? 5 : (Math.floor(a.time * 14) % 2 === 0 ? 4 : 3);
     Art.drawGlow('star', pose, x, bottom, 330, 'rgb(150, 100, 255)', 0.7 * alpha);
     Art.draw('star', pose, x, bottom, 330, { alpha: 0.88 * alpha });
@@ -282,6 +285,7 @@ const Stands = {
       Sound.play('freeze', { volume: 1 });
       Sound.play('freezeFx', { volume: 0.8 });
       FX.shake(0.35);
+      Camera.kick(0.06, game.catcher.x, game.catcher.rimY);
     }
     // plan welke bommen The World gaat slaan
     if (!a.visitsPlanned && a.time >= T.frozen) {
@@ -385,9 +389,11 @@ const Stands = {
       FX.hitStop(0.12);
       FX.shake(1);
       FX.flash('255,250,220', 0.75, 3);
+      game.impactAt(a.x, a.y, 0.12, 0.1);
       FX.ring(a.x, a.y, { color: '255,230,150', from: 40, to: 600, life: 0.6, width: 10, real: true });
       FX.ring(a.x, a.y, { color: '255,255,255', from: 20, to: 420, life: 0.45, width: 5, real: true });
       FX.burst(a.x, a.y + 60, { count: 40, colors: ['#ffe14d', '#b5781b', '#8d8a99', '#ffffff'], speed: [200, 700], size: [3, 7], life: [0.5, 1.2], gravity: 900, shape: 'shard', real: true, glow: false });
+      FX.burst(a.x, a.y + 120, { count: 26, colors: ['#ffffff'], speed: [120, 420], angle: 0, spread: TAU, size: [8, 14], life: [0.8, 1.6], drag: 3, shape: 'smoke', real: true, glow: false });
       FX.text(a.x - Math.min(330, game.fieldW * 0.33), a.y - 40, 'ドドドドド', { size: 50, font: FONT_JP, weight: '900', color: '#ffe27a', life: 1.4, rise: 30, skew: -0.25 });
       this.cracks = [];
       for (let i = 0; i < 9; i++) {

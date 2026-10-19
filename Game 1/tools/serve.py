@@ -22,7 +22,7 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", 8000))
     handler = functools.partial(NoCacheHandler, directory=ROOT)
     with http.server.ThreadingHTTPServer(("127.0.0.1", port), handler) as server:
         print(f"JoJo Catcher draait op http://localhost:{port}  (Ctrl+C om te stoppen)")

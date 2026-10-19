@@ -89,6 +89,17 @@ De game neemt tijdens het spelen steeds "foto's" van het speelveld op (`Game.rec
 
 De game is **eerlijk**: de golf-regisseur (`src/waves.js`) rekent uit waar je catcher kan komen. Hij laat nooit twee roze orbs vallen die je onmogelijk allebei kunt vangen.
 
+## Graphics en effecten
+
+- **Tot echte 4K**: de game tekent op de volle resolutie van je scherm (tot 3840×2160). Onder **O → Grafische kwaliteit** kies je *Auto*, *Ultra (4K)*, *Hoog* of *Snel*. *Auto* gaat vanzelf een stapje omlaag als je computer het niet bijhoudt.
+- **Bloom**: alles wat licht geeft (orbs, vonken, Stands, het logo) krijgt een zachte gloed, met twee lagen op Ultra.
+- **Anime-impact-frames**: bij de laatste ORA-klap, de Road Roller, een ontploffende bom en het verslaan van Pucci flitst het beeld heel even in hard zwart-wit met snelheidslijnen.
+- **Camera**: het beeld zoomt kort in bij grote momenten.
+- **Levende achtergrond**: noorderlicht, vallende sterren, fonkelende sterren, zwevend stof en parallax (de achtergrond schuift mee met je catcher).
+- **Vangen**: een lichtzuil schiet omhoog, orbs hebben een komeetstaart en verschijnen uit een portaaltje. Een bom vlak boven je catcher krijgt een rode waarschuwingsring.
+- **Stand-aura**: met Stand Energy branden er vlammen rond je catcher, die goud worden als je 3 balken vol hebt. In de glimmende vloer zie je je catcher weerspiegeld.
+- Vind je het te druk? Zet *Felle flitsen* uit (geen impact frames, rustigere effecten) of *Scherm schudden* uit (ook geen camera-zoom).
+
 ## Hoe de code in elkaar zit
 
 Alle code staat in `src/`. Elk bestand heeft één taak en bovenaan staat uitleg in het Nederlands.
@@ -108,8 +119,9 @@ Alle code staat in `src/`. Elk bestand heeft één taak en bovenaan staat uitleg
 | `heaven.js` | De MADE IN HEAVEN-filmscène (universum-reset) |
 | `hud.js` | Score, levens, energiebalk, combo |
 | `screens.js` | Titelscherm, uitleg, pauzemenu, Game Over |
-| `effects.js` | Deeltjes, zwevende tekst, schermschudden, flitsen, hit-stop |
-| `background.js` | Sterren, nevel, planeet, klok en vloer |
+| `effects.js` | Deeltjes, zwevende tekst, lichtzuilen, schermschudden, flitsen, hit-stop |
+| `postfx.js` | Beeldkwaliteit tot 4K, bloom, vignet, camera-zoom en anime-impact-frames |
+| `background.js` | Sterren, nevel, noorderlicht, vallende sterren, planeet, klok en vloer |
 | `assets.js` | Stand-plaatjes laden en sprites tekenen (orbs, bom, vuist, Road Roller) |
 | `audio.js` | Geluid, stemmen en muziek (Web Audio) |
 | `ui.js`, `view.js`, `input.js`, `utils.js`, `storage.js`, `settings.js` | Hulpcode: tekst en knoppen, schermschaal, besturing, wiskunde, opslaan, instellingen |
@@ -118,7 +130,7 @@ Belangrijk om te weten:
 
 - **Tijd-gebaseerd**: alle beweging gebruikt `deltaTime`. De game is daardoor op een 60 Hz- en een 165 Hz-scherm even snel.
 - **Vaste speelveldhoogte**: het veld is altijd 720 "game-pixels" hoog en schaalt mee met je scherm. Dat werkt van telefoon tot ultrawide.
-- **Snel tekenen**: sprites worden één keer getekend en daarna steeds gekopieerd. Zware dingen gebeuren niet in `draw()`.
+- **Snel tekenen**: sprites worden één keer getekend en daarna steeds gekopieerd. Het noorderlicht tekenen we op lage resolutie en de bloom werkt op een verkleinde kopie. Zo blijft de game ook met alle effecten soepel.
 
 ## Tests
 

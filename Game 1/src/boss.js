@@ -60,6 +60,7 @@ class Boss {
     if (!this.alive || amount <= 0) return;
     this.hp = Math.max(0, this.hp - amount);
     this.hitFlash = 1;
+    if (amount >= 10 && this.hp > 0) game.impactAt(this.x, this.y + 110, 0.05, 0.03);
     if (this.hp <= 0) {
       this.state = 'dying';
       this.stateTime = 0;
@@ -68,6 +69,7 @@ class Boss {
       Sound.play('collapse', { volume: 1 });
       FX.shake(0.8);
       FX.hitStop(0.2);
+      game.impactAt(this.x, this.y + 110, 0.14, 0.08);
     }
   }
 

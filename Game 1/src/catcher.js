@@ -128,8 +128,58 @@ class Catcher {
     ctx.fill();
     ctx.restore();
 
+    this.drawReflection(energyBars, time);
+    if (energyBars > 0) this.drawAura(energyBars, time);
     this.drawThrusters(time);
     this.drawShape(this.x, this.tilt, this.width, this.squash, 1, false, energyBars, time);
+  }
+
+  // Stand-aura: vlammen rond de bak, feller (en gouden) met meer energie.
+  drawAura(energyBars, time) {
+    const ctx = drawingContext;
+    const strength = energyBars / ENERGY.bars;
+    const full = energyBars >= ENERGY.bars;
+    const tongues = 9;
+    const half = this.width / 2;
+    const baseY = this.rimY + CATCHER.height * 0.6;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < tongues; i++) {
+      const u = i / (tongues - 1) - 0.5;
+      const x = this.x + u * this.width * 0.95;
+      const flicker = 0.6 + 0.4 * Math.sin(time * (9 + i * 1.7) + i * 2.3);
+      const height = (24 + 34 * strength) * flicker * (1 - Math.abs(u) * 0.9);
+      const lean = this.vx * -0.012 + Math.sin(time * 3 + i) * 4;
+      const gradient = ctx.createLinearGradient(0, baseY, 0, baseY - height - 30);
+      gradient.addColorStop(0, full ? 'rgba(255, 210, 110, 0.55)' : 'rgba(170, 110, 255, 0.5)');
+      gradient.addColorStop(0.6, full ? 'rgba(255, 120, 200, 0.25)' : 'rgba(110, 160, 255, 0.2)');
+      gradient.addColorStop(1, 'rgba(120, 80, 255, 0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(x - 14, baseY);
+      ctx.quadraticCurveTo(x - 10 + lean * 0.5, baseY - height * 0.6, x + lean, baseY - height - 26);
+      ctx.quadraticCurveTo(x + 10 + lean * 0.5, baseY - height * 0.6, x + 14, baseY);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // een zachte gloed eromheen
+    ctx.globalAlpha = 0.25 + 0.2 * strength;
+    ctx.drawImage(full ? Sprites.glowGold : Sprites.glowPurple, this.x - half * 1.4, this.rimY - half * 1.1, half * 2.8, half * 2.2);
+    ctx.restore();
+  }
+
+  // Een vage weerspiegeling van de catcher in de glimmende vloer.
+  drawReflection(energyBars, time) {
+    const ctx = drawingContext;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(this.x - this.width, FLOOR_Y, this.width * 2, FIELD.height - FLOOR_Y);
+    ctx.clip();
+    // spiegelen in de vloerlijn en platter maken: y' = vloer + (vloer - y) * 0.45
+    ctx.translate(0, FLOOR_Y * 1.45);
+    ctx.scale(1, -0.45);
+    this.drawShape(this.x, -this.tilt, this.width, 0, 0.18, false, energyBars, time);
+    ctx.restore();
   }
 
   // Kleine straalmotoren die feller branden als je beweegt.

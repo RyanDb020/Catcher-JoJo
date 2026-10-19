@@ -39,6 +39,10 @@ const Settings = {
   apply(name) {
     if (['master', 'music', 'voice', 'sfx', 'muted'].includes(name)) Sound.applyVolumes();
     if (name === 'soundtrack' && Sound.musicWanted) Sound.playMusic(Save.settings.soundtrack);
+    if (name === 'quality') {
+      Quality.reset();
+      applyPixelDensity();
+    }
     if (name === 'sfx') Sound.play('catch', { volume: 0.8 });
     if (name === 'voice') Sound.play('vYes', { bus: 'voice', duration: 0.8, fadeOut: 0.2, minGap: 0.6 });
   },

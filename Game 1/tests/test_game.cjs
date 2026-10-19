@@ -14,7 +14,7 @@ const assert = require('assert');
 
 const ROOT = path.join(__dirname, '..');
 const SCRIPTS = [
-  'config', 'utils', 'storage', 'ui', 'view', 'input', 'audio', 'assets', 'effects', 'background',
+  'config', 'utils', 'storage', 'ui', 'view', 'input', 'audio', 'assets', 'effects', 'postfx', 'background',
   'catcher', 'objects', 'waves', 'cinematics', 'heaven', 'stands', 'cards', 'boss', 'hud', 'screens', 'settings', 'game',
 ];
 
@@ -38,6 +38,7 @@ function createGame(seed = 1) {
     keyIsDown: code => keysDown.has(code),
     LEFT_ARROW: 37, RIGHT_ARROW: 39, UP_ARROW: 38, DOWN_ARROW: 40, ENTER: 13, ESCAPE: 27,
     frameRate: () => 60,
+    width: 1280, height: 720, // grootte van de canvas
   };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);

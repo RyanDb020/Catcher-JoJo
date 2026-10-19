@@ -19,10 +19,20 @@ const Background = {
   speed: 1,
   warp: 0,       // 0..1: sterren worden strepen (Made in Heaven)
   danger: 0,     // 0..1: rode gloed als je bijna dood bent
+  parallax: 0,   // -1..1: de achtergrond schuift een beetje mee met de catcher
+  time: 0,
+  shooting: [],  // vallende sterren
+  shootTimer: 3,
+  dust: [],      // zwevende stofdeeltjes onderin
+  auroraCanvas: null,
+  auroraTime: -1,
 
   init() {
     for (let i = 0; i < 190; i++) {
       this.stars.push({ x: rand(), y: rand(), z: randRange(0.15, 1), twinkle: rand() * TAU });
+    }
+    for (let i = 0; i < 46; i++) {
+      this.dust.push({ x: rand(), y: randRange(0.55, 1), speed: randRange(0.01, 0.035), size: randRange(1, 3), phase: rand() * TAU });
     }
     this.clockFace = this.buildClockFace();
   },
@@ -163,11 +173,38 @@ const Background = {
   },
 
   // timeScale: 0 = tijd staat stil, 1 = normaal, >1 = versneld
-  update(dt, timeScale, warpTarget = 0, dangerTarget = 0) {
+  update(dt, timeScale, warpTarget = 0, dangerTarget = 0, parallaxTarget = 0) {
     this.speed = timeScale;
     this.warp = damp(this.warp, warpTarget, 3, dt);
     this.danger = damp(this.danger, dangerTarget, 3, dt);
+    this.parallax = damp(this.parallax, parallaxTarget, 2, dt);
     const worldDt = dt * timeScale;
+    this.time += worldDt;
+
+    // af en toe een vallende ster
+    this.shootTimer -= worldDt;
+    if (this.shootTimer <= 0 && this.warp < 0.2) {
+      this.shootTimer = randRange(2.5, 6.5);
+      const fromLeft = chance(0.5);
+      this.shooting.push({
+        x: fromLeft ? randRange(0.05, 0.5) : randRange(0.5, 0.95), y: randRange(0.04, 0.3),
+        vx: (fromLeft ? 1 : -1) * randRange(0.5, 0.8), vy: randRange(0.18, 0.32), life: 0.9, maxLife: 0.9,
+      });
+    }
+    for (let i = this.shooting.length - 1; i >= 0; i--) {
+      const star = this.shooting[i];
+      star.life -= Math.abs(worldDt);
+      star.x += star.vx * worldDt;
+      star.y += star.vy * worldDt;
+      if (star.life <= 0) this.shooting.splice(i, 1);
+    }
+    // stof zweeft langzaam omhoog
+    for (const mote of this.dust) {
+      mote.y -= mote.speed * worldDt;
+      mote.phase += worldDt * 0.8;
+      if (mote.y < 0.5) { mote.y = 1.02; mote.x = rand(); }
+      if (mote.y > 1.03) mote.y = 0.52;
+    }
     this.clockTime += worldDt * (1 + this.warp * 40);
     this.gridTime += worldDt;
     for (const star of this.stars) {
@@ -197,8 +234,17 @@ const Background = {
   // Tekent de achtergrond over het hele venster (schermcoördinaten).
   draw(width, height) {
     const ctx = drawingContext;
-    if (this.nebula) ctx.drawImage(this.nebula, 0, 0, width, height);
-    else { ctx.fillStyle = '#0c0620'; ctx.fillRect(0, 0, width, height); }
+    // de nevel is iets groter dan het scherm en schuift mee met de catcher (diepte!)
+    const shift = this.parallax * width * 0.02;
+    const breathe = 1 + 0.01 * Math.sin(this.time * 0.25);
+    if (this.nebula) {
+      const w = width * 1.06 * breathe, h = height * 1.06 * breathe;
+      ctx.drawImage(this.nebula, (width - w) / 2 - shift, (height - h) / 2, w, h);
+    } else {
+      ctx.fillStyle = '#0c0620';
+      ctx.fillRect(0, 0, width, height);
+    }
+    this.drawAurora(width, height, shift);
 
     // grote vage klok in het midden
     const size = Math.min(width, height) * 0.92;
@@ -248,6 +294,39 @@ const Background = {
         }
       }
     }
+    // de helderste sterren fonkelen met een kruisje van licht
+    ctx.globalCompositeOperation = 'lighter';
+    for (const star of this.stars) {
+      if (star.z < 0.93 || this.warp > 0.05) continue;
+      const twinkle = Math.max(0, Math.sin(star.twinkle * 1.7));
+      const size = 6 + twinkle * 16;
+      ctx.globalAlpha = 0.25 + twinkle * 0.6;
+      ctx.drawImage(Sprites.spark, star.x * width - shift * star.z - size / 2, star.y * height - size / 2, size, size);
+    }
+    // vallende sterren
+    for (const shooting of this.shooting) {
+      const alpha = Math.sin(Math.PI * (shooting.life / shooting.maxLife));
+      const x = shooting.x * width, y = shooting.y * height;
+      const gradient = ctx.createLinearGradient(x, y, x - shooting.vx * width * 0.18, y - shooting.vy * height * 0.18);
+      gradient.addColorStop(0, `rgba(255, 245, 230, ${0.9 * alpha})`);
+      gradient.addColorStop(1, 'rgba(200, 160, 255, 0)');
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - shooting.vx * width * 0.18, y - shooting.vy * height * 0.18);
+      ctx.stroke();
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(Sprites.glowWhite, x - 9, y - 9, 18, 18);
+    }
+    // zwevend stof onderin
+    for (const mote of this.dust) {
+      ctx.globalAlpha = 0.25 + 0.25 * Math.sin(mote.phase);
+      const x = mote.x * width + Math.sin(mote.phase) * 12 - shift * 1.5;
+      const size = mote.size * 5;
+      ctx.drawImage(Sprites.glowPurple, x - size / 2, mote.y * height - size / 2, size, size);
+    }
     ctx.restore();
 
     // rode rand als je nog maar één leven hebt
@@ -258,6 +337,52 @@ const Background = {
       gradient.addColorStop(1, `rgba(255, 30, 60, ${0.28 * this.danger * pulse})`);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, width, height);
+    }
+  },
+
+  // Noorderlicht: zachte gordijnen van licht bovenin de lucht.
+  // Het is wazig en beweegt langzaam, dus we tekenen het op lage resolutie
+  // en maar 20 keer per seconde. Dat scheelt veel rekenwerk.
+  drawAurora(width, height, shift) {
+    const lowW = Math.max(32, Math.round(width / 6)), lowH = Math.max(32, Math.round(height / 6));
+    if (!this.auroraCanvas || this.auroraCanvas.width !== lowW || this.auroraCanvas.height !== lowH) {
+      this.auroraCanvas = document.createElement('canvas');
+      this.auroraCanvas.width = lowW;
+      this.auroraCanvas.height = lowH;
+      this.auroraTime = -1;
+    }
+    if (Math.abs(this.time - this.auroraTime) > 0.05 || this.auroraTime < 0) {
+      this.auroraTime = this.time;
+      this.paintAurora(this.auroraCanvas.getContext('2d'), lowW, lowH);
+    }
+    const ctx = drawingContext;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 1 - this.warp;
+    ctx.drawImage(this.auroraCanvas, -shift * 0.5, 0, width, height);
+    ctx.restore();
+  },
+
+  paintAurora(ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'lighter';
+    for (let band = 0; band < 2; band++) {
+      const baseY = h * (0.13 + band * 0.07);
+      const color = band === 0 ? '90, 230, 210' : '190, 110, 255';
+      for (let x = 0; x < w; x += 2) {
+        const wx = x * 6; // in "schermpixels"
+        const wave = Math.sin(wx * 0.0035 + this.time * (0.25 + band * 0.1) + band * 2);
+        const wave2 = Math.sin(wx * 0.011 - this.time * 0.4 + band);
+        const y = baseY + wave * h * 0.035;
+        const length = h * (0.09 + 0.05 * (wave2 * 0.5 + 0.5));
+        const alpha = 0.08 + 0.08 * (wave2 * 0.5 + 0.5);
+        const gradient = ctx.createLinearGradient(0, y - length * 0.3, 0, y + length);
+        gradient.addColorStop(0, `rgba(${color}, 0)`);
+        gradient.addColorStop(0.3, `rgba(${color}, ${alpha})`);
+        gradient.addColorStop(1, `rgba(${color}, 0)`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x, y - length * 0.3, 2, length * 1.3);
+      }
     }
   },
 

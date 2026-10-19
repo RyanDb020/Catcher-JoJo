@@ -17,6 +17,7 @@ function setup() {
   frameRate(240);
 
   Save.load();
+  Quality.reset();
   applyPixelDensity();
   View.compute(windowWidth, windowHeight);
   Sprites.build();
@@ -40,17 +41,17 @@ function draw() {
   // deltaTime = milliseconden sinds het vorige frame. We begrenzen het,
   // zodat een haperende computer de game niet ineens vooruit laat springen.
   const dt = Math.min(deltaTime / 1000, 1 / 20);
+  // Op 'Auto' gaat de resolutie vanzelf omlaag als het hapert.
+  if (Quality.monitor(deltaTime, Game.state === 'playing')) applyPixelDensity();
+  drawingContext.imageSmoothingQuality = 'high';
   Game.update(dt);
   Game.render();
 }
 
-// Scherpte: op een scherm met een hoge pixeldichtheid tekenen we meer pixels,
-// maar nooit zo veel dat de game gaat haperen.
+// Scherpte: tot echte 4K (Ultra), afhankelijk van de kwaliteit-instelling.
 function applyPixelDensity() {
-  const pixelBudget = 4.5e6;
-  const ideal = Math.min(window.devicePixelRatio || 1, 2);
-  const limit = Math.sqrt(pixelBudget / Math.max(1, windowWidth * windowHeight));
-  pixelDensity(Math.max(1, Math.min(ideal, limit)));
+  const density = Quality.density(windowWidth, windowHeight);
+  if (Math.abs(pixelDensity() - density) > 0.01) pixelDensity(density);
 }
 
 function windowResized() {
