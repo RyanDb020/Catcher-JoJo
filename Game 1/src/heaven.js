@@ -96,6 +96,7 @@ const HeavenReset = {
     this.shake = 0;
     this.chroma = 0;
     this.frozen = null;
+    HeavenShots.start();
   },
 
   get phase() {
@@ -166,8 +167,14 @@ const HeavenReset = {
         this.chroma = Math.max(this.chroma, last ? 0.6 : 0.25);
       });
     }
+    // camera-wissel van de close-up naar het wijde shot
+    this.cue('cut1', PRAYER_CLOSEUP, () => {
+      this.sfx('heavy', { volume: 0.5, rate: 0.5 });
+      this.shake = Math.max(this.shake, 0.25);
+    });
     this.cue('manifest', T.manifest, () => {
       FX.flash('255,255,255', 0.9, 2.5);
+      PostFX.impact(0.1, 0.6, 0.45);
       this.sfx('heavy', { volume: 1, rate: 0.6 });
       this.sfx('bell', { volume: 0.7, rate: 0.75 });
       this.shake = 1;
@@ -175,7 +182,19 @@ const HeavenReset = {
       this.hoofWave();
       this.burstFeathers(60);
     });
-    this.cue('limit', T.manifest + 2.2, () => {
+    // close-up van de snelheidsmeter: de naald zwiept naar oneindig
+    this.cue('gauge', T.manifest + MANIFEST_SHOTS.gauge, () => {
+      this.sfx('whoosh', { volume: 0.8, rate: 1.5 });
+      this.sfx('latch', { volume: 0.5, rate: 0.8 });
+      this.chroma = Math.max(this.chroma, 0.5);
+    });
+    this.cue('infinity', T.manifest + MANIFEST_SHOTS.gauge + 0.8, () => {
+      this.sfx('bell', { volume: 0.7, rate: 1.6 });
+      FX.flash('255,90,110', 0.35, 4);
+      this.shake = Math.max(this.shake, 0.5);
+      this.chroma = Math.max(this.chroma, 0.8);
+    });
+    this.cue('limit', T.manifest + MANIFEST_SHOTS.limit, () => {
       FX.flash('230,220,255', 0.5, 3);
       this.sfx('heavy', { volume: 0.9, rate: 0.7 });
       this.sfx('metal', { volume: 0.6, rate: 0.7 });
@@ -184,7 +203,7 @@ const HeavenReset = {
       this.hoofWave();
       this.burstFeathers(40);
     });
-    [0.35, 1.1, 2.5, 2.9, 3.4, 3.8].forEach((offset, i) => this.cue('bolt' + i, T.manifest + offset, () => this.lightning()));
+    [0.35, 3.1, 3.35, 3.6, 3.85, 4.1].forEach((offset, i) => this.cue('bolt' + i, T.manifest + offset, () => this.lightning()));
     this.cue('rewind', T.rewind, () => {
       Sound.playVoice('vAccelerate');
       this.sfx('rewindFx', { volume: 0.75, duration: HEAVEN_TIMING.rewind + 0.4, fadeOut: 0.5 });
@@ -240,6 +259,7 @@ const HeavenReset = {
         }
       }
     }
+    HeavenShots.update(dt, this);
     if (this.t >= T.end) this.finish();
   },
 
@@ -257,7 +277,7 @@ const HeavenReset = {
       this.feathers.push({
         x: 0.64, y: 0.55, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed * 0.8,
         drag: 1.2, gravity: 0.04, rot: rand() * TAU, spin: randRange(-3, 3), size: randRange(6, 14),
-        life: randRange(1.6, 3), maxLife: 3,
+        life: randRange(1.6, 3), maxLife: 3, color: pick(['#ffffff', '#b8ffe6', '#ffc6e6']), // munt en roze, zoals in de anime
       });
     }
   },
@@ -316,7 +336,7 @@ const HeavenReset = {
       for (const handle of this.sounds) handle.stop(0.15);
       this.sounds = [];
       Sound.stopVoice(0.15);
-      const names = ['voice', 'manifest', 'limit', 'rewind', 'accelerate', 'collapse'];
+      const names = ['voice', 'cut1', 'manifest', 'gauge', 'infinity', 'limit', 'rewind', 'accelerate', 'collapse'];
       for (let i = 0; i < 14; i++) names.push('word' + i);
       for (let i = 0; i < 6; i++) names.push('bolt' + i);
       for (const name of names) this.cues[name] = true;
@@ -347,12 +367,13 @@ const HeavenReset = {
 
     ctx.save();
     ctx.translate(sx, sy);
-    if (phase === 'prayer' || phase === 'manifest') this.drawFrozenWorld(W, H);
+    if (phase === 'prayer' || phase === 'manifest') HeavenShots.drawPucciShots(W, H, this);
     else if (phase === 'rewind') this.drawRewind(W, H);
-    else if (phase === 'accelerate') this.drawAcceleration(W, H);
-    else if (phase === 'collapse') this.drawCollapse(W, H);
-    else this.drawRebirth(W, H);
-    if (phase === 'prayer' || phase === 'manifest') this.drawPucci(W, H);
+    else if (phase === 'accelerate') HeavenShots.drawAcceleration(W, H, this);
+    else if (phase === 'collapse') {
+      this.drawCollapse(W, H);
+      HeavenShots.drawCollapseStreams(W, H, this);
+    } else this.drawRebirth(W, H);
     this.drawWaves(W, H);
     this.drawFeathers(W, H);
     this.drawStars(W, H);
@@ -500,7 +521,6 @@ const HeavenReset = {
       ctx.fill();
     }
     ctx.restore();
-    if (this.phase === 'manifest') this.drawClockworks(W, H, this.phaseProgress('manifest'));
   },
 
   // Draaiende klokken (tandwielen) achter Made in Heaven.
@@ -527,38 +547,6 @@ const HeavenReset = {
       ctx.beginPath();
       ctx.arc(cx, cy, ring * Math.max(W, H) * 0.7, 0, TAU);
       ctx.stroke();
-    }
-    ctx.restore();
-  },
-
-  // Pucci: eerst een biddend silhouet, dan de onthulling van Made in Heaven.
-  drawPucci(W, H) {
-    const ctx = drawingContext;
-    const T = this.T;
-    const prayer = this.phase === 'prayer';
-    const pose = prayer ? 5 : (this.t >= T.manifest + 2.2 ? 4 : 0);
-    const appear = prayer ? easeOutCubic(this.phaseProgress('prayer') * 2) : 1;
-    const slam = prayer ? 0 : 1 - easeOutCubic(progress(this.t, T.manifest, T.manifest + 0.45));
-    const limitSlam = 1 - easeOutCubic(progress(this.t, T.manifest + 2.2, T.manifest + 2.55));
-    const size = Math.min(H * 0.8, W * 0.78) * (1 + slam * 0.14 + limitSlam * 0.07);
-    const x = W * (W < H ? 0.5 : 0.64) + Math.sin(this.t * 0.8) * 6;
-    const bottom = H * 0.915 + Math.sin(this.t * 1.3) * 4;
-    const pulse = 0.5 + 0.5 * Math.sin(this.t * 4);
-    ctx.save();
-    ctx.globalAlpha = appear;
-    if (prayer) {
-      // geheimzinnig silhouet met een lichtrand
-      Art.drawGlow('heaven', pose, x, bottom, size, 'rgb(220, 200, 255)', 0.55 + pulse * 0.25);
-      const shadow = Art.silhouette('heaven', pose, '#0d0620');
-      if (shadow) ctx.drawImage(shadow, x - size / 2, bottom - size, size, size);
-      // gouden ogen die oplichten
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = appear * (0.4 + pulse * 0.4);
-      ctx.drawImage(Sprites.glowGold, x - size * 0.17 - 8, bottom - size * 0.86 - 8, 16, 16);
-    } else {
-      Art.drawGlow('heaven', pose, x, bottom, size, 'rgb(255, 236, 190)', 0.5 + pulse * 0.25 + slam * 1.2);
-      Art.draw('heaven', pose, x, bottom, size);
-      if (slam > 0.05) Art.drawGlow('heaven', pose, x, bottom, size, 'rgb(255, 255, 255)', slam);
     }
     ctx.restore();
   },
@@ -631,107 +619,6 @@ const HeavenReset = {
     drawText(timecode, W * 0.5, H * 0.18 + Math.min(42, W * 0.06), { size: Math.min(26, W * 0.04), font: "'Courier New', monospace", weight: '700', align: 'center', baseline: 'middle', color: '#bff0ff', stroke: '#06223a', strokeWidth: 4 });
   },
 
-  // Deel 4: de tijd versnelt.
-  drawAcceleration(W, H) {
-    const ctx = drawingContext;
-    const p = this.phaseProgress('accelerate');
-    const local = this.t - this.T.accelerate;
-    // de oudste herinnering vervaagt
-    if (p < 0.35) {
-      View.begin();
-      this.drawSnapshot(this.history[0], 1 - p / 0.35, false);
-      View.end();
-    }
-    ctx.save();
-    // dag en nacht flitsen steeds sneller voorbij
-    const cycle = Math.sin(local * local * 2.4 + local * 2);
-    const sky = ctx.createLinearGradient(0, 0, 0, H);
-    if (cycle > 0) {
-      sky.addColorStop(0, `rgba(120, 190, 255, ${0.35 * cycle})`);
-      sky.addColorStop(1, `rgba(255, 170, 80, ${0.35 * cycle})`);
-    } else {
-      sky.addColorStop(0, `rgba(10, 10, 60, ${-0.4 * cycle})`);
-      sky.addColorStop(1, `rgba(40, 10, 80, ${-0.4 * cycle})`);
-    }
-    ctx.fillStyle = sky;
-    ctx.fillRect(-50, -50, W + 100, H + 100);
-    ctx.restore();
-
-    // zon en maan razen in een grote baan rond
-    const orbit = local * local * 3 + local;
-    const cx = W / 2, cy = H * 0.95, radius = Math.min(W * 0.55, H * 0.8);
-    for (const [offset, color, glow, r] of [[0, '#fff1b0', Sprites.glowGold, 34], [Math.PI, '#e8ecff', Sprites.glowWhite, 26]]) {
-      for (let trail = 6; trail >= 0; trail--) {
-        const angle = Math.PI + orbit + offset - trail * 0.07;
-        const x = cx + Math.cos(angle) * radius, y = cy + Math.sin(angle) * radius;
-        const alpha = trail === 0 ? 1 : 0.18 * (1 - trail / 7);
-        drawGlowSprite(glow, x, y, r * 5, alpha);
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, TAU);
-        ctx.fill();
-        ctx.restore();
-      }
-    }
-
-    // gigantische klok met razende wijzers
-    const size = Math.min(W, H) * (0.8 + p * 0.3);
-    ctx.save();
-    ctx.translate(W / 2, H / 2);
-    ctx.globalAlpha = 0.35;
-    ctx.drawImage(Background.clockFace, -size / 2, -size / 2, size, size);
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineCap = 'round';
-    for (const [speed, length, lineWidth] of [[3, 0.25, 10], [30, 0.38, 5]]) {
-      ctx.save();
-      ctx.rotate(local * local * speed);
-      ctx.lineWidth = lineWidth;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, -size * length);
-      ctx.stroke();
-      ctx.restore();
-    }
-    ctx.restore();
-
-    this.drawSpeedLines(W, H, 0.25 + p * 0.6);
-
-    // Pucci staat stil in het midden terwijl alles om hem heen raast
-    const heroSize = Math.min(H * 0.62, W * 0.55);
-    const bottom = H * 0.88;
-    for (let i = 3; i >= 1; i--) {
-      Art.draw('heaven', 4, W / 2 + Math.sin(this.t * 40 + i) * i * 10 * p, bottom, heroSize, { alpha: 0.12 * i });
-    }
-    Art.drawGlow('heaven', 4, W / 2, bottom, heroSize, 'rgb(255, 240, 200)', 0.6);
-    Art.draw('heaven', 4, W / 2, bottom, heroSize);
-  },
-
-  // Manga-snelheidslijnen die naar het midden wijzen.
-  drawSpeedLines(W, H, strength) {
-    const ctx = drawingContext;
-    const cx = W / 2, cy = H / 2;
-    const inner = Math.min(W, H) * 0.3, outer = Math.hypot(W, H);
-    ctx.save();
-    ctx.globalAlpha = strength;
-    ctx.fillStyle = '#ffffff';
-    const frame = Math.floor(this.t * 20);
-    for (let i = 0; i < 70; i++) {
-      const seed = Math.sin((i + frame * 0.37) * 91.3) * 0.5 + 0.5;
-      const angle = (i / 70) * TAU + seed * 0.08;
-      const width = 0.004 + seed * 0.012;
-      const start = inner * (1 + seed * 0.8);
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(angle) * start, cy + Math.sin(angle) * start);
-      ctx.lineTo(cx + Math.cos(angle - width) * outer, cy + Math.sin(angle - width) * outer);
-      ctx.lineTo(cx + Math.cos(angle + width) * outer, cy + Math.sin(angle + width) * outer);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.restore();
-  },
-
   // Deel 5: het hele scherm wordt in een spiraal naar één punt gezogen.
   drawCollapse(W, H) {
     const ctx = drawingContext;
@@ -781,6 +668,7 @@ const HeavenReset = {
     const ctx = drawingContext;
     const local = this.t - this.T.rebirth;
     const p = this.phaseProgress('rebirth');
+    HeavenShots.drawSunrise(W, H, local);
     // nevel die opbloeit
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
@@ -855,7 +743,7 @@ const HeavenReset = {
       ctx.translate(feather.x * W, feather.y * H);
       ctx.rotate(feather.rot);
       ctx.globalAlpha = alpha * 0.9;
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = feather.color || '#ffffff';
       ctx.beginPath();
       ctx.ellipse(0, 0, feather.size, feather.size * 0.32, 0, 0, TAU);
       ctx.fill();
@@ -933,9 +821,9 @@ const HeavenReset = {
     const cx = portrait ? W * 0.5 : W * 0.33, cy = portrait ? H * 0.28 : H * 0.47;
     const big = Math.min(W * (portrait ? 0.1 : 0.062), 64);
     // het vorige woord vervaagt naar links
-    if (index > 0 && local < 0.18) {
+    if (index > 0 && local < 0.12) {
       const [, english] = FOURTEEN_WORDS[index - 1];
-      drawJoJoTitle(english, cx - local * 300, cy + big * 0.25, big, { alpha: 1 - local / 0.18, color: '#ffffff', maxWidth: W * 0.6 });
+      drawJoJoTitle(english, cx - local * 1400, cy + big * 0.25, big * 0.9, { alpha: (1 - local / 0.12) * 0.6, color: '#ffffff', maxWidth: W * 0.6 });
     }
     const [japanese, english] = FOURTEEN_WORDS[index];
     const pop = easeOutBack(clamp(local / 0.12, 0, 1));
@@ -964,8 +852,8 @@ const HeavenReset = {
       drawJoJoTitle(text, W * (portrait ? 0.5 : 0.34), H * (portrait ? 0.25 : 0.36), size * mix(1.6, 1, pop), { alpha, color, shadow, maxWidth: W * 0.9 });
     };
     const big = Math.min(W * (portrait ? 0.12 : 0.085), 96);
-    slam('MADE IN HEAVEN', T.manifest, 2.1, big, '#ffffff', 'rgba(255, 190, 90, 0.9)');
-    slam('TIME HAS NO LIMIT', T.manifest + 2.2, 2.2, big * 0.8, COLORS.gold, 'rgba(130, 60, 220, 0.9)');
+    slam('MADE IN HEAVEN', T.manifest, MANIFEST_SHOTS.gauge - 0.05, big, '#ffffff', 'rgba(255, 190, 90, 0.9)');
+    slam('TIME HAS NO LIMIT', T.manifest + MANIFEST_SHOTS.limit, HEAVEN_TIMING.manifest - MANIFEST_SHOTS.limit, big * 0.8, COLORS.gold, 'rgba(130, 60, 220, 0.9)');
     if (this.phase === 'accelerate') {
       const local = this.t - T.accelerate;
       const pop = easeOutBack(clamp(local / 0.3, 0, 1));

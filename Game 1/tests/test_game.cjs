@@ -15,7 +15,7 @@ const assert = require('assert');
 const ROOT = path.join(__dirname, '..');
 const SCRIPTS = [
   'config', 'utils', 'storage', 'ui', 'view', 'input', 'audio', 'assets', 'effects', 'postfx', 'background',
-  'catcher', 'objects', 'waves', 'cinematics', 'heaven', 'stands', 'cards', 'boss', 'hud', 'screens', 'settings', 'game',
+  'catcher', 'objects', 'waves', 'cinematics', 'heaven', 'heaven-shots', 'stands', 'cards', 'boss', 'hud', 'screens', 'settings', 'game',
 ];
 
 // Maakt een nieuwe, schone game-omgeving.

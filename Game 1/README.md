@@ -78,12 +78,14 @@ Elke gevangen orb schiet een ster naar Pucci en je Stand-aanvallen doen extra sc
 
 Na het verslaan van Pucci, of als je bij pauze of Game Over op **R** drukt, speelt een filmscène van ongeveer 22 seconden. Met **spatie** sla je hem over.
 
-1. **The Final Prayer** — Pucci staat als silhouet te bidden en spreekt de 14 woorden uit (*Spiral staircase… Rhinoceros beetle… Secret emperor*).
-2. **Manifestation** — Made in Heaven onthult zich: flits, schokgolven, veren, draaiende klokken en bliksem. *TIME HAS NO LIMIT.*
+1. **The Final Prayer** — een close-up van Pucci's gezicht in het donker, daarna een biddend silhouet met hittegolf-vervorming. Hij spreekt de 14 woorden uit (*Spiral staircase… Rhinoceros beetle… Secret emperor*) en de zwaartekracht trekt stenen omhoog.
+2. **Manifestation** — een impact frame, en de camera trekt terug: Made in Heaven onthult zich in fel licht, met stenen die om hem heen draaien, munt- en roze veren en *"It is complete! The power of gravity is permeating my body!"*. Dan een close-up van zijn **snelheidsmeter-gezicht** (de naald slaat naar ∞) en *TIME HAS NO LIMIT* met een bliksemstorm.
 3. **Rewind** — **jouw eigen laatste 9 seconden gameplay** spoelen terug, met een VHS-effect: kleuren die uit elkaar trekken, glitch-strepen en een tijdcode die terugtelt.
-4. **Time Accelerates** — zon en maan razen rond, dag en nacht flitsen voorbij en Pucci staat stil terwijl alles langs hem raast.
-5. **Singularity** — het hele scherm wordt in een draaikolk naar één punt gezogen.
-6. **Rebirth** — een oerknal, en het nieuwe universum begint.
+4. **Time Accelerates** — zoals in de anime: de zon en de maan draaien steeds sneller tot er **lichtstrepen** langs de hemel overblijven, sterren trekken strepen, dag en nacht flitsen voorbij en Pucci raast als uitgerekte "smear" over het scherm.
+5. **Singularity** — het hele scherm wordt in een draaikolk naar één punt gezogen, lichtdeeltjes worden naar binnen getrokken: 特異点.
+6. **Rebirth** — een oerknal en een zonsopgang boven het nieuwe universum.
+
+De scène is gebaseerd op hoe Made in Heaven er in *Stone Ocean* uitziet en werkt (bron: de [JoJo-wiki over Made in Heaven](https://jojowiki.com/Made_in_Heaven) en de afleveringen [36](https://jojowiki.com/SO_Episode_36), [37](https://jojowiki.com/SO_Episode_37) en [38](https://jojowiki.com/SO_Episode_38)). De shots staan in `src/heaven-shots.js`.
 
 De game neemt tijdens het spelen steeds "foto's" van het speelveld op (`Game.recordHistory` in `game.js`). Die worden in deel 3 achterstevoren afgespeeld.
 
@@ -116,7 +118,8 @@ Alle code staat in `src/`. Elk bestand heeft één taak en bovenaan staat uitleg
 | `cards.js` | Stand-kaarten en het kaart-kies-scherm |
 | `boss.js` | De eindbaas Pucci |
 | `cinematics.js` | Cut-ins en de TO BE CONTINUED-pijl |
-| `heaven.js` | De MADE IN HEAVEN-filmscène (universum-reset) |
+| `heaven.js` | De MADE IN HEAVEN-filmscène: tijdlijn, geluid, terugspoelen, singulariteit, oerknal |
+| `heaven-shots.js` | De camera-shots van Pucci: close-ups, snelheidsmeter, versnelde hemel |
 | `hud.js` | Score, levens, energiebalk, combo |
 | `screens.js` | Titelscherm, uitleg, pauzemenu, Game Over |
 | `effects.js` | Deeltjes, zwevende tekst, lichtzuilen, schermschudden, flitsen, hit-stop |
